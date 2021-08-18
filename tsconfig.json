@@ -1,0 +1,32 @@
+{
+  "ts-node": {
+    "transpileOnly": true
+  },
+  "compilerOptions": {
+    "alwaysStrict": true,
+    "baseUrl": ".",
+    "rootDir": "src",
+    "skipLibCheck": true,
+    "outDir": "build/main",
+    "sourceMap": false,
+    "noImplicitThis": true,
+    "noImplicitAny": false,
+    "module": "commonjs",
+    "target": "ESNext",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "allowSyntheticDefaultImports": true,
+    "allowJs": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "declaration": true,
+    "pretty": true,
+    "lib": ["ESNext", "dom"],
+    "typeRoots": ["./typings", "./node_modules/@types"]
+  },
+  "exclude": ["dist", "build", "**/node_modules/*"],
+  "include": ["src"],
+  "compileOnSave": false
+}
