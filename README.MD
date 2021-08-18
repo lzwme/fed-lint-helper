@@ -1,5 +1,5 @@
 [![Code Climate](https://lzw.me/images/logo.png)](https://lzw.me)
-[![@lzwme/fed-lint-helper](https://nodei.co/npm/@lzwme/fed-lint-helper.png)](npm-url)
+[![@lzwme/fed-lint-helper](https://nodei.co/npm/@lzwme/fed-lint-helper.png)][npm-url]
 
 # @lzwme/fed-lint-helper
 
