@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-18 10:33:52
  * @LastEditors: lzw
- * @LastEditTime: 2021-08-18 11:36:52
+ * @LastEditTime: 2021-08-19 18:32:31
  * @Description:
  */
 import { ESLintCheck } from '../src/eslint-check';
@@ -18,7 +18,8 @@ const eslintCheck = new ESLintCheck({
   checkOnInit: false,
   silent: argv.includes('silent'),
   debug: argv.includes('debug'),
-  toWhiteList: true,
+  toWhiteList: argv.includes('whitelist'),
+  allowErrorToWhiteList: true,
   fix: argv.includes('fix'),
   eslintOptions: {
     overrideConfig: {
@@ -29,7 +30,7 @@ const eslintCheck = new ESLintCheck({
 
 eslintCheck
   .start()
-  .then(res => console.log(res))
+  .then(res => res && console.log(res))
   .then(() => {
     return eslintCheck.start(['test-cases/ts-check-test-1.ts', 'src/ts-check.ts']).then(res => console.log(res));
   });

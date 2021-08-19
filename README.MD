@@ -66,6 +66,8 @@ const eslintCheck = new ESLintCheck({
   eslintOptions: {
     overrideConfig: {
       rules: { eqeqeq: 'warn' },
+      // rulePaths: ['./eslint-rules/'],
+      // errorOnUnmatchedPattern: true,
     },
   },
   // cache: argv.includes('cache'),

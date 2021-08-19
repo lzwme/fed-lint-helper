@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-08-18 14:07:34
+ * @LastEditTime: 2021-08-19 21:02:04
  * @Description:  eslint check
  */
 
@@ -23,7 +23,7 @@ export interface ESLintCheckConfig {
   cache?: boolean;
   /** 是否移除缓存文件。设置为 true 将移除缓存并生成新的。默认 false */
   removeCache?: boolean;
-  /** eslint 检测通过文件的缓存。不应提交至 git 仓库。默认为 `<config.rootDir>/node_modules/.cache/flh/eslintcache.json` */
+  /** eslint 缓存文件路径（eslintOptions.cacheLocation）。不应提交至 git 仓库。默认为 `<config.rootDir>/node_modules/.cache/flh/eslintcache.json` */
   cacheFilePath?: string;
   /** 白名单列表文件保存的路径，用于过滤允许出错的历史文件。默认为 `<config.rootDir>/eslintWhitelist.json` 文件 */
   whiteListFilePath?: string;
@@ -35,12 +35,16 @@ export interface ESLintCheckConfig {
   silent?: boolean;
   /** 执行完成时存在 lint 异常，是否退出程序。默认为 true */
   exitOnError?: boolean;
+  /** 警告提示附加信息 */
+  warningTip?: string;
   /**
    * 是否将异常文件输出至白名单列表文件中。默认为 false。
    * 追加模式，如需全新生成，应先删除白名单文件。
    * 初始化、规则变更、版本升级导致新增异常，但又不能立即修复的情况下，可设置为 true 执行一次
    */
   toWhiteList?: boolean;
+  /** 是否允许 Error 类型也可通过白名单过滤。默认为 false */
+  allowErrorToWhiteList?: boolean;
   /** ESLint Options。部分配置项会被内置修正 */
   eslintOptions?: ESLint.Options;
   /** 严格模式。默认禁止文件内的 eslint 配置标记 */
@@ -60,7 +64,8 @@ export class ESLintCheck {
   /** 打印日志 */
   private printLog(...args) {
     if (this.config.silent) return;
-    console.log(...args);
+    if (!args.length) console.log();
+    else console.log(chalk.cyan('[ESLint]'), ...args);
   }
   /** 获取初始化的统计信息 */
   private getInitStats() {
@@ -72,12 +77,12 @@ export class ESLintCheck {
     this.stats = stats;
     return stats;
   }
-  private parseConfig(config: ESLintCheckConfig) {
+  public parseConfig(config: ESLintCheckConfig) {
+    if (config !== this.config) config = Object.assign({}, this.config, config);
     this.config = Object.assign(
       {
         rootDir: process.cwd(),
         src: ['src'],
-        exclude: ['**/*.test.{ts,tsx}', '**/*/*.mock.{ts,tsx}', '**/*/*.d.ts'],
         cache: true,
         removeCache: false,
         cacheFilePath: 'node_modules/.cache/flh/eslintcache.json',
@@ -85,6 +90,7 @@ export class ESLintCheck {
         debug: !!process.env.DEBUG,
         exitOnError: true,
         checkOnInit: true,
+        warningTip: `[errors-必须修复；warnings-历史文件选择性处理(对于历史文件慎重修改 == 类问题)]`,
       } as ESLintCheckConfig,
       config
     );
@@ -142,7 +148,7 @@ export class ESLintCheck {
 
     if (cfg.debug) {
       cfg.silent = false;
-      this.printLog('[ESLint]eslintOption:', option);
+      this.printLog('eslintOption:', option);
     }
 
     return option;
@@ -157,29 +163,36 @@ export class ESLintCheck {
     const config = this.config;
     const stats = this.stats;
 
-    if (config.debug) this.printLog('[ESLint][options]:', config);
+    if (config.debug) this.printLog('[options]:', config);
 
     if (!lintList.length) {
-      this.printLog('[ESLint] No files processed\n');
-      return;
+      this.printLog('No files to processed\n');
+      return false;
     }
 
-    if (config.debug) this.printLog('[ESlint][debug]', `TOTAL:`, lintList.length, `, Files:\n`, lintList);
+    if (config.debug) this.printLog('[debug]', `TOTAL:`, lintList.length, `, Files:\n`, lintList);
 
     const eslint = new ESLint(this.getESLintOptions(lintList));
     const results = await eslint.lintFiles(lintList);
     const errorReults: ESLint.LintResult[] = [];
+    /** 不在旧文件白名单中的 warning 类结果 */
+    const newErrorReults: ESLint.LintResult[] = [];
     const waringReults: ESLint.LintResult[] = [];
-    /** 不在旧文件白名单中的新文件，包含 warning 也不允许通过 */
+    /** 不在旧文件白名单中的 warning 类结果 */
     const newWaringReults: ESLint.LintResult[] = [];
     let errorCount = 0;
     let warningCount = 0;
-
     let fixableErrorCount = 0;
     let fixableWarningCount = 0;
 
     results.forEach(result => {
       const filePath = utils.fixToshortPath(result.filePath);
+
+      if (!result.warningCount && !result.errorCount) {
+        // remove passed files from old whitelist
+        if (this.whiteList[filePath]) delete this.whiteList[filePath];
+        return;
+      }
 
       fixableErrorCount += result.fixableErrorCount;
       fixableWarningCount += result.fixableWarningCount;
@@ -199,66 +212,81 @@ export class ESLintCheck {
         errorCount += result.errorCount;
         if (result.messages.length) errorReults.push(result);
 
-        if (config.toWhiteList) this.whiteList[filePath] = 'e';
+        if (config.toWhiteList) {
+          this.whiteList[filePath] = 'e';
+        } else if (!this.whiteList[filePath]) {
+          if (result.messages.length) newErrorReults.push(result);
+        }
       }
     });
 
-    if (config.toWhiteList) fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, null, 2));
+    const formatter = await eslint.loadFormatter('stylish');
+    let isPassed = !newWaringReults.length && !newErrorReults.length;
 
-    const tips = `[errors-必须修复；warnings-历史文件选择性处理(对于历史文件慎重修改 == 类问题)]`;
-    if (errorCount > 0) {
-      const formatter = await eslint.loadFormatter('stylish');
-      const resultText = formatter.format(errorReults);
-      this.printLog(`\n ${resultText}`);
-      this.printLog(`[ESLint] VERIFICATION FAILED. [${chalk.bold.redBright(errorReults.length)} FILES]${chalk.yellowBright(tips)}\n`);
-
-      if (!config.fix && errorReults.length < 20) {
-        // 运行此方法可以自动修复语法问题
-        this.printLog('===================== ↓  ↓ Auto Fix Command ↓  ↓  ============================\n');
-        this.printLog(
-          `node --max_old_space_size=4096 "%~dp0/../node_modules/eslint/bin/eslint.js" --fix ${errorReults
-            .map(d => d.filePath)
-            .map(f => f.replace(/[\\]/g, '\\\\'))
-            .join(' ')}\n`
-        );
-
-        this.printLog('===================== ↑  ↑ Auto Fix Command ↑  ↑ ============================\n');
+    if (config.toWhiteList) {
+      if (!results.length) {
+        this.printLog('no new error file');
+      } else {
+        this.printLog(' write whitelist to file:', chalk.cyanBright(config.whiteListFilePath));
+        fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, null, 2));
+        const resultText = formatter.format(results);
+        this.printLog(`\n ${resultText}`);
       }
     } else {
-      if (warningCount) {
-        const formatter = await eslint.loadFormatter('stylish');
+      const tips = config.warningTip || '';
 
+      // 存在 error 异常
+      if (errorCount && (!config.allowErrorToWhiteList || newErrorReults.length)) {
+        isPassed = false;
+
+        const errResults = config.allowErrorToWhiteList ? newErrorReults : errorReults;
+        const resultText = formatter.format(errResults);
+        this.printLog(`\n ${resultText}`);
+        this.printLog(chalk.bold.redBright(`[Error]VERIFICATION FAILED![${errResults.length} files]`), chalk.yellowBright(tips), `\n`);
+
+        if (!config.fix && errorReults.length < 20 && errResults.some(d => d.fixableErrorCount || d.fixableWarningCount)) {
+          // 运行此方法可以自动修复语法问题
+          this.printLog('===================== ↓  ↓ Auto Fix Command ↓  ↓  ============================\n');
+          this.printLog(
+            `node --max_old_space_size=4096 "%~dp0/../node_modules/eslint/bin/eslint.js" --fix ${errResults
+              .map(d => d.filePath)
+              .map(f => f.replace(/[\\]/g, '\\\\'))
+              .join(' ')}\n`
+          );
+
+          this.printLog('===================== ↑  ↑ Auto Fix Command ↑  ↑ ============================\n');
+        }
+      } else {
+        // 不在白名单中的 warning
         if (newWaringReults.length) {
           const resultText = formatter.format(newWaringReults);
-          this.printLog(
-            `[注意] 以下文件存在警告信息且不在白名单中，请修复[TOTAL: ${newWaringReults.length} FILES]${tips}：\n`,
-            newWaringReults.map(d => d.filePath).join('\n')
-          );
-          this.printLog(`\n ${resultText}\n`);
-        } else {
-          const resultText = formatter.format(waringReults);
-          this.printLog(
-            `[注意] 以下文件存在警告信息[TOTAL: ${waringReults.length} FILES]${tips}：\n`,
-            waringReults.map(d => d.filePath).join('\n')
-          );
+          this.printLog(chalk.bold.red(`[Warning]VERIFICATION FAILED![${newWaringReults.length} files]`), chalk.yellowBright(tips), `\n`);
+          this.printLog(newWaringReults.map(d => d.filePath).join('\n'));
           this.printLog(`\n ${resultText}\n`);
         }
+      }
 
-        // if (config.strict) utils.exit(waringReults.length, stats.startTime, '[ESLint]');
+      if (isPassed) {
+        if (errorCount || warningCount) {
+          const resultText = formatter.format(waringReults);
+          this.printLog(
+            `[注意] 以下文件在白名单中，但存在异常信息[TOTAL: ${chalk.bold.yellowBright(waringReults.length)} files]${tips}：\n`,
+            waringReults.map(d => d.filePath).join('\n'),
+            '\n'
+          );
+          this.printLog(`\n ${resultText}\n`);
+          // if (config.strict) utils.exit(results.length, stats.startTime, '[ESLint]');
+        }
+
+        this.printLog(chalk.bold.greenBright('Verification passed'));
+      } else {
+        if (this.config.exitOnError) utils.exit(1, stats.startTime, '[ESLint]');
       }
     }
 
-    const isPassed = !errorCount && !newWaringReults.length;
+    this.printLog(`TimeCost: ${chalk.bold.greenBright(Date.now() - stats.startTime)}ms`);
 
-    if (isPassed) {
-      this.printLog(`[ESLint]`, chalk.bold.greenBright('Verification passed'));
-    } else {
-      if (this.config.exitOnError) utils.exit(1, stats.startTime, '[ESLint]');
-    }
-
-    if (!config.silent) utils.logTimeCost(stats.startTime, '[ESLint]');
-
-    const result = {
+    const info = {
       /** 是否检测通过 */
       isPassed,
       /** 异常文件总数 */
@@ -267,21 +295,24 @@ export class ESLintCheck {
       errorCount,
       /** warning 类型异常的总数量 */
       warningCount,
+      // newErrCount: newErrorReults.length,
+      // newWarningCount: newWaringReults.length,
       /** 可修复的 Error 类异常数量 */
       fixableErrorCount,
       /** 可修复的 Warning 类异常数量 */
       fixableWarningCount,
       /** 自动修复的错误数量 */
       fixedCount: config.fix ? fixableErrorCount + fixableWarningCount : 0,
-      /** 本次检测的文件列表 */
+      /** 本次检测的目录或文件列表 */
       lintList,
       /** 存在 error 异常的文件列表（必须修复，否则应将其规则设置为 warning 级别并生成至白名单中） */
-      errorFiles: errorReults.map(d => d.filePath),
+      errorFiles: errorReults.map(d => d.filePath), // results.filter(d => d.errorCount).map(d => d.filePath),
       /** 存在 warning 异常的文件列表 */
-      warningFiles: waringReults.map(d => d.filePath),
-      // newWaringFiles: newWaringReults.map(d => d.filePath),
+      warningFiles: waringReults.map(d => d.filePath), // results.filter(d => d.warningCount).map(d => d.filePath),
+      /** LintResult，用于 API 调用自行处理相关逻辑 */
+      results,
     };
 
-    return result;
+    return info;
   }
 }

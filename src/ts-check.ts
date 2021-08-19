@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-08-18 14:42:44
+ * @LastEditTime: 2021-08-19 21:53:37
  * @Description: typescript Diagnostics report
  */
 
@@ -11,7 +11,7 @@ import fs from 'fs';
 import path from 'path';
 import * as ts from 'typescript';
 import glob from 'glob';
-import { fixToshortPath, logTimeCost, md5, exit } from './utils';
+import { fixToshortPath, md5, exit } from './utils';
 
 export interface TsCheckConfig {
   /** 项目源码目录，支持配置多个子项目(存在独立的 tsconfig.json)路径，默认为 ['src'] */
@@ -57,7 +57,7 @@ export interface TsCheckConfig {
 export class TsCheck {
   private stats = this.getInitStats();
   /** 白名单列表 */
-  private whiteList = {} as { [filepath: string]: string }; // ts.DiagnosticCategory
+  private whiteList = {} as Record<string, keyof typeof ts.DiagnosticCategory>; // ts.DiagnosticCategory
 
   constructor(private config: TsCheckConfig = {}) {
     this.parseConfig(config);
@@ -66,7 +66,9 @@ export class TsCheck {
   /** 打印日志 */
   private printLog(...args) {
     if (this.config.silent) return;
-    console.log(...args);
+    // 打印空行
+    if (!args.length) console.log();
+    else console.log(chalk.cyan('[TSCheck]'), ...args);
   }
   private getInitStats() {
     const stats = {
@@ -74,7 +76,7 @@ export class TsCheck {
       /** 匹配到的 ts 文件总数 */
       totalFiles: 0,
       /** 异常类型数量统计 */
-      allDiagnosticsCategory: new Map<ts.DiagnosticCategory, number>(),
+      allDiagnosticsCategory: {} as Record<keyof typeof ts.DiagnosticCategory, number>,
       /** 检测到异常且需要 report 的文件列表 */
       allDiagnosticsFileMap: {} as { [file: string]: ts.Diagnostic },
       /** 要缓存到 cacheFilePath 的信息 */
@@ -88,7 +90,8 @@ export class TsCheck {
     this.stats = stats;
     return stats;
   }
-  private parseConfig(config: TsCheckConfig) {
+  public parseConfig(config: TsCheckConfig) {
+    if (config !== this.config) config = Object.assign({}, this.config, config);
     this.config = Object.assign(
       {
         rootDir: process.cwd(),
@@ -110,6 +113,7 @@ export class TsCheck {
 
     this.config.cacheFilePath = path.resolve(this.config.rootDir, this.config.cacheFilePath);
     this.config.whiteListFilePath = path.resolve(this.config.rootDir, this.config.whiteListFilePath);
+    return this;
   }
   private init() {
     const { cacheFilePath, whiteListFilePath, removeCache, cache } = this.config;
@@ -162,21 +166,20 @@ export class TsCheck {
     sourceFiles = sourceFiles.filter(name => {
       const shortpath = fixToshortPath(name, config.rootDir);
 
+      if (this.whiteList[shortpath]) {
+        whiteListHits++;
+        return false;
+      }
+
       // 缓存过滤
-      if (config.cache) {
-        if (tsCheckFilesPassed[shortpath]) {
-          // tsCheckFilesPassed[shortpath].updateTime = startTime;
+      if (config.cache && tsCheckFilesPassed[shortpath]) {
+        if (tsCheckFilesPassed[shortpath].md5 === md5(name, true)) {
           cacheHits++;
-          if (tsCheckFilesPassed[shortpath].md5 === md5(name, true)) return false;
+          return false;
         }
 
         // 先放到 tsCheckFilesPassed 中
         tsCheckFilesPassed[shortpath] = { md5: '', updateTime: stats.startTime };
-      }
-
-      if (this.whiteList[shortpath]) {
-        whiteListHits++;
-        return false;
       }
 
       return true;
@@ -196,38 +199,63 @@ export class TsCheck {
     const host = ts.createCompilerHost(cfg.options);
     const program = ts.createProgram(sourceFiles, cfg.options, host);
 
-    const tempDiagnostics = ts
+    const tmpDiagnostics = ts
       .getPreEmitDiagnostics(program)
       .concat(program.getSyntacticDiagnostics())
       .filter(item => {
-        // code 忽略列表
-        if (config.tsCodeIgnore.length && config.tsCodeIgnore.includes(item.code)) return false;
-        // code 白名单
-        if (config.tsCodeCheck.length && !config.tsCodeCheck.includes(item.code)) return false;
+        if (item.code) {
+          // code 忽略列表
+          if (config.tsCodeIgnore.length && config.tsCodeIgnore.includes(item.code)) return false;
+          // code 白名单
+          if (config.tsCodeCheck.length && !config.tsCodeCheck.includes(item.code)) return false;
+        }
 
         return true;
       });
 
-    if (tempDiagnostics.length) {
-      this.printLog(ts.formatDiagnosticsWithColorAndContext(tempDiagnostics, host));
+    if (tmpDiagnostics.length) {
+      const errDiagnostics: ts.Diagnostic[] = [];
+      const whiteListDiagnostics: ts.Diagnostic[] = [];
 
-      tempDiagnostics.forEach(d => {
-        stats.allDiagnosticsCategory.set(d.category, (stats.allDiagnosticsCategory.get(d.category) || 0) + 1);
+      tmpDiagnostics.forEach(d => {
+        const cateStr = ts.DiagnosticCategory[d.category];
+        stats.allDiagnosticsCategory[cateStr] = (stats.allDiagnosticsCategory[cateStr] || 0) + 1;
+
+        if (!d.file) {
+          errDiagnostics.push(d);
+          return;
+        }
+
         const shortpath = fixToshortPath(path.normalize(d.file.fileName));
         const key = shortpath; // d.file.id ||
 
-        stats.allDiagnosticsFileMap[key] = d;
+        if (!this.whiteList[key]) {
+          stats.allDiagnosticsFileMap[key] = d;
+          errDiagnostics.push(d);
+        } else {
+          whiteListDiagnostics[key] = d;
+        }
+
+        if (config.toWhiteList) {
+          // Error 级别最高
+          if (this.whiteList[key] !== 'Error') this.whiteList[key] = ts.DiagnosticCategory[d.category] as never;
+        }
+
         if (tsCheckFilesPassed[shortpath]) {
           // 移除缓存
           if (tsCheckFilesPassed[shortpath].md5) stats.tsCheckFilesPassedChanged = true;
           delete tsCheckFilesPassed[shortpath];
         }
-
-        if (config.toWhiteList) {
-          // Error 级别最高
-          if (this.whiteList[key] !== 'Error') this.whiteList[key] = ts.DiagnosticCategory[d.category];
-        }
       });
+
+      if (errDiagnostics.length) {
+        this.printLog(chalk.bold.redBright('Diagnostics of need repair:\n'), ts.formatDiagnosticsWithColorAndContext(tmpDiagnostics, host));
+      } else if (whiteListDiagnostics) {
+        this.printLog(
+          chalk.bold.yellowBright('Diagnostics in whitelist:\n'),
+          ts.formatDiagnosticsWithColorAndContext(tmpDiagnostics, host)
+        );
+      }
     }
   }
   /** 返回指定子目录中匹配到的 ts 文件列表 */
@@ -252,10 +280,7 @@ export class TsCheck {
     const { tsCache } = stats;
     const dirs = this.getCheckProjectDirs();
 
-    if (debug) console.log('本次检测的子目录包括：', dirs);
-
-    // 逐个目录编译，比较慢
-    // dirs.map(d => getTsFiles(d)).forEach(d => d?.tsFiles && compile(d.tsFiles, d.subDir));
+    if (debug) this.printLog('本次检测的子目录包括：', dirs);
 
     const dirMap = {
       // 没有 tsconfig.json 独立配置文件的子目录文件，也将全部放到这里一起编译
@@ -298,7 +323,7 @@ export class TsCheck {
     if (config.toWhiteList) {
       if (!fs.existsSync(path.dirname(config.whiteListFilePath))) fs.mkdirSync(path.dirname(config.whiteListFilePath), { recursive: true });
       fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, null, 2));
-      this.printLog('Write to WhiteList:', chalk.cyanBright(config.whiteListFilePath));
+      this.printLog('Write to whitelist:', chalk.cyanBright(config.whiteListFilePath));
     }
 
     const errCount = Object.keys(stats.allDiagnosticsFileMap).length;
@@ -309,31 +334,24 @@ export class TsCheck {
       passed: stats.totalFiles - errCount,
       /** 失败的文件数 */
       failed: errCount,
-      diagnosticCategory: {
-        Warning: 0,
-        Error: 0,
-        Suggestion: 0,
-        Message: 0,
-      },
+      diagnosticCategory: stats.allDiagnosticsCategory,
     };
 
-    this.printLog();
     this.printLog('Total Files：\t', result.total);
     this.printLog('Passed：\t', chalk.bold.greenBright(result.passed));
     this.printLog('Failed：\t', chalk.bold.red(result.failed));
-    stats.allDiagnosticsCategory.forEach((value, key) => {
-      const keyStr = ts.DiagnosticCategory[key] as keyof typeof result.diagnosticCategory;
-      result.diagnosticCategory[keyStr] = value;
 
-      this.printLog(chalk.bold.cyan(` -- ${keyStr} Count：`), chalk.bold.yellowBright(value));
+    Object.keys(stats.allDiagnosticsCategory).forEach(keyStr => {
+      this.printLog(chalk.bold.cyan(` -- ${keyStr} Count：`), chalk.bold.yellowBright(result.diagnosticCategory[keyStr]));
     });
-    // if (!errCount) this.printLog(chalk.bold.bgGreen.white(' BINGO! '));
 
-    if (config.exitOnError && result.failed) {
-      exit(result.failed, stats.startTime, '[TsCheck]');
+    if (!result.failed) {
+      this.printLog(chalk.bold.greenBright('Verification passed'));
     } else {
-      if (!config.silent) logTimeCost(stats.startTime, '[TsCheck]');
+      if (config.exitOnError) exit(result.failed, stats.startTime, '[TsCheck]');
     }
+
+    this.printLog(`TimeCost: ${chalk.bold.greenBright(Date.now() - stats.startTime)}ms`);
 
     return result;
   }
