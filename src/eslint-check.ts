@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-08-19 21:02:04
+ * @LastEditTime: 2021-08-21 17:54:48
  * @Description:  eslint check
  */
 
@@ -242,7 +242,7 @@ export class ESLintCheck {
         const errResults = config.allowErrorToWhiteList ? newErrorReults : errorReults;
         const resultText = formatter.format(errResults);
         this.printLog(`\n ${resultText}`);
-        this.printLog(chalk.bold.redBright(`[Error]VERIFICATION FAILED![${errResults.length} files]`), chalk.yellowBright(tips), `\n`);
+        this.printLog(chalk.bold.redBright(`[Error]Verification failed![${errResults.length} files]`), chalk.yellowBright(tips), `\n`);
 
         if (!config.fix && errorReults.length < 20 && errResults.some(d => d.fixableErrorCount || d.fixableWarningCount)) {
           // 运行此方法可以自动修复语法问题
@@ -260,7 +260,7 @@ export class ESLintCheck {
         // 不在白名单中的 warning
         if (newWaringReults.length) {
           const resultText = formatter.format(newWaringReults);
-          this.printLog(chalk.bold.red(`[Warning]VERIFICATION FAILED![${newWaringReults.length} files]`), chalk.yellowBright(tips), `\n`);
+          this.printLog(chalk.bold.red(`[Warning]Verification failed![${newWaringReults.length} files]`), chalk.yellowBright(tips), `\n`);
           this.printLog(newWaringReults.map(d => d.filePath).join('\n'));
           this.printLog(`\n ${resultText}\n`);
         }

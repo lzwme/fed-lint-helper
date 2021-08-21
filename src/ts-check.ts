@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-08-19 21:53:37
+ * @LastEditTime: 2021-08-21 18:05:51
  * @Description: typescript Diagnostics report
  */
 
@@ -48,6 +48,8 @@ export interface TsCheckConfig {
   debug?: boolean;
   /** 静默模式。不打印任何信息，一般用于接口调用 */
   silent?: boolean;
+  /** 是否打印诊断错误详情。默认为 true */
+  printDetail?: boolean;
   /** 执行完成时存在 lint 异常，是否退出程序。默认为 true */
   exitOnError?: boolean;
   /** 是否将异常文件输出至白名单列表文件中（追加模式，如需全新生成，应先删除白名单文件）。初始化、规则变更、版本升级导致新增异常，但又不能立即修复的情况下可设置为 true */
@@ -75,6 +77,8 @@ export class TsCheck {
       startTime: Date.now(),
       /** 匹配到的 ts 文件总数 */
       totalFiles: 0,
+      /** 异常总数 */
+      totalDiagnostics: 0,
       /** 异常类型数量统计 */
       allDiagnosticsCategory: {} as Record<keyof typeof ts.DiagnosticCategory, number>,
       /** 检测到异常且需要 report 的文件列表 */
@@ -107,6 +111,7 @@ export class TsCheck {
         debug: !!process.env.DEBUG,
         exitOnError: true,
         checkOnInit: true,
+        printDetail: true,
       } as TsCheckConfig,
       config
     );
@@ -173,13 +178,14 @@ export class TsCheck {
 
       // 缓存过滤
       if (config.cache && tsCheckFilesPassed[shortpath]) {
-        if (tsCheckFilesPassed[shortpath].md5 === md5(name, true)) {
+        const fileMd5 = md5(shortpath, true);
+        if (tsCheckFilesPassed[shortpath].md5 === fileMd5) {
           cacheHits++;
           return false;
         }
 
         // 先放到 tsCheckFilesPassed 中
-        tsCheckFilesPassed[shortpath] = { md5: '', updateTime: stats.startTime };
+        tsCheckFilesPassed[shortpath] = { md5: fileMd5, updateTime: stats.startTime };
       }
 
       return true;
@@ -214,6 +220,8 @@ export class TsCheck {
       });
 
     if (tmpDiagnostics.length) {
+      stats.totalDiagnostics += tmpDiagnostics.length;
+
       const errDiagnostics: ts.Diagnostic[] = [];
       const whiteListDiagnostics: ts.Diagnostic[] = [];
 
@@ -243,18 +251,34 @@ export class TsCheck {
 
         if (tsCheckFilesPassed[shortpath]) {
           // 移除缓存
-          if (tsCheckFilesPassed[shortpath].md5) stats.tsCheckFilesPassedChanged = true;
+          if (tsCheckFilesPassed[shortpath].updateTime === stats.startTime) stats.tsCheckFilesPassedChanged = true;
           delete tsCheckFilesPassed[shortpath];
         }
       });
 
       if (errDiagnostics.length) {
-        this.printLog(chalk.bold.redBright('Diagnostics of need repair:\n'), ts.formatDiagnosticsWithColorAndContext(tmpDiagnostics, host));
-      } else if (whiteListDiagnostics) {
+        const fileList = errDiagnostics
+          .filter(d => d.file)
+          .map(d => d.file.fileName)
+          .join('\n -');
         this.printLog(
-          chalk.bold.yellowBright('Diagnostics in whitelist:\n'),
-          ts.formatDiagnosticsWithColorAndContext(tmpDiagnostics, host)
+          chalk.bold.redBright(`Diagnostics of need repair(not in whitelist)[${chalk.redBright(errDiagnostics.length)} files]:\n`),
+          fileList,
+          '\n'
         );
+
+        this.printLog(ts.formatDiagnosticsWithColorAndContext(tmpDiagnostics, host));
+      } else if (whiteListDiagnostics) {
+        const fileList = tmpDiagnostics
+          .filter(d => d.file)
+          .map(d => d.file.fileName)
+          .join('\n -');
+        this.printLog(
+          chalk.bold.yellowBright(`Diagnostics in whitelist[${chalk.redBright(errDiagnostics.length)} files]:\n`),
+          fileList,
+          '\n'
+        );
+        if (config.printDetail) this.printLog(ts.formatDiagnosticsWithColorAndContext(tmpDiagnostics, host));
       }
     }
   }
@@ -281,6 +305,7 @@ export class TsCheck {
     const dirs = this.getCheckProjectDirs();
 
     if (debug) this.printLog('本次检测的子目录包括：', dirs);
+    if (debug) this.printLog('config：', config);
 
     const dirMap = {
       // 没有 tsconfig.json 独立配置文件的子目录文件，也将全部放到这里一起编译
@@ -307,8 +332,7 @@ export class TsCheck {
     if (config.cache || config.removeCache) {
       const passedFileList = Object.keys(tsCache.tsCheckFilesPassed);
       passedFileList.forEach(shortpath => {
-        if (!tsCache.tsCheckFilesPassed[shortpath].md5) {
-          tsCache.tsCheckFilesPassed[shortpath].md5 = md5(path.resolve(rootDir, shortpath), true);
+        if (tsCache.tsCheckFilesPassed[shortpath].updateTime === stats.startTime) {
           stats.tsCheckFilesPassedChanged = true;
         }
       });
@@ -326,29 +350,31 @@ export class TsCheck {
       this.printLog('Write to whitelist:', chalk.cyanBright(config.whiteListFilePath));
     }
 
-    const errCount = Object.keys(stats.allDiagnosticsFileMap).length;
+    const errFileList = Object.keys(stats.allDiagnosticsFileMap);
     const result = {
       /** 匹配到的文件总数 */
       total: stats.totalFiles,
       /** 检测通过的文件数 */
-      passed: stats.totalFiles - errCount,
+      passed: stats.totalFiles - errFileList.length,
       /** 失败的文件数 */
-      failed: errCount,
+      failed: errFileList.length,
       diagnosticCategory: stats.allDiagnosticsCategory,
     };
 
-    this.printLog('Total Files：\t', result.total);
-    this.printLog('Passed：\t', chalk.bold.greenBright(result.passed));
-    this.printLog('Failed：\t', chalk.bold.red(result.failed));
+    if (result.failed) this.printLog('Files:\n', errFileList.join('\n'), '\n');
+    this.printLog('Total Files:\t', result.total);
+    this.printLog('Passed:\t', chalk.bold.greenBright(result.passed));
+    this.printLog('Failed:\t', chalk.bold.red(result.failed));
 
     Object.keys(stats.allDiagnosticsCategory).forEach(keyStr => {
       this.printLog(chalk.bold.cyan(` -- ${keyStr} Count：`), chalk.bold.yellowBright(result.diagnosticCategory[keyStr]));
     });
 
     if (!result.failed) {
-      this.printLog(chalk.bold.greenBright('Verification passed'));
+      this.printLog(chalk.bold.greenBright('Verification passed!'));
     } else {
       if (config.exitOnError) exit(result.failed, stats.startTime, '[TsCheck]');
+      this.printLog(chalk.bold.redBright('Verification failed!'));
     }
 
     this.printLog(`TimeCost: ${chalk.bold.greenBright(Date.now() - stats.startTime)}ms`);
