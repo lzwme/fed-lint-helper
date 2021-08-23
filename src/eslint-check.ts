@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-08-23 13:54:12
+ * @LastEditTime: 2021-08-23 14:06:40
  * @Description:  eslint check
  */
 
@@ -287,7 +287,7 @@ export class ESLintCheck {
           // if (config.strict) utils.exit(results.length, stats.startTime, '[ESLint]');
         }
 
-        this.printLog(chalk.bold.greenBright('Verification passed'));
+        this.printLog(chalk.bold.greenBright('Verification passed!'));
       } else {
         if (this.config.exitOnError) utils.exit(1, stats.startTime, '[ESLint]');
       }

@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-08-23 13:54:23
+ * @LastEditTime: 2021-08-23 18:22:20
  * @Description: typescript Diagnostics report
  */
 
@@ -261,35 +261,27 @@ export class TsCheck {
           if (this.whiteList[key] !== 'Error') this.whiteList[key] = ts.DiagnosticCategory[d.category] as never;
         }
 
-        if (tsCheckFilesPassed[shortpath]) {
+        if (tsCheckFilesPassed[key]) {
           // 移除缓存
-          if (tsCheckFilesPassed[shortpath].updateTime === stats.startTime) stats.tsCheckFilesPassedChanged = true;
-          delete tsCheckFilesPassed[shortpath];
+          if (tsCheckFilesPassed[key].updateTime === stats.startTime) stats.tsCheckFilesPassedChanged = true;
+          delete tsCheckFilesPassed[key];
         }
       });
 
       if (errDiagnostics.length) {
         const fileList = errDiagnostics.filter(d => d.file).map(d => d.file.fileName);
 
-        if (config.printDetail) {
-          this.printLog(ts.formatDiagnosticsWithColorAndContext(tmpDiagnostics, host));
-        } else {
-          this.printLog(
-            chalk.bold.redBright(`Diagnostics of need repair(not in whitelist)[${chalk.redBright(errDiagnostics.length)} files]:\n`),
-            `\n - ` + fileList.join('\n - ') + '\n'
-          );
-        }
-      } else if (whiteListDiagnostics) {
+        this.printLog(
+          chalk.bold.redBright(`Diagnostics of need repair(not in whitelist)[${chalk.redBright(errDiagnostics.length)} files]:\n`),
+          config.printDetail ? ts.formatDiagnosticsWithColorAndContext(errDiagnostics, host) : `\n - ` + fileList.join('\n - ') + '\n'
+        );
+      } else if (whiteListDiagnostics.length) {
         const fileList = tmpDiagnostics.filter(d => d.file).map(d => d.file.fileName);
 
-        if (config.printDetail) {
-          this.printLog(ts.formatDiagnosticsWithColorAndContext(tmpDiagnostics, host));
-        } else {
-          this.printLog(
-            chalk.bold.yellowBright(`Diagnostics in whitelist[${chalk.redBright(errDiagnostics.length)} files]:\n`),
-            `\n - ` + fileList.join('\n - ') + '\n'
-          );
-        }
+        this.printLog(
+          chalk.bold.yellowBright(`Diagnostics in whitelist[${chalk.redBright(errDiagnostics.length)} files]:\n`),
+          config.printDetail ? ts.formatDiagnosticsWithColorAndContext(tmpDiagnostics, host) : `\n - ` + fileList.join('\n - ') + '\n'
+        );
       }
     }
   }
