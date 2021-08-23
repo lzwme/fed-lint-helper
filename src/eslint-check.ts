@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-08-23 14:06:40
+ * @LastEditTime: 2021-08-23 21:06:47
  * @Description:  eslint check
  */
 
@@ -76,6 +76,8 @@ export class ESLintCheck {
       startTime: Date.now(),
       /** 匹配到的 ts 文件总数 */
       totalFiles: 0,
+      /** 规则报告异常的数量统计。以 ruleId 为 key */
+      rules: {} as Record<string, number>,
     };
     this.stats = stats;
     return stats;
@@ -201,6 +203,17 @@ export class ESLintCheck {
         // remove passed files from old whitelist
         if (this.whiteList[filePath]) delete this.whiteList[filePath];
         return;
+      }
+
+      if (Array.isArray(result.messages)) {
+        for (const d of result.messages) {
+          // ignored  file
+          if (!d.ruleId) {
+            if (/ignore pattern/.test(d.message)) return;
+          } else {
+            stats.rules[d.ruleId] = (stats.rules[d.ruleId] || 0) + 1;
+          }
+        }
       }
 
       fixableErrorCount += result.fixableErrorCount;
