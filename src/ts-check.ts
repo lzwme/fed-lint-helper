@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-08-21 18:05:51
+ * @LastEditTime: 2021-08-23 13:54:23
  * @Description: typescript Diagnostics report
  */
 
@@ -32,7 +32,7 @@ export interface TsCheckConfig {
   whiteListFilePath?: string;
   /** tsconfig 配置文件的文件名。默认为 tsconfig.json */
   tsConfigFileName?: string;
-  /** 初始化即执行check。默认为 true。设置为 false 则需自行调用 start 方法 */
+  /** 初始化即执行check。默认为 false。设置为 true 则初始化后即调用 start 方法 */
   checkOnInit?: boolean;
   /**
    * 要检测的 ignoreDiagnostics code 列表。如设置，则仅检查包含于此列表中的异常
@@ -74,6 +74,9 @@ export class TsCheck {
   }
   private getInitStats() {
     const stats = {
+      /** 最近一次处理是否成功 */
+      success: false,
+      /** 最近一次处理的开始时间 */
       startTime: Date.now(),
       /** 匹配到的 ts 文件总数 */
       totalFiles: 0,
@@ -94,6 +97,11 @@ export class TsCheck {
     this.stats = stats;
     return stats;
   }
+  /** 返回执行结果统计信息 */
+  public get statsInfo() {
+    return this.stats;
+  }
+  /** 配置参数格式化 */
   public parseConfig(config: TsCheckConfig) {
     if (config !== this.config) config = Object.assign({}, this.config, config);
     this.config = Object.assign(
@@ -110,7 +118,7 @@ export class TsCheck {
         tsCodeIgnore: [],
         debug: !!process.env.DEBUG,
         exitOnError: true,
-        checkOnInit: true,
+        checkOnInit: false,
         printDetail: true,
       } as TsCheckConfig,
       config
@@ -146,9 +154,12 @@ export class TsCheck {
     }
   }
   /** 返回可检测的子项目路径 */
-  private getCheckProjectDirs() {
-    const { rootDir, src } = this.config;
-    return src.filter(d => fs.existsSync(path.resolve(rootDir, d)));
+  private getCheckProjectDirs(src = this.config.src) {
+    const { rootDir } = this.config;
+    return src.filter(d => {
+      const p = path.resolve(rootDir, d);
+      return fs.existsSync(p) && fs.statSync(p).isDirectory();
+    });
   }
 
   /** ts 编译 */
@@ -177,15 +188,16 @@ export class TsCheck {
       }
 
       // 缓存过滤
-      if (config.cache && tsCheckFilesPassed[shortpath]) {
-        const fileMd5 = md5(shortpath, true);
-        if (tsCheckFilesPassed[shortpath].md5 === fileMd5) {
-          cacheHits++;
-          return false;
+      if (config.cache) {
+        if (tsCheckFilesPassed[shortpath]) {
+          if (tsCheckFilesPassed[shortpath].md5 === md5(name, true)) {
+            cacheHits++;
+            return false;
+          }
         }
 
-        // 先放到 tsCheckFilesPassed 中
-        tsCheckFilesPassed[shortpath] = { md5: fileMd5, updateTime: stats.startTime };
+        // 新文件：先放到 tsCheckFilesPassed 中
+        tsCheckFilesPassed[shortpath] = { md5: '', updateTime: stats.startTime };
       }
 
       return true;
@@ -257,28 +269,27 @@ export class TsCheck {
       });
 
       if (errDiagnostics.length) {
-        const fileList = errDiagnostics
-          .filter(d => d.file)
-          .map(d => d.file.fileName)
-          .join('\n -');
-        this.printLog(
-          chalk.bold.redBright(`Diagnostics of need repair(not in whitelist)[${chalk.redBright(errDiagnostics.length)} files]:\n`),
-          fileList,
-          '\n'
-        );
+        const fileList = errDiagnostics.filter(d => d.file).map(d => d.file.fileName);
 
-        this.printLog(ts.formatDiagnosticsWithColorAndContext(tmpDiagnostics, host));
+        if (config.printDetail) {
+          this.printLog(ts.formatDiagnosticsWithColorAndContext(tmpDiagnostics, host));
+        } else {
+          this.printLog(
+            chalk.bold.redBright(`Diagnostics of need repair(not in whitelist)[${chalk.redBright(errDiagnostics.length)} files]:\n`),
+            `\n - ` + fileList.join('\n - ') + '\n'
+          );
+        }
       } else if (whiteListDiagnostics) {
-        const fileList = tmpDiagnostics
-          .filter(d => d.file)
-          .map(d => d.file.fileName)
-          .join('\n -');
-        this.printLog(
-          chalk.bold.yellowBright(`Diagnostics in whitelist[${chalk.redBright(errDiagnostics.length)} files]:\n`),
-          fileList,
-          '\n'
-        );
-        if (config.printDetail) this.printLog(ts.formatDiagnosticsWithColorAndContext(tmpDiagnostics, host));
+        const fileList = tmpDiagnostics.filter(d => d.file).map(d => d.file.fileName);
+
+        if (config.printDetail) {
+          this.printLog(ts.formatDiagnosticsWithColorAndContext(tmpDiagnostics, host));
+        } else {
+          this.printLog(
+            chalk.bold.yellowBright(`Diagnostics in whitelist[${chalk.redBright(errDiagnostics.length)} files]:\n`),
+            `\n - ` + fileList.join('\n - ') + '\n'
+          );
+        }
       }
     }
   }
@@ -297,14 +308,13 @@ export class TsCheck {
   }
   /** 执行 check */
   public start(tsFiles = this.config.tsFiles) {
+    this.printLog('start');
     this.init();
 
     const { config, stats } = this;
     const { rootDir, debug } = config;
     const { tsCache } = stats;
-    const dirs = this.getCheckProjectDirs();
 
-    if (debug) this.printLog('本次检测的子目录包括：', dirs);
     if (debug) this.printLog('config：', config);
 
     const dirMap = {
@@ -314,6 +324,13 @@ export class TsCheck {
 
     // 没有指定 tsFiles 文件列表，才按 src 指定规则匹配
     if (!dirMap[rootDir].length) {
+      const dirs = this.getCheckProjectDirs(config.src);
+      if (!dirs) {
+        this.printLog('No files or directories to process\n');
+        return false;
+      }
+
+      if (debug) this.printLog('本次检测的子目录包括：', dirs);
       dirs
         .map(d => this.getTsFiles(d))
         .forEach(info => {
@@ -332,9 +349,12 @@ export class TsCheck {
     if (config.cache || config.removeCache) {
       const passedFileList = Object.keys(tsCache.tsCheckFilesPassed);
       passedFileList.forEach(shortpath => {
-        if (tsCache.tsCheckFilesPassed[shortpath].updateTime === stats.startTime) {
+        const item = tsCache.tsCheckFilesPassed[shortpath];
+        if (!item.md5) {
+          item.md5 = md5(path.resolve(config.rootDir, shortpath), true);
           stats.tsCheckFilesPassedChanged = true;
         }
+        // if (item.updateTime === stats.startTime) stats.tsCheckFilesPassedChanged = true;
       });
 
       if (stats.tsCheckFilesPassedChanged) {
@@ -361,7 +381,12 @@ export class TsCheck {
       diagnosticCategory: stats.allDiagnosticsCategory,
     };
 
-    if (result.failed) this.printLog('Files:\n', errFileList.join('\n'), '\n');
+    this.stats.success = result.failed !== 0;
+
+    if (result.failed && config.printDetail) {
+      this.printLog('Failed Files:', '\n - ' + errFileList.join('\n - '), '\n');
+    }
+
     this.printLog('Total Files:\t', result.total);
     this.printLog('Passed:\t', chalk.bold.greenBright(result.passed));
     this.printLog('Failed:\t', chalk.bold.red(result.failed));

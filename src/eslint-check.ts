@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-08-21 17:54:48
+ * @LastEditTime: 2021-08-23 13:54:12
  * @Description:  eslint check
  */
 
@@ -27,7 +27,7 @@ export interface ESLintCheckConfig {
   cacheFilePath?: string;
   /** 白名单列表文件保存的路径，用于过滤允许出错的历史文件。默认为 `<config.rootDir>/eslintWhitelist.json` 文件 */
   whiteListFilePath?: string;
-  /** 初始化即执行check。默认为 true。设置为 false 则需自行调用 start 方法 */
+  /** 初始化即执行check。默认为 false。设置为 true 则初始化后即调用 start 方法 */
   checkOnInit?: boolean;
   /** 是否开启调试模式(打印更多的细节) */
   debug?: boolean;
@@ -70,6 +70,9 @@ export class ESLintCheck {
   /** 获取初始化的统计信息 */
   private getInitStats() {
     const stats = {
+      /** 最近一次处理是否成功 */
+      success: false,
+      /** 最近一次处理的开始时间 */
       startTime: Date.now(),
       /** 匹配到的 ts 文件总数 */
       totalFiles: 0,
@@ -77,6 +80,11 @@ export class ESLintCheck {
     this.stats = stats;
     return stats;
   }
+  /** 返回执行结果统计信息 */
+  public get statsInfo() {
+    return this.stats;
+  }
+  /** 配置参数格式化 */
   public parseConfig(config: ESLintCheckConfig) {
     if (config !== this.config) config = Object.assign({}, this.config, config);
     this.config = Object.assign(
@@ -89,7 +97,7 @@ export class ESLintCheck {
         whiteListFilePath: 'eslintWhitelist.json',
         debug: !!process.env.DEBUG,
         exitOnError: true,
-        checkOnInit: true,
+        checkOnInit: false,
         warningTip: `[errors-必须修复；warnings-历史文件选择性处理(对于历史文件慎重修改 == 类问题)]`,
       } as ESLintCheckConfig,
       config
@@ -158,6 +166,7 @@ export class ESLintCheck {
    * 执行 eslint 校验
    */
   async start(lintList = this.config.src) {
+    this.printLog('start');
     this.init();
 
     const config = this.config;
@@ -166,7 +175,7 @@ export class ESLintCheck {
     if (config.debug) this.printLog('[options]:', config);
 
     if (!lintList.length) {
-      this.printLog('No files to processed\n');
+      this.printLog('No files to process\n');
       return false;
     }
 
@@ -284,6 +293,7 @@ export class ESLintCheck {
       }
     }
 
+    stats.success = isPassed;
     this.printLog(`TimeCost: ${chalk.bold.greenBright(Date.now() - stats.startTime)}ms`);
 
     const info = {
