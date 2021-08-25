@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-08-23 18:22:20
+ * @LastEditTime: 2021-08-25 16:53:43
  * @Description: typescript Diagnostics report
  */
 
@@ -12,6 +12,8 @@ import path from 'path';
 import * as ts from 'typescript';
 import glob from 'glob';
 import { fixToshortPath, md5, exit } from './utils';
+import { createForkThread } from './utils/fork';
+import { createWorkerThreads } from './utils/worker-threads';
 
 export interface TsCheckConfig {
   /** 项目源码目录，支持配置多个子项目(存在独立的 tsconfig.json)路径，默认为 ['src'] */
@@ -54,8 +56,21 @@ export interface TsCheckConfig {
   exitOnError?: boolean;
   /** 是否将异常文件输出至白名单列表文件中（追加模式，如需全新生成，应先删除白名单文件）。初始化、规则变更、版本升级导致新增异常，但又不能立即修复的情况下可设置为 true */
   toWhiteList?: boolean;
+  /**
+   * 执行检测的方式。默认为 proc
+   * @var proc fork 子进程执行
+   * @var thread 创建 work_threads 子线程执行
+   * @var current 在当前进程中执行
+   */
+  mode?: 'proc' | 'thread' | 'current';
 }
 
+export interface TsCheckResult {
+  total: number;
+  passed: number;
+  failed: number;
+  diagnosticCategory: Record<keyof typeof ts.DiagnosticCategory, number>;
+}
 export class TsCheck {
   private stats = this.getInitStats();
   /** 白名单列表 */
@@ -108,6 +123,7 @@ export class TsCheck {
       {
         rootDir: process.cwd(),
         src: ['src'],
+        tsFiles: [],
         exclude: ['**/*.test.{ts,tsx}', '**/*/*.mock.{ts,tsx}', '**/*/*.d.ts'],
         cache: true,
         removeCache: false,
@@ -120,6 +136,7 @@ export class TsCheck {
         exitOnError: true,
         checkOnInit: false,
         printDetail: true,
+        mode: 'thread',
       } as TsCheckConfig,
       config
     );
@@ -298,8 +315,8 @@ export class TsCheck {
     // checkUnUse(tsFiles);
     return { tsFiles, subDir };
   }
-  /** 执行 check */
-  public start(tsFiles = this.config.tsFiles) {
+  /** 执行 ts check */
+  public check(tsFiles = this.config.tsFiles) {
     this.printLog('start');
     this.init();
 
@@ -397,5 +414,47 @@ export class TsCheck {
     this.printLog(`TimeCost: ${chalk.bold.greenBright(Date.now() - stats.startTime)}ms`);
 
     return result;
+  }
+  /**
+   * 在 fork 子进程中执行
+   */
+  private checkInChildProc() {
+    this.printLog('start fork child progress');
+
+    return createForkThread<TsCheckResult>({
+      type: 'tscheck',
+      debug: this.config.debug,
+      tsCheckConfig: this.config,
+    }).catch(code => {
+      if (this.config.exitOnError) process.exit(code);
+    });
+  }
+  /**
+   * 在 work_threads 子线程中执行
+   */
+  private checkInWorkThreads() {
+    this.printLog('start create work threads');
+
+    return createWorkerThreads<TsCheckResult>({
+      type: 'tscheck',
+      debug: this.config.debug,
+      tsCheckConfig: this.config,
+    }).catch(code => {
+      if (this.config.exitOnError) process.exit(code);
+    });
+  }
+  /** 执行 check */
+  public async start(tsFiles = this.config.tsFiles) {
+    if (tsFiles !== this.config.tsFiles) this.config.tsFiles = tsFiles;
+    this.init();
+
+    if (!tsFiles.length && !this.config.src?.length) {
+      this.printLog('No files to process\n');
+      return false;
+    }
+
+    if (this.config.mode === 'current') return this.check(tsFiles);
+    if (this.config.mode === 'thread') return this.checkInWorkThreads();
+    return this.checkInChildProc();
   }
 }

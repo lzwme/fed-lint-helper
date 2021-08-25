@@ -1,4 +1,3 @@
-[![Code Climate](https://lzw.me/images/logo.png)](https://lzw.me)
 [![@lzwme/fed-lint-helper](https://nodei.co/npm/@lzwme/fed-lint-helper.png)][npm-url]
 
 # @lzwme/fed-lint-helper
@@ -122,7 +121,7 @@ yarn dev
 [issues-url]: https://github.com/lzwme/fed-lint-helper/issues
 [npm-badge]: https://img.shields.io/npm/v/@lzwme/fed-lint-helper.svg?style=flat-square
 [npm-url]: https://npmjs.org/package/@lzwme/fed-lint-helper
-[node-badge]: https://img.shields.io/badge/node.js-%3E=_10.0.0-green.svg?style=flat-square
+[node-badge]: https://img.shields.io/badge/node.js-%3E=_14.0.0-green.svg?style=flat-square
 [node-url]: https://nodejs.org/download/
 [download-badge]: https://img.shields.io/npm/dm/@lzwme/fed-lint-helper.svg?style=flat-square
 [download-url]: https://npmjs.org/package/@lzwme/fed-lint-helper

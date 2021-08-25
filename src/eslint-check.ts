@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-08-23 21:06:47
+ * @LastEditTime: 2021-08-25 16:53:41
  * @Description:  eslint check
  */
 
@@ -11,6 +11,8 @@ import { ESLint } from 'eslint';
 import fs from 'fs';
 import path from 'path';
 import * as utils from './utils';
+import { createForkThread } from './utils/fork';
+import { createWorkerThreads } from './utils/worker-threads';
 
 export interface ESLintCheckConfig {
   /** 是否自动修正可修复的 eslint 错误，同 ESLint.Option。默认 false。建议不设置为 true，手动逐个文件处理以避免造成大量不可控的业务代码变动 */
@@ -49,8 +51,27 @@ export interface ESLintCheckConfig {
   eslintOptions?: ESLint.Options;
   /** 严格模式。默认禁止文件内的 eslint 配置标记 */
   strict?: boolean;
+  /**
+   * 执行检测的方式。默认为 proc
+   * @var proc fork 子进程执行
+   * @var thread 创建 work_threads 子线程执行。eslint 不推荐使用此种方式，打印进度有所缺失
+   * @var current 在当前进程中执行
+   */
+  mode?: 'proc' | 'thread' | 'current';
 }
 
+export interface ESLintCheckResult {
+  isPassed: boolean;
+  total: number;
+  errorCount: number;
+  warningCount: number;
+  fixableErrorCount: number;
+  fixableWarningCount: number;
+  fixedCount: number;
+  lintList: string[];
+  errorFiles: string[];
+  warningFiles: string[];
+}
 export class ESLintCheck {
   /** 统计信息 */
   private stats = this.getInitStats();
@@ -167,7 +188,7 @@ export class ESLintCheck {
   /**
    * 执行 eslint 校验
    */
-  async start(lintList = this.config.src) {
+  private async check(lintList = this.config.src) {
     this.printLog('start');
     this.init();
 
@@ -175,12 +196,6 @@ export class ESLintCheck {
     const stats = this.stats;
 
     if (config.debug) this.printLog('[options]:', config);
-
-    if (!lintList.length) {
-      this.printLog('No files to process\n');
-      return false;
-    }
-
     if (config.debug) this.printLog('[debug]', `TOTAL:`, lintList.length, `, Files:\n`, lintList);
 
     const eslint = new ESLint(this.getESLintOptions(lintList));
@@ -312,7 +327,7 @@ export class ESLintCheck {
     const info = {
       /** 是否检测通过 */
       isPassed,
-      /** 异常文件总数 */
+      /** 文件总数 */
       total: results.length,
       /** error 类型异常的总数量 */
       errorCount,
@@ -332,10 +347,55 @@ export class ESLintCheck {
       errorFiles: errorReults.map(d => d.filePath), // results.filter(d => d.errorCount).map(d => d.filePath),
       /** 存在 warning 异常的文件列表 */
       warningFiles: waringReults.map(d => d.filePath), // results.filter(d => d.warningCount).map(d => d.filePath),
-      /** LintResult，用于 API 调用自行处理相关逻辑 */
-      results,
+      // /** LintResult，用于 API 调用自行处理相关逻辑 */
+      // results,
     };
 
     return info;
+  }
+  /**
+   * 在 fork 子进程中执行
+   */
+  private checkInChildProc() {
+    this.printLog('start fork child progress');
+
+    return createForkThread<ESLintCheckResult>({
+      type: 'eslint',
+      debug: this.config.debug,
+      eslintConfig: this.config,
+    }).catch(code => {
+      if (this.config.exitOnError) process.exit(code);
+    });
+  }
+  /**
+   * 在 work_threads 子线程中执行
+   */
+  private checkInWorkThreads() {
+    this.printLog('start create work threads');
+
+    return createWorkerThreads<ESLintCheckResult>({
+      type: 'eslint',
+      debug: this.config.debug,
+      eslintConfig: this.config,
+    }).catch(code => {
+      if (this.config.exitOnError) process.exit(code);
+    });
+  }
+  /**
+   * 启动 eslint 校验
+   */
+  async start(lintList = this.config.src) {
+    // this.printLog('start');
+    if (lintList !== this.config.src) this.config.src = lintList;
+    this.init();
+
+    if (!lintList.length) {
+      this.printLog('No files to process\n');
+      return false;
+    }
+
+    if (this.config.mode === 'current') return this.check(lintList);
+    if (this.config.mode === 'thread') return this.checkInWorkThreads();
+    return this.checkInChildProc();
   }
 }

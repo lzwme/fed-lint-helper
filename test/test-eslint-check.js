@@ -2,10 +2,12 @@
  * @Author: lzw
  * @Date: 2021-08-18 10:33:52
  * @LastEditors: lzw
- * @LastEditTime: 2021-08-19 18:32:31
- * @Description:
+ * @LastEditTime: 2021-08-25 15:20:04
+ * @Description: eslint 测试
  */
-import { ESLintCheck } from '../src/eslint-check';
+// @ts-check
+
+const { ESLintCheck } = require('../build/main/eslint-check');
 
 const argv = process.argv.slice(2).map(d => d.replace('--', ''));
 
@@ -30,7 +32,11 @@ const eslintCheck = new ESLintCheck({
 
 eslintCheck
   .start()
-  .then(res => res && console.log(res))
+  .then(res => res && console.log('eslint test1:', res))
   .then(() => {
-    return eslintCheck.start(['test-cases/ts-check-test-1.ts', 'src/ts-check.ts']).then(res => console.log(res));
-  });
+    eslintCheck.parseConfig({ fork: false })
+    return eslintCheck
+      .start(['test-cases/ts-check-test-1.ts', 'src/ts-check.ts'])
+      .then(res => console.log('eslint test2:', res));
+  })
+  .catch(err => console.log('failed!', err));

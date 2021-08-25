@@ -2,11 +2,11 @@
  * @Author: lzw
  * @Date: 2021-08-18 10:33:52
  * @LastEditors: lzw
- * @LastEditTime: 2021-08-18 14:08:09
+ * @LastEditTime: 2021-08-25 14:23:01
  * @Description:
  */
 
-import { TsCheck } from '../src/ts-check';
+const { TsCheck } = require('../build/main/ts-check');
 
 const argv = process.argv.slice(2).map(d => d.replace('--', ''));
 
@@ -21,8 +21,8 @@ const tsCheck = new TsCheck({
   debug: argv.includes('debug'),
   toWhiteList: true,
 });
-let res = tsCheck.start();
-console.log(res);
+tsCheck.start().then(res => res && console.log(res));
 
-res = tsCheck.start(['test-cases/ts-check-test-1.ts', 'src/ts-check.ts']);
-console.log(res);
+tsCheck
+  .start(['test-cases/ts-check-test-1.ts', 'src/ts-check.ts'])
+  .then(res => res && console.log(res));
