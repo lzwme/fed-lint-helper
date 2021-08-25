@@ -1,6 +1,6 @@
 {
   "name": "@lzwme/fed-lint-helper",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "main": "build/main/index.js",
   "browser": "build/main/index.js",
   "typings": "build/main/index.d.ts",
@@ -46,7 +46,7 @@
     "doc": "run-s doc:html",
     "doc:html": "typedoc src/ --exclude **/*.spec.ts --out build/docs",
     "version": "standard-version",
-    "prepare-release": "run-s clean test cov:check doc:html version",
+    "prepare-release": "run-s clean test doc:html version",
     "release": "run-s clean build doc",
     "clean": "node scripts/rmdir.mjs ./build"
   },
