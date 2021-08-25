@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-08-25 16:53:43
+ * @LastEditTime: 2021-08-25 16:59:46
  * @Description: typescript Diagnostics report
  */
 
@@ -136,7 +136,6 @@ export class TsCheck {
         exitOnError: true,
         checkOnInit: false,
         printDetail: true,
-        mode: 'thread',
       } as TsCheckConfig,
       config
     );

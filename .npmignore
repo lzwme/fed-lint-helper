@@ -3,6 +3,7 @@ test
 test-cases
 tsconfig.json
 tsconfig.module.json
+tsconfig.eslint.json
 tslint.json
 .travis.yml
 .gitlab-ci.yml
