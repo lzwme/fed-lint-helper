@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-08-26 17:36:51
+ * @LastEditTime: 2021-08-26 17:54:21
  * @Description: typescript Diagnostics report
  */
 
@@ -255,9 +255,6 @@ export class TsCheck {
       const whiteListDiagnostics: ts.Diagnostic[] = [];
 
       tmpDiagnostics.forEach(d => {
-        const cateStr = ts.DiagnosticCategory[d.category];
-        stats.allDiagnosticsCategory[cateStr] = (stats.allDiagnosticsCategory[cateStr] || 0) + 1;
-
         if (!d.file) {
           errDiagnostics.push(d);
           return;
@@ -400,9 +397,17 @@ export class TsCheck {
     this.printLog('Passed:\t', chalk.bold.greenBright(result.passed));
     this.printLog('Failed:\t', chalk.bold.red(result.failed));
 
-    Object.keys(stats.allDiagnosticsCategory).forEach(keyStr => {
-      this.printLog(chalk.bold.cyan(` -- ${keyStr} Count：`), chalk.bold.yellowBright(result.diagnosticCategory[keyStr]));
-    });
+    // 异常类型统计
+    if (result.failed) {
+      errFileList.forEach(filepath => {
+        const d = stats.allDiagnosticsFileMap[filepath];
+        const cateStr = ts.DiagnosticCategory[d.category];
+        stats.allDiagnosticsCategory[cateStr] = (stats.allDiagnosticsCategory[cateStr] || 0) + 1;
+      });
+      Object.keys(stats.allDiagnosticsCategory).forEach(keyStr => {
+        this.printLog(chalk.bold.cyan(` -- ${keyStr} Count：`), chalk.bold.yellowBright(result.diagnosticCategory[keyStr]));
+      });
+    }
 
     if (!result.failed) {
       this.printLog(chalk.bold.greenBright('Verification passed!'));
