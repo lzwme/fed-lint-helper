@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-08-25 16:53:41
+ * @LastEditTime: 2021-08-26 17:38:29
  * @Description:  eslint check
  */
 
@@ -212,7 +212,7 @@ export class ESLintCheck {
     let fixableWarningCount = 0;
 
     results.forEach(result => {
-      const filePath = utils.fixToshortPath(result.filePath);
+      const filePath = utils.fixToshortPath(result.filePath, config.rootDir);
 
       if (!result.warningCount && !result.errorCount) {
         // remove passed files from old whitelist
@@ -264,7 +264,7 @@ export class ESLintCheck {
       if (!results.length) {
         this.printLog('no new error file');
       } else {
-        this.printLog(' write whitelist to file:', chalk.cyanBright(config.whiteListFilePath));
+        this.printLog(' write whitelist to file:', chalk.cyanBright(utils.fixToshortPath(config.whiteListFilePath)));
         fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, null, 2));
         const resultText = formatter.format(results);
         this.printLog(`\n ${resultText}`);
@@ -286,8 +286,7 @@ export class ESLintCheck {
           this.printLog('===================== ↓  ↓ Auto Fix Command ↓  ↓  ============================\n');
           this.printLog(
             `node --max_old_space_size=4096 "%~dp0/../node_modules/eslint/bin/eslint.js" --fix ${errResults
-              .map(d => d.filePath)
-              .map(f => f.replace(/[\\]/g, '\\\\'))
+              .map(d => d.filePath.replace(/[\\]/g, '\\\\'))
               .join(' ')}\n`
           );
 
@@ -298,7 +297,7 @@ export class ESLintCheck {
         if (newWaringReults.length) {
           const resultText = formatter.format(newWaringReults);
           this.printLog(chalk.bold.red(`[Warning]Verification failed![${newWaringReults.length} files]`), chalk.yellowBright(tips), `\n`);
-          this.printLog(newWaringReults.map(d => d.filePath).join('\n'));
+          this.printLog(newWaringReults.map(d => utils.fixToshortPath(d.filePath, config.rootDir)).join('\n'));
           this.printLog(`\n ${resultText}\n`);
         }
       }
@@ -308,7 +307,7 @@ export class ESLintCheck {
           const resultText = formatter.format(waringReults);
           this.printLog(
             `[注意] 以下文件在白名单中，但存在异常信息[TOTAL: ${chalk.bold.yellowBright(waringReults.length)} files]${tips}：\n`,
-            waringReults.map(d => d.filePath).join('\n'),
+            waringReults.map(d => utils.fixToshortPath(d.filePath, config.rootDir)).join('\n'),
             '\n'
           );
           this.printLog(`\n ${resultText}\n`);

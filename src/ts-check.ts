@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-08-25 16:59:46
+ * @LastEditTime: 2021-08-26 17:36:51
  * @Description: typescript Diagnostics report
  */
 
@@ -59,7 +59,7 @@ export interface TsCheckConfig {
   /**
    * 执行检测的方式。默认为 proc
    * @var proc fork 子进程执行
-   * @var thread 创建 work_threads 子线程执行
+   * @var thread 创建 work_threads 子线程执行。eslint 不要选此选项
    * @var current 在当前进程中执行
    */
   mode?: 'proc' | 'thread' | 'current';
@@ -136,6 +136,7 @@ export class TsCheck {
         exitOnError: true,
         checkOnInit: false,
         printDetail: true,
+        mode: 'thread',
       } as TsCheckConfig,
       config
     );
@@ -368,14 +369,14 @@ export class TsCheck {
       if (stats.tsCheckFilesPassedChanged) {
         if (!fs.existsSync(path.dirname(config.cacheFilePath))) fs.mkdirSync(path.dirname(config.cacheFilePath), { recursive: true });
         fs.writeFileSync(config.cacheFilePath, JSON.stringify(tsCache, null, 2));
-        this.printLog('Write to cache:', chalk.cyanBright(config.cacheFilePath));
+        this.printLog('Write to cache:', chalk.cyanBright(fixToshortPath(config.cacheFilePath, config.rootDir)));
       }
     }
 
     if (config.toWhiteList) {
       if (!fs.existsSync(path.dirname(config.whiteListFilePath))) fs.mkdirSync(path.dirname(config.whiteListFilePath), { recursive: true });
       fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, null, 2));
-      this.printLog('Write to whitelist:', chalk.cyanBright(config.whiteListFilePath));
+      this.printLog('Write to whitelist:', chalk.cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
     }
 
     const errFileList = Object.keys(stats.allDiagnosticsFileMap);
