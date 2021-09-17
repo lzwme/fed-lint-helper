@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-08-26 17:38:29
+ * @LastEditTime: 2021-08-31 14:24:48
  * @Description:  eslint check
  */
 
@@ -189,7 +189,7 @@ export class ESLintCheck {
    * 执行 eslint 校验
    */
   private async check(lintList = this.config.src) {
-    this.printLog('start');
+    this.printLog('start checking');
     this.init();
 
     const config = this.config;
@@ -306,8 +306,8 @@ export class ESLintCheck {
         if (errorCount || warningCount) {
           const resultText = formatter.format(waringReults);
           this.printLog(
-            `[注意] 以下文件在白名单中，但存在异常信息[TOTAL: ${chalk.bold.yellowBright(waringReults.length)} files]${tips}：\n`,
-            waringReults.map(d => utils.fixToshortPath(d.filePath, config.rootDir)).join('\n'),
+            `[注意] 以下文件在白名单中，但存在异常信息[TOTAL: ${chalk.bold.yellowBright(waringReults.length)} files]${tips}：`,
+            '\n' + waringReults.map(d => utils.fixToshortPath(d.filePath, config.rootDir)).join('\n'),
             '\n'
           );
           this.printLog(`\n ${resultText}\n`);

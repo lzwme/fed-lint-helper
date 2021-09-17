@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-08-26 17:54:21
+ * @LastEditTime: 2021-09-01 11:44:39
  * @Description: typescript Diagnostics report
  */
 
@@ -66,8 +66,13 @@ export interface TsCheckConfig {
 }
 
 export interface TsCheckResult {
+  /**是否检测通过 */
+  isPassed: boolean;
+  /** 匹配到的文件总数 */
   total: number;
+  /** 检测通过的文件数 */
   passed: number;
+  /** 失败的文件数 */
   failed: number;
   diagnosticCategory: Record<keyof typeof ts.DiagnosticCategory, number>;
 }
@@ -314,7 +319,7 @@ export class TsCheck {
   }
   /** 执行 ts check */
   public check(tsFiles = this.config.tsFiles) {
-    this.printLog('start');
+    this.printLog('start checking');
     this.init();
 
     const { config, stats } = this;
@@ -377,7 +382,8 @@ export class TsCheck {
     }
 
     const errFileList = Object.keys(stats.allDiagnosticsFileMap);
-    const result = {
+    const result: TsCheckResult = {
+      isPassed: !errFileList.length,
       /** 匹配到的文件总数 */
       total: stats.totalFiles,
       /** 检测通过的文件数 */

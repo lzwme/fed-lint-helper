@@ -7,8 +7,10 @@ npm-debug.log
 coverage
 package-lock.json
 yarn.lock
+yarn-error.log
 node_modules
 build
 eslintWhitelist.json
 tsCheckWhiteList.json
 .nyc_output
+.husky/post-commit
