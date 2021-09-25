@@ -3,6 +3,9 @@ import fs from 'fs';
 import crypto from 'crypto';
 import chalk from 'chalk';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type PlanObject = Record<string, any>;
+
 /**
  * 将给定的文件路径规整为 a/b/c.js 格式
  */
@@ -50,4 +53,32 @@ export function md5(str, isFile = false) {
     console.log(err);
     return '';
   }
+}
+
+/** 简易的对象深复制 */
+export function assign<T = PlanObject>(a: T, b: PlanObject, c?: PlanObject): T {
+  if (!a || typeof a !== 'object') return a;
+  // 入参不是对象格式，忽略
+  if (typeof b !== 'object' || b instanceof RegExp || Array.isArray(b)) {
+    if (c) return assign(a, c);
+    return a;
+  }
+
+  for (const key in b) {
+    // 如果是数组，则只简单的复制一份（不考虑数组内的类型）
+    if (Array.isArray(b[key])) {
+      a[key] = b[key].concat();
+    } else if (null == b[key] || typeof b[key] !== 'object' || b[key] instanceof RegExp) {
+      a[key] = b[key];
+    } else {
+      if (!a[key]) a[key] = {};
+      assign(a[key], b[key]);
+    }
+  }
+
+  return assign(a, c);
+}
+
+export function log(...args: string[]) {
+  console.log(`[${chalk.cyanBright(new Date().toTimeString().slice(0, 8))}]`, ...args);
 }

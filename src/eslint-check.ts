@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-08-31 14:24:48
+ * @LastEditTime: 2021-09-25 18:07:49
  * @Description:  eslint check
  */
 
@@ -10,55 +10,9 @@ import chalk from 'chalk';
 import { ESLint } from 'eslint';
 import fs from 'fs';
 import path from 'path';
-import * as utils from './utils';
-import { createForkThread } from './utils/fork';
+import { fixToshortPath, exit, createForkThread, assign } from './utils';
 import { createWorkerThreads } from './utils/worker-threads';
-
-export interface ESLintCheckConfig {
-  /** 是否自动修正可修复的 eslint 错误，同 ESLint.Option。默认 false。建议不设置为 true，手动逐个文件处理以避免造成大量不可控的业务代码变动 */
-  fix?: boolean;
-  /** 要执行 lint 的源码目录，默认为 ['src'] */
-  src?: string[];
-  /** 项目根目录，默认为当前工作目录 */
-  rootDir?: string;
-  /** 本次 check 是否使用缓存。默认为 true。当 eslint 升级、规则变更、CI 执行 MR 时建议设置为 false */
-  cache?: boolean;
-  /** 是否移除缓存文件。设置为 true 将移除缓存并生成新的。默认 false */
-  removeCache?: boolean;
-  /** eslint 缓存文件路径（eslintOptions.cacheLocation）。不应提交至 git 仓库。默认为 `<config.rootDir>/node_modules/.cache/flh/eslintcache.json` */
-  cacheFilePath?: string;
-  /** 白名单列表文件保存的路径，用于过滤允许出错的历史文件。默认为 `<config.rootDir>/eslintWhitelist.json` 文件 */
-  whiteListFilePath?: string;
-  /** 初始化即执行check。默认为 false。设置为 true 则初始化后即调用 start 方法 */
-  checkOnInit?: boolean;
-  /** 是否开启调试模式(打印更多的细节) */
-  debug?: boolean;
-  /** 静默模式。不打印任何信息，一般用于接口调用 */
-  silent?: boolean;
-  /** 执行完成时存在 lint 异常，是否退出程序。默认为 true */
-  exitOnError?: boolean;
-  /** 警告提示附加信息 */
-  warningTip?: string;
-  /**
-   * 是否将异常文件输出至白名单列表文件中。默认为 false。
-   * 追加模式，如需全新生成，应先删除白名单文件。
-   * 初始化、规则变更、版本升级导致新增异常，但又不能立即修复的情况下，可设置为 true 执行一次
-   */
-  toWhiteList?: boolean;
-  /** 是否允许 Error 类型也可通过白名单过滤。默认为 false */
-  allowErrorToWhiteList?: boolean;
-  /** ESLint Options。部分配置项会被内置修正 */
-  eslintOptions?: ESLint.Options;
-  /** 严格模式。默认禁止文件内的 eslint 配置标记 */
-  strict?: boolean;
-  /**
-   * 执行检测的方式。默认为 proc
-   * @var proc fork 子进程执行
-   * @var thread 创建 work_threads 子线程执行。eslint 不推荐使用此种方式，打印进度有所缺失
-   * @var current 在当前进程中执行
-   */
-  mode?: 'proc' | 'thread' | 'current';
-}
+import { ESLintCheckConfig, getConfig } from './config';
 
 export interface ESLintCheckResult {
   isPassed: boolean;
@@ -109,33 +63,13 @@ export class ESLintCheck {
   }
   /** 配置参数格式化 */
   public parseConfig(config: ESLintCheckConfig) {
-    if (config !== this.config) config = Object.assign({}, this.config, config);
-    this.config = Object.assign(
-      {
-        rootDir: process.cwd(),
-        src: ['src'],
-        cache: true,
-        removeCache: false,
-        cacheFilePath: 'node_modules/.cache/flh/eslintcache.json',
-        whiteListFilePath: 'eslintWhitelist.json',
-        debug: !!process.env.DEBUG,
-        exitOnError: true,
-        checkOnInit: false,
-        warningTip: `[errors-必须修复；warnings-历史文件选择性处理(对于历史文件慎重修改 == 类问题)]`,
-      } as ESLintCheckConfig,
-      config
-    );
+    const baseConfig = getConfig();
 
-    this.config.eslintOptions = Object.assign(
-      {
-        extensions: ['ts', 'tsx'],
-        errorOnUnmatchedPattern: false,
-      },
-      config.eslintOptions
-    );
-
+    if (config !== this.config) config = assign<ESLintCheckConfig>({}, this.config, config);
+    this.config = assign<ESLintCheckConfig>({}, baseConfig.eslint, config);
     this.config.cacheFilePath = path.resolve(this.config.rootDir, this.config.cacheFilePath);
     this.config.whiteListFilePath = path.resolve(this.config.rootDir, this.config.whiteListFilePath);
+    return this;
   }
   private init() {
     const config = this.config;
@@ -212,7 +146,7 @@ export class ESLintCheck {
     let fixableWarningCount = 0;
 
     results.forEach(result => {
-      const filePath = utils.fixToshortPath(result.filePath, config.rootDir);
+      const filePath = fixToshortPath(result.filePath, config.rootDir);
 
       if (!result.warningCount && !result.errorCount) {
         // remove passed files from old whitelist
@@ -264,7 +198,7 @@ export class ESLintCheck {
       if (!results.length) {
         this.printLog('no new error file');
       } else {
-        this.printLog(' write whitelist to file:', chalk.cyanBright(utils.fixToshortPath(config.whiteListFilePath)));
+        this.printLog(' write whitelist to file:', chalk.cyanBright(fixToshortPath(config.whiteListFilePath)));
         fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, null, 2));
         const resultText = formatter.format(results);
         this.printLog(`\n ${resultText}`);
@@ -297,7 +231,7 @@ export class ESLintCheck {
         if (newWaringReults.length) {
           const resultText = formatter.format(newWaringReults);
           this.printLog(chalk.bold.red(`[Warning]Verification failed![${newWaringReults.length} files]`), chalk.yellowBright(tips), `\n`);
-          this.printLog(newWaringReults.map(d => utils.fixToshortPath(d.filePath, config.rootDir)).join('\n'));
+          this.printLog(newWaringReults.map(d => fixToshortPath(d.filePath, config.rootDir)).join('\n'));
           this.printLog(`\n ${resultText}\n`);
         }
       }
@@ -307,16 +241,16 @@ export class ESLintCheck {
           const resultText = formatter.format(waringReults);
           this.printLog(
             `[注意] 以下文件在白名单中，但存在异常信息[TOTAL: ${chalk.bold.yellowBright(waringReults.length)} files]${tips}：`,
-            '\n' + waringReults.map(d => utils.fixToshortPath(d.filePath, config.rootDir)).join('\n'),
+            '\n' + waringReults.map(d => fixToshortPath(d.filePath, config.rootDir)).join('\n'),
             '\n'
           );
           this.printLog(`\n ${resultText}\n`);
-          // if (config.strict) utils.exit(results.length, stats.startTime, '[ESLint]');
+          // if (config.strict) exit(results.length, stats.startTime, '[ESLint]');
         }
 
         this.printLog(chalk.bold.greenBright('Verification passed!'));
       } else {
-        if (this.config.exitOnError) utils.exit(1, stats.startTime, '[ESLint]');
+        if (this.config.exitOnError) exit(1, stats.startTime, '[ESLint]');
       }
     }
 

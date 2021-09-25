@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-09-01 11:44:39
+ * @LastEditTime: 2021-09-25 18:06:12
  * @Description: typescript Diagnostics report
  */
 
@@ -11,59 +11,9 @@ import fs from 'fs';
 import path from 'path';
 import * as ts from 'typescript';
 import glob from 'glob';
-import { fixToshortPath, md5, exit } from './utils';
-import { createForkThread } from './utils/fork';
+import { fixToshortPath, md5, exit, createForkThread, assign } from './utils';
 import { createWorkerThreads } from './utils/worker-threads';
-
-export interface TsCheckConfig {
-  /** 项目源码目录，支持配置多个子项目(存在独立的 tsconfig.json)路径，默认为 ['src'] */
-  src?: string[];
-  /** ts 文件列表。当设置并存在内容时，只对该列表中的文件进行检测。主要用于 git hook 获取 commit 文件列表的场景 */
-  tsFiles?: string[];
-  /** 文件排除列表， glob 规则。用于过滤一些不需要检测的文件 */
-  exclude?: string | string[];
-  /** 项目根目录，默认为当前工作目录 */
-  rootDir?: string;
-  /** 本次 check 是否使用缓存。为 false 则进行全量文件检测，否则不检测已缓存通过的文件。默认为 true。当 ts 升级、规则变更、CI 执行 MR 时建议设置为 false */
-  cache?: boolean;
-  /** 是否移除缓存文件。设置为 true 将移除缓存并生成新的。默认 false */
-  removeCache?: boolean;
-  /** ts 检测通过文件的缓存。不应提交至 git 仓库。默认为 `<config.rootDir>/node_modules/.cache/flh/tsCheckCache.json` */
-  cacheFilePath?: string;
-  /** 白名单列表文件保存的路径，用于过滤允许出错的历史文件。默认为 `<config.rootDir>/tsCheckWhiteList.json` 文件 */
-  whiteListFilePath?: string;
-  /** tsconfig 配置文件的文件名。默认为 tsconfig.json */
-  tsConfigFileName?: string;
-  /** 初始化即执行check。默认为 false。设置为 true 则初始化后即调用 start 方法 */
-  checkOnInit?: boolean;
-  /**
-   * 要检测的 ignoreDiagnostics code 列表。如设置，则仅检查包含于此列表中的异常
-   * @see https://www.tslang.cn/docs/handbook/error.html
-   */
-  tsCodeCheck?: number[];
-  /**
-   * 要忽略的 ignoreDiagnostics code 列表
-   * @see https://www.tslang.cn/docs/handbook/error.html
-   */
-  tsCodeIgnore?: number[];
-  /** 是否开启调试模式(打印更多的细节) */
-  debug?: boolean;
-  /** 静默模式。不打印任何信息，一般用于接口调用 */
-  silent?: boolean;
-  /** 是否打印诊断错误详情。默认为 true */
-  printDetail?: boolean;
-  /** 执行完成时存在 lint 异常，是否退出程序。默认为 true */
-  exitOnError?: boolean;
-  /** 是否将异常文件输出至白名单列表文件中（追加模式，如需全新生成，应先删除白名单文件）。初始化、规则变更、版本升级导致新增异常，但又不能立即修复的情况下可设置为 true */
-  toWhiteList?: boolean;
-  /**
-   * 执行检测的方式。默认为 proc
-   * @var proc fork 子进程执行
-   * @var thread 创建 work_threads 子线程执行。eslint 不要选此选项
-   * @var current 在当前进程中执行
-   */
-  mode?: 'proc' | 'thread' | 'current';
-}
+import { TsCheckConfig, getConfig } from './config';
 
 export interface TsCheckResult {
   /**是否检测通过 */
@@ -123,29 +73,10 @@ export class TsCheck {
   }
   /** 配置参数格式化 */
   public parseConfig(config: TsCheckConfig) {
-    if (config !== this.config) config = Object.assign({}, this.config, config);
-    this.config = Object.assign(
-      {
-        rootDir: process.cwd(),
-        src: ['src'],
-        tsFiles: [],
-        exclude: ['**/*.test.{ts,tsx}', '**/*/*.mock.{ts,tsx}', '**/*/*.d.ts'],
-        cache: true,
-        removeCache: false,
-        cacheFilePath: 'node_modules/.cache/flh/tsCheckCache.json',
-        whiteListFilePath: 'tsCheckWhiteList.json',
-        tsConfigFileName: 'tsconfig.json',
-        tsCodeCheck: [],
-        tsCodeIgnore: [],
-        debug: !!process.env.DEBUG,
-        exitOnError: true,
-        checkOnInit: false,
-        printDetail: true,
-        mode: 'thread',
-      } as TsCheckConfig,
-      config
-    );
+    const baseConfig = getConfig();
 
+    if (config !== this.config) config = assign<TsCheckConfig>({}, this.config, config);
+    this.config = assign<TsCheckConfig>({}, baseConfig.tscheck, config);
     this.config.cacheFilePath = path.resolve(this.config.rootDir, this.config.cacheFilePath);
     this.config.whiteListFilePath = path.resolve(this.config.rootDir, this.config.whiteListFilePath);
     return this;

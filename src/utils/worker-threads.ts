@@ -2,15 +2,14 @@
  * @Author: lzw
  * @Date: 2021-08-25 10:12:21
  * @LastEditors: lzw
- * @LastEditTime: 2021-08-25 16:43:13
+ * @LastEditTime: 2021-09-25 17:39:03
  * @Description: worker_threads 实现在 worker 线程中执行
  * worker_threads 比 child_process 和 cluster 更为轻量级的并行性，而且 worker_threads 可有效地共享内存
  * eslint-plugins 也使用了 worker_threads，会有一些异常现象
  */
 
 import { Worker, isMainThread, parentPort, workerData } from 'worker_threads';
-import { ESLintCheckConfig } from '../eslint-check';
-import { TsCheckConfig } from '../ts-check';
+import type { TsCheckConfig, ESLintCheckConfig } from '../config';
 
 interface CreateThreadOptions {
   /** 创建线程的类型。eslint 尽量使用该模式，使用 fork 进程方式 */

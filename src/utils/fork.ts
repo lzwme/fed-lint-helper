@@ -2,21 +2,21 @@
  * @Author: lzw
  * @Date: 2021-08-25 10:12:21
  * @LastEditors: lzw
- * @LastEditTime: 2021-08-25 16:49:57
+ * @LastEditTime: 2021-09-25 17:41:04
  * @Description: 在 fork 子进程中执行 Check 任务
  */
 
 import { fork } from 'child_process';
 import path from 'path';
-import { ESLintCheckConfig } from '../eslint-check';
-import { TsCheckConfig } from '../ts-check';
+import type { TsCheckConfig, ESLintCheckConfig, JestCheckConfig } from '../config';
 
 export interface CreateThreadOptions {
-  type: 'tscheck' | 'eslint' | 'jest'; // 'eslint' 存在插件报错异常，暂不支持
+  /** 启动的类型。eslint 存在插件报错异常，暂不支持 */
+  type: 'tscheck' | 'eslint' | 'jest';
+  debug?: boolean;
   eslintConfig?: ESLintCheckConfig;
   tsCheckConfig?: TsCheckConfig;
-  debug?: boolean;
-  jestConfig?: unknown;
+  jestConfig?: JestCheckConfig;
 }
 
 export interface WorkerMsgBody {

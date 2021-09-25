@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-25 13:31:22
  * @LastEditors: lzw
- * @LastEditTime: 2021-08-25 16:47:41
+ * @LastEditTime: 2021-09-25 18:30:12
  * @Description: fork 子进程的具体调用逻辑实现
  */
 
@@ -37,19 +37,33 @@ process.on('message', (config: CreateThreadOptions) => {
           type: 'eslint',
           data: d,
           end: true,
-        });
+        } as WorkerMsgBody);
         process.exit(0);
       });
     });
   } else if (config.type === 'jest' && config.jestConfig) {
-    console.log('TODO');
-    // config.jestConfig.mode = 'current';
+    import('../jest-check').then(({ JestCheck }) => {
+      config.eslintConfig.checkOnInit = false;
+      config.eslintConfig.mode = 'current';
 
-    process.send({
-      type: 'jest',
-      data: { msg: 'todo' },
-      end: true,
-    } as WorkerMsgBody);
-    process.exit(0);
+      const jestCheck = new JestCheck(config.jestConfig);
+      jestCheck.start().then(d => {
+        process.send({
+          type: 'jest',
+          data: d,
+          end: true,
+        } as WorkerMsgBody);
+        process.exit(0);
+      });
+    });
+
+    // console.log('TODO');
+    // // config.jestConfig.mode = 'current';
+    // process.send({
+    //   type: 'jest',
+    //   data: { msg: 'todo' },
+    //   end: true,
+    // } as WorkerMsgBody);
+    // process.exit(0);
   }
 });

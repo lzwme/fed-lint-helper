@@ -2,55 +2,20 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-09-01 16:14:39
+ * @LastEditTime: 2021-09-25 18:03:48
  * @Description:  jest check
  */
 
-import chalk from 'chalk';
 import fs from 'fs';
 import path from 'path';
-import * as utils from './utils';
-import { createForkThread } from './utils/fork';
-import { createWorkerThreads } from './utils/worker-threads';
-import glob from 'glob';
 import { exec } from 'child_process';
+import chalk from 'chalk';
+import glob from 'glob';
 import { runCLI } from '@jest/core';
 import type { Config } from '@jest/types';
-import { exit } from './utils/common';
-
-export interface JestCheckConfig {
-  /** 要检测的源码目录，默认为 ['src'] */
-  src?: string[];
-  /** spec 测试文件列表 */
-  fileList?: string[];
-  /** 项目根目录，默认为当前工作目录 */
-  rootDir?: string;
-  /** 本次 check 是否使用缓存。默认为 true。当 jest 升级、规则变更、CI 执行 MR 时建议设置为 false */
-  cache?: boolean;
-  /** 是否移除缓存文件。设置为 true 将移除缓存并生成新的。默认 false */
-  removeCache?: boolean;
-  /** jest 缓存文件路径（jestOptions.cacheLocation）。不应提交至 git 仓库。默认为 `<config.rootDir>/node_modules/.cache/flh/jestcache.json` */
-  cacheFilePath?: string;
-  /** 初始化即执行check。默认为 false。设置为 true 则初始化后即调用 start 方法 */
-  checkOnInit?: boolean;
-  /** 是否开启调试模式(打印更多的细节) */
-  debug?: boolean;
-  /** 静默模式。不打印任何信息，一般用于接口调用 */
-  silent?: boolean;
-  /** 执行完成时存在 lint 异常，是否退出程序。默认为 true */
-  exitOnError?: boolean;
-  /** Jest Options。部分配置项会被内置修正 */
-  jestOptions?: Config.Argv & Record<string, unknown>;
-  /** 严格模式 */
-  strict?: boolean;
-  /**
-   * 执行检测的方式。默认为 proc
-   * @var proc fork 子进程执行
-   * @var thread 创建 work_threads 子线程执行。jest 不推荐使用此种方式，打印进度有所缺失
-   * @var current 在当前进程中执行
-   */
-  mode?: 'proc' | 'thread' | 'current';
-}
+import { fixToshortPath, md5, exit, createForkThread, assign } from './utils';
+import { createWorkerThreads } from './utils/worker-threads';
+import { JestCheckConfig, getConfig } from './config';
 
 export interface JestCheckResult {
   /** 是否检测通过 */
@@ -106,6 +71,12 @@ export class JestCheck {
   }
   /** 配置参数格式化 */
   public parseConfig(config: JestCheckConfig) {
+    const baseConfig = getConfig();
+
+    if (config !== this.config) config = assign<JestCheckConfig>({}, this.config, config);
+    this.config = assign<JestCheckConfig>({}, baseConfig.jest, config);
+    this.config.cacheFilePath = path.resolve(this.config.rootDir, this.config.cacheFilePath);
+
     if (config !== this.config) config = Object.assign({}, this.config, config);
     this.config = Object.assign(
       {
@@ -200,18 +171,18 @@ export class JestCheck {
       Object.assign(jestPassedFiles, JSON.parse(fs.readFileSync(config.cacheFilePath, 'utf8')));
 
       specFileList = specFileList.filter(filepath => {
-        filepath = utils.fixToshortPath(filepath, config.rootDir);
+        filepath = fixToshortPath(filepath, config.rootDir);
 
         const item = jestPassedFiles[filepath];
         if (!item) return true;
 
         const tsFilePath = filepath.replace('.spec.', '.');
         // 同名业务文件 md5 发生改变
-        if (fs.existsSync(tsFilePath) && item.md5 && utils.md5(tsFilePath, true) !== item.md5) {
+        if (fs.existsSync(tsFilePath) && item.md5 && md5(tsFilePath, true) !== item.md5) {
           return true;
         }
 
-        return utils.md5(filepath, true) !== item.specMd5;
+        return md5(filepath, true) !== item.specMd5;
       });
 
       cacheHits = totalFiles - specFileList.length;
@@ -267,15 +238,15 @@ export class JestCheck {
       const jestPassedFiles = this.stats.cacheInfo.passed;
 
       data.results.testResults.forEach(d => {
-        const testFilePath = utils.fixToshortPath(d.testFilePath, config.rootDir);
+        const testFilePath = fixToshortPath(d.testFilePath, config.rootDir);
         // console.log(testFilePath, d.testFilePath);
         if (d.numFailingTests) {
           if (jestPassedFiles[testFilePath]) delete jestPassedFiles[testFilePath];
         } else {
           const tsFilePath = d.testFilePath.replace('.spec.', '.');
           jestPassedFiles[testFilePath] = {
-            md5: fs.existsSync(tsFilePath) ? utils.md5(tsFilePath, true) : '',
-            specMd5: utils.md5(d.testFilePath, true),
+            md5: fs.existsSync(tsFilePath) ? md5(tsFilePath, true) : '',
+            specMd5: md5(d.testFilePath, true),
             updateTime: data.results.startTime,
           };
         }

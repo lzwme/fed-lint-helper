@@ -1,5 +1,6 @@
 {
   "name": "@lzwme/fed-lint-helper",
+  "description": "前端项目编码质量 lint 检测辅助工具。用于辅助大型长期研发的前端项目渐进式的迁移与改进编码规范约束。",
   "version": "1.1.0",
   "main": "build/main/index.js",
   "browser": "build/main/index.js",
@@ -20,8 +21,12 @@
     "fed",
     "lint-helper",
     "typescript",
-    "eslint"
+    "eslint",
+    "jest"
   ],
+  "bin": {
+    "flh": "flh.js"
+  },
   "scripts": {
     "dev": "tsc -w",
     "start": "npm run watch",
@@ -52,6 +57,7 @@
   },
   "dependencies": {
     "chalk": "*",
+    "commander": "^8.2.0",
     "glob": "^7.1.7"
   },
   "devDependencies": {
@@ -59,6 +65,7 @@
     "@commitlint/cli": "^13.1.0",
     "@commitlint/config-angular": "^13.1.0",
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
+    "@types/commander": "^2.12.2",
     "@types/eslint": "^7.28.0",
     "@types/glob": "^7.1.4",
     "@types/jest": "^27.0.1",
