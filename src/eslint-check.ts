@@ -11,7 +11,6 @@ import { ESLint } from 'eslint';
 import fs from 'fs';
 import path from 'path';
 import { fixToshortPath, exit, createForkThread, assign } from './utils';
-import { createWorkerThreads } from './utils/worker-threads';
 import { ESLintCheckConfig, getConfig } from './config';
 
 export interface ESLintCheckResult {
@@ -306,19 +305,20 @@ export class ESLintCheck {
   private checkInWorkThreads() {
     this.printLog('start create work threads');
 
-    return createWorkerThreads<ESLintCheckResult>({
-      type: 'eslint',
-      debug: this.config.debug,
-      eslintConfig: this.config,
-    }).catch(code => {
-      if (this.config.exitOnError) process.exit(code);
+    return import('./utils/worker-threads').then(({ createWorkerThreads }) => {
+      return createWorkerThreads<ESLintCheckResult>({
+        type: 'eslint',
+        debug: this.config.debug,
+        eslintConfig: this.config,
+      }).catch(code => {
+        if (this.config.exitOnError) process.exit(code);
+      });
     });
   }
   /**
    * 启动 eslint 校验
    */
   async start(lintList = this.config.src) {
-    // this.printLog('start');
     if (lintList !== this.config.src) this.config.src = lintList;
     this.init();
 

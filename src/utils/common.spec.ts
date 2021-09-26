@@ -1,34 +1,34 @@
-import test from 'ava';
+// import test from 'ava';
 import * as comm from './common';
+describe('utils/common', () => {
+  it('fixToshortPath', () => {
+    expect(comm.fixToshortPath('./abc\\d.ts')).toBe('abc/d.ts');
+  });
 
-test('fixToshortPath', t => {
-  t.is(comm.fixToshortPath('./abc\\d.ts'), 'abc/d.ts');
-});
+  it('logTimeCost', () => {
+    comm.logTimeCost(Date.now());
+  });
 
-test('logTimeCost', t => {
-  comm.logTimeCost(Date.now());
-  t.pass();
-});
+  it('exit', () => {
+    const exit = process.exit;
+    let val = 0;
+    process.exit = (v: number): never => {
+      val = v;
+      return null as never;
+    };
 
-test.serial('exit', t => {
-  const exit = process.exit;
-  let val = 0;
-  process.exit = (v: number): never => {
-    val = v;
-    return null as never;
-  };
+    comm.exit();
+    expect(val).toEqual(0);
 
-  comm.exit();
-  t.is(val, 0);
+    comm.exit(1, Date.now());
+    expect(val).toEqual(1);
 
-  comm.exit(1, Date.now());
-  t.is(val, 1);
+    process.exit = exit;
+  });
 
-  process.exit = exit;
-});
-
-test('md5', t => {
-  t.is(comm.md5('abc').length > 1, true);
-  t.is(comm.md5('abc', true).length === 0, true);
-  t.is(comm.md5(__filename, true).length > 1, true);
+  it('md5', () => {
+    expect(comm.md5('abc').length > 1).toEqual(true);
+    expect(comm.md5('abc', true).length === 0).toEqual(true);
+    expect(comm.md5(__filename, true).length > 1).toEqual(true);
+  });
 });

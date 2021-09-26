@@ -43,8 +43,8 @@ process.on('message', (config: CreateThreadOptions) => {
     });
   } else if (config.type === 'jest' && config.jestConfig) {
     import('../jest-check').then(({ JestCheck }) => {
-      config.eslintConfig.checkOnInit = false;
-      config.eslintConfig.mode = 'current';
+      config.jestConfig.checkOnInit = false;
+      config.jestConfig.mode = 'current';
 
       const jestCheck = new JestCheck(config.jestConfig);
       jestCheck.start().then(d => {

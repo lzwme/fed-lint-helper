@@ -12,7 +12,6 @@ import path from 'path';
 import * as ts from 'typescript';
 import glob from 'glob';
 import { fixToshortPath, md5, exit, createForkThread, assign } from './utils';
-import { createWorkerThreads } from './utils/worker-threads';
 import { TsCheckConfig, getConfig } from './config';
 
 export interface TsCheckResult {
@@ -377,12 +376,14 @@ export class TsCheck {
   private checkInWorkThreads() {
     this.printLog('start create work threads');
 
-    return createWorkerThreads<TsCheckResult>({
-      type: 'tscheck',
-      debug: this.config.debug,
-      tsCheckConfig: this.config,
-    }).catch(code => {
-      if (this.config.exitOnError) process.exit(code);
+    return import('./utils/worker-threads').then(({ createWorkerThreads }) => {
+      return createWorkerThreads<TsCheckResult>({
+        type: 'tscheck',
+        debug: this.config.debug,
+        tsCheckConfig: this.config,
+      }).catch(code => {
+        if (this.config.exitOnError) process.exit(code);
+      });
     });
   }
   /** 执行 check */
@@ -390,7 +391,7 @@ export class TsCheck {
     if (tsFiles !== this.config.tsFiles) this.config.tsFiles = tsFiles;
     this.init();
 
-    if (!tsFiles.length && !this.config.src?.length) {
+    if (!tsFiles.length && !this.config.src.length) {
       this.printLog('No files to process\n');
       return false;
     }

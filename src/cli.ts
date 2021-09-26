@@ -7,20 +7,13 @@
  */
 import { program } from 'commander';
 import chalk from 'chalk';
-import { TsCheck } from './ts-check';
-import { ESLintCheck } from './eslint-check';
-import { getConfig } from './config';
-import { JestCheck } from './jest-check';
+import { getConfig, IConfig } from './config';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const pkg = require('../../package.json');
 
-interface POptions {
-  debug?: boolean;
-  silent?: boolean;
-  cache?: boolean;
-  removeCache?: boolean;
-  ts?: boolean;
+interface POptions extends Pick<IConfig, 'configPath' | 'debug' | 'silent' | 'cache' | 'removeCache' | 'exitOnError' | 'src'> {
+  tscheck?: boolean;
   eslint?: boolean;
   jest?: boolean;
 }
@@ -29,20 +22,22 @@ program
   // .aliases(['flh'])
   .version(pkg.version, '-v, --version')
   .description(chalk.cyanBright(pkg.description))
-  // .option('-c, --config-path [filepath]', `配置文件 ${chalk.yellow(config.configPath)} 的路径`)
+  .option('-c, --config-path <filepath>', `配置文件 ${chalk.yellow('.flh.config.js')} 的路径`)
   .option('--silent', `开启静默模式。`)
   .option('--debug', `开启调试模式。`)
-  .option('--ts', `执行 TypeScript Diagnostics check`)
+  .option('--src <src...>', `指定要检测的源码目录。默认为 src`)
+  .option('--cache', `开启缓存。默认为 true`)
+  .option('--remove-cache', `移除已存在的缓存。`)
+  .option('--exit-on-error', `检测到异常时，是否以非 0 值立即退出。`, true)
+  .option('--tscheck', `执行 TypeScript Diagnostics check`)
   .option('--eslint', `执行 eslint`)
   .option('--jest', `执行 jest 单元测试`)
   .action((opts: POptions) => {
-    if (opts.debug) console.log(opts);
-
     const baseConfig = getConfig({
-      exitOnError: false,
-      src: ['src'],
-      cache: !!opts.cache,
-      removeCache: !!opts.removeCache,
+      exitOnError: opts.exitOnError,
+      src: Array.isArray(opts.src) ? opts.src : [opts.src || 'src'],
+      cache: opts.cache,
+      removeCache: opts.removeCache,
       // tsConfigFileName: 'tsconfig.eslint.json',
       checkOnInit: false,
       silent: opts.silent,
@@ -54,22 +49,32 @@ program
         // tsConfigFileName: 'tsconfig.eslint.json',
         toWhiteList: true,
       },
-      jest: {},
+      jest: {
+        mode: 'current',
+      },
     });
 
-    if (opts.ts) {
-      const tsCheck = new TsCheck(baseConfig.tscheck);
-      tsCheck.start().then(res => res && console.log('tscheck', res));
+    if (opts.debug) console.log(opts, baseConfig);
+
+    if (opts.tscheck) {
+      import('./ts-check').then(({ TsCheck }) => {
+        const tsCheck = new TsCheck(baseConfig.tscheck);
+        tsCheck.start().then(res => console.log('tscheck done!', res));
+      });
     }
 
     if (opts.eslint) {
-      const eslintCheck = new ESLintCheck(baseConfig.eslint);
-      eslintCheck.start().then(res => res && console.log('eslintCheck:', res));
+      import('./eslint-check').then(({ ESLintCheck }) => {
+        const eslintCheck = new ESLintCheck(baseConfig.eslint);
+        eslintCheck.start().then(res => console.log('eslint done!', res));
+      });
     }
 
     if (opts.jest) {
-      const jestCheck = new JestCheck(baseConfig.jest);
-      jestCheck.start().then(res => res && console.log('jestCheck:', res));
+      import('./jest-check').then(({ JestCheck }) => {
+        const jestCheck = new JestCheck(baseConfig.jest);
+        jestCheck.start().then(res => console.log('jestCheck done!', res));
+      });
     }
   });
 

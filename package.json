@@ -3,7 +3,6 @@
   "description": "前端项目编码质量 lint 检测辅助工具。用于辅助大型长期研发的前端项目渐进式的迁移与改进编码规范约束。",
   "version": "1.1.0",
   "main": "build/main/index.js",
-  "browser": "build/main/index.js",
   "typings": "build/main/index.d.ts",
   "module": "build/module/index.js",
   "license": "MIT",
@@ -39,15 +38,13 @@
     "test": "run-s test:*",
     "test:lint": "eslint src --ext .ts",
     "test:prettier": "prettier \"src/**/*.ts\" --list-different",
-    "test:unit": "nyc --silent ava",
+    "test:unit": "jest",
+    "test:cov": "jest --coverage --silent --reporter=html",
     "watch": "run-s clean build:main && run-p \"build:main -- -w\" \"test:unit -- --watch\"",
     "watch:build": "tsc -p tsconfig.json -w",
-    "watch:test": "nyc --silent ava --watch",
-    "cov": "run-s build test:unit cov:html cov:lcov && open-cli coverage/index.html",
-    "cov:html": "nyc report --reporter=html",
-    "cov:lcov": "nyc report --reporter=lcov",
+    "watch:test": "jest --watch",
+    "cov": "run-s build test:cov && open-cli coverage/index.html",
     "cov:send": "run-s cov:lcov && codecov",
-    "cov:summary": "nyc report --reporter=text-summary",
     "doc": "run-s doc:html",
     "doc:html": "typedoc src/ --exclude **/*.spec.ts --out build/docs",
     "version": "standard-version",
@@ -61,10 +58,8 @@
     "glob": "^7.1.7"
   },
   "devDependencies": {
-    "@ava/typescript": "^2.0.0",
     "@commitlint/cli": "^13.1.0",
     "@commitlint/config-angular": "^13.1.0",
-    "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@types/commander": "^2.12.2",
     "@types/eslint": "^7.28.0",
     "@types/glob": "^7.1.4",
@@ -72,7 +67,6 @@
     "@types/node": "^16.6.1",
     "@typescript-eslint/eslint-plugin": "^4.29.2",
     "@typescript-eslint/parser": "^4.29.2",
-    "ava": "^3.15.0",
     "codecov": "^3.8.3",
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.3.0",
@@ -81,50 +75,25 @@
     "husky": "^7.0.1",
     "jest": "^27.1.0",
     "npm-run-all": "^4.1.5",
-    "nyc": "^15.1.0",
+    "open-cli": "^7.0.1",
     "prettier": "^2.3.2",
     "standard-version": "^9.3.1",
+    "ts-jest": "^27.0.5",
     "ts-node": "^10.2.0",
     "typedoc": "^0.21.5",
     "typescript": "^4.4.2"
   },
   "peerDependencies": {
+    "@types/eslint": ">=7",
     "@types/jest": ">=25",
     "eslint": ">=7",
-    "jest": ">=25"
-  },
-  "ava": {
-    "failFast": true,
-    "timeout": "60s",
-    "require": [
-      "ts-node/register"
-    ],
-    "extensions": [
-      "ts"
-    ],
-    "typescript_ava": {
-      "extensions": [
-        "ts",
-        "tsx"
-      ],
-      "rewritePaths": {
-        "src/": "build/main/"
-      },
-      "compile": false
-    },
-    "files": [
-      "src/**/*.spec.ts"
-    ]
+    "jest": ">=25",
+    "prettier": ">=2",
+    "typescript": ">=3"
   },
   "config": {
     "commitizen": {
       "path": "cz-conventional-changelog"
     }
-  },
-  "nyc": {
-    "extends": "@istanbuljs/nyc-config-typescript",
-    "exclude": [
-      "**/*.spec.js"
-    ]
   }
 }

@@ -119,7 +119,7 @@ export interface JestCheckConfig extends CommConfig {
   /** jest 缓存文件路径（jestOptions.cacheLocation）。不应提交至 git 仓库。默认为 `<config.rootDir>/node_modules/.cache/flh/jestcache.json` */
   cacheFilePath?: string;
   /** Jest Options。部分配置项会被内置修正 */
-  jestOptions?: Config.Argv & Record<string, unknown>;
+  jestOptions?: Partial<Config.Argv> & Record<string, unknown>;
   /** 严格模式 */
   strict?: boolean;
 }
@@ -152,11 +152,7 @@ const commConfig: CommConfig = {
 
 export const config: IConfig = {
   configPath: '.flh.config.js',
-  rootDir: commConfig.rootDir,
-  debug: commConfig.debug,
-  silent: commConfig.silent,
   tscheck: {
-    ...commConfig,
     tsFiles: [],
     exclude: ['**/*.test.{ts,tsx}', '**/*/*.mock.{ts,tsx}', '**/*/*.d.ts'],
     cacheFilePath: 'node_modules/.cache/flh/tsCheckCache.json',
@@ -168,7 +164,6 @@ export const config: IConfig = {
     mode: 'thread',
   },
   eslint: {
-    ...commConfig,
     cacheFilePath: 'node_modules/.cache/flh/eslintcache.json',
     whiteListFilePath: 'eslintWhitelist.json',
     warningTip: `[errors-必须修复；warnings-历史文件选择性处理(对于历史文件慎重修改 == 类问题)]`,
@@ -178,17 +173,25 @@ export const config: IConfig = {
     },
   },
   jest: {
-    ...commConfig,
-    cacheFilePath: 'node_modules/.cache/flh/jestcache.json',
     fileList: [],
+    cacheFilePath: 'node_modules/.cache/flh/jestcache.json',
     // whiteListFilePath: 'jestWhitelist.json',
+    jestOptions: {
+      config: 'jest.config.js',
+      coverageReporters: ['text-summary', 'html'],
+      forceExit: false,
+      detectOpenHandles: true,
+    },
   },
 };
+
+const lintTypes = ['eslint', 'tscheck', 'jest'] as const;
+let isInited = false;
 
 /**
  * 获取配置信息
  */
-export function getConfig(options?: IConfig, useCache = true) {
+export function getConfig(options?: IConfig, useCache = isInited) {
   if (useCache) return config;
 
   if (options && options.configPath) config.configPath = options.configPath;
@@ -198,20 +201,21 @@ export function getConfig(options?: IConfig, useCache = true) {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const cfg: IConfig = require(configPath);
     assign(config, cfg);
-  } else if (config.debug) {
+  } else if (config.debug || (options && options.debug)) {
     console.log(chalk.yellowBright(`配置文件不存在：${configPath}`));
   }
 
   // 直接入参的优先级最高
   if (options) assign(config, options);
-
   if (config.debug) config.silent = true;
 
-  // 公共通用配置优先级最低
+  // 公共通用配置
   Object.keys(commConfig).forEach(key => {
-    if (null == config[key]) return;
-    ['eslint', 'ts', 'jest'].forEach(type => {
-      if (null === config[type][key]) config[type][key] = config[key];
+    lintTypes.forEach(type => {
+      if (null == config[type][key]) {
+        if (null == config[key]) config[type][key] = commConfig[key];
+        else config[type][key] = config[key];
+      }
     });
   });
 
@@ -223,6 +227,8 @@ export function getConfig(options?: IConfig, useCache = true) {
     console.log(chalk.redBright('eslint 与 tscheck 白名单缓存文件路径(whiteListFilePath)不能相同！', config.eslint.cacheFilePath));
   }
   // TODO: More...
+
+  isInited = true;
 
   return config;
 }
