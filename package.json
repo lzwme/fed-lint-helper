@@ -24,7 +24,7 @@
     "jest"
   ],
   "bin": {
-    "flh": "flh.js"
+    "flh": "cli.js"
   },
   "scripts": {
     "dev": "tsc -w",

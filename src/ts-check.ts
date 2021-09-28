@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-09-25 18:06:12
+ * @LastEditTime: 2021-09-28 22:42:21
  * @Description: typescript Diagnostics report
  */
 
@@ -29,6 +29,8 @@ export class TsCheck {
   private stats = this.getInitStats();
   /** 白名单列表 */
   private whiteList = {} as Record<string, keyof typeof ts.DiagnosticCategory>; // ts.DiagnosticCategory
+  /** 检测缓存文件的路径。不应提交至 git 仓库: 默认为 <config.rootDir>/node_modules/.cache/flh/tsCheckCache.json */
+  private cacheFilePath = 'node_modules/.cache/flh/tscheckcache.json';
 
   constructor(private config: TsCheckConfig = {}) {
     this.parseConfig(config);
@@ -72,23 +74,22 @@ export class TsCheck {
   }
   /** 配置参数格式化 */
   public parseConfig(config: TsCheckConfig) {
-    const baseConfig = getConfig();
+    const baseConfig = getConfig({ tscheck: config });
 
-    if (config !== this.config) config = assign<TsCheckConfig>({}, this.config, config);
-    this.config = assign<TsCheckConfig>({}, baseConfig.tscheck, config);
-    this.config.cacheFilePath = path.resolve(this.config.rootDir, this.config.cacheFilePath);
+    this.config = assign<TsCheckConfig>({}, baseConfig.tscheck);
+    this.cacheFilePath = path.resolve(this.config.rootDir, baseConfig.cacheLocation, 'tsCheckCache.json');
     this.config.whiteListFilePath = path.resolve(this.config.rootDir, this.config.whiteListFilePath);
     return this;
   }
   private init() {
-    const { cacheFilePath, whiteListFilePath, removeCache, cache } = this.config;
+    const { whiteListFilePath, removeCache, cache } = this.config;
 
-    if (fs.existsSync(cacheFilePath)) {
+    if (fs.existsSync(this.cacheFilePath)) {
       try {
         if (removeCache) {
-          fs.unlinkSync(cacheFilePath);
+          fs.unlinkSync(this.cacheFilePath);
         } else if (cache) {
-          const cacheInfo = JSON.parse(fs.readFileSync(cacheFilePath, { encoding: 'utf-8' }));
+          const cacheInfo = JSON.parse(fs.readFileSync(this.cacheFilePath, { encoding: 'utf-8' }));
           if (cacheInfo.tsCheckFilesPassed) this.stats.tsCache = cacheInfo;
         }
       } catch (e) {
@@ -299,9 +300,8 @@ export class TsCheck {
       });
 
       if (stats.tsCheckFilesPassedChanged) {
-        if (!fs.existsSync(path.dirname(config.cacheFilePath))) fs.mkdirSync(path.dirname(config.cacheFilePath), { recursive: true });
-        fs.writeFileSync(config.cacheFilePath, JSON.stringify(tsCache, null, 2));
-        this.printLog('Write to cache:', chalk.cyanBright(fixToshortPath(config.cacheFilePath, config.rootDir)));
+        fs.writeFileSync(this.cacheFilePath, JSON.stringify(tsCache, null, 2));
+        this.printLog('Write to cache:', chalk.cyanBright(fixToshortPath(this.cacheFilePath, config.rootDir)));
       }
     }
 

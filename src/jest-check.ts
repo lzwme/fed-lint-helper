@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-09-25 18:03:48
+ * @LastEditTime: 2021-09-28 22:40:56
  * @Description:  jest check
  */
 
@@ -28,6 +28,10 @@ export interface JestCheckResult {
 export class JestCheck {
   /** 统计信息 */
   private stats = this.getInitStats();
+  /** 检测缓存文件的路径。不应提交至 git 仓库:
+   * 默认为 `<config.rootDir>/node_modules/.cache/flh/jestcache.json`
+   */
+  private cacheFilePath = '';
 
   constructor(private config: JestCheckConfig = {}) {
     this.parseConfig(config);
@@ -69,14 +73,13 @@ export class JestCheck {
 
     if (config !== this.config) config = assign<JestCheckConfig>({}, this.config, config);
     this.config = assign<JestCheckConfig>({}, baseConfig.jest, config);
-    this.config.cacheFilePath = path.resolve(this.config.rootDir, this.config.cacheFilePath);
-    if (this.config.debug) this.config.silent = false;
+    this.cacheFilePath = path.resolve(this.config.rootDir, baseConfig.cacheLocation, 'jestcache.json');
     if (this.config.debug) this.printLog(this.config);
   }
   private init() {
     const config = this.config;
 
-    if (fs.existsSync(config.cacheFilePath) && config.removeCache) fs.unlinkSync(config.cacheFilePath);
+    if (fs.existsSync(this.cacheFilePath) && config.removeCache) fs.unlinkSync(this.cacheFilePath);
   }
   /**
    * 获取 Jest Options
@@ -121,8 +124,8 @@ export class JestCheck {
 
     this.printLog('total test files:', specFileList.length);
 
-    if (config.cache && fs.existsSync(config.cacheFilePath)) {
-      Object.assign(jestPassedFiles, JSON.parse(fs.readFileSync(config.cacheFilePath, 'utf8')));
+    if (config.cache && fs.existsSync(this.cacheFilePath)) {
+      Object.assign(jestPassedFiles, JSON.parse(fs.readFileSync(this.cacheFilePath, 'utf8')));
 
       specFileList = specFileList.filter(filepath => {
         filepath = fixToshortPath(filepath, config.rootDir);
@@ -206,9 +209,7 @@ export class JestCheck {
         }
       });
 
-      const cacheDir = path.dirname(config.cacheFilePath);
-      if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir, { recursive: true });
-      fs.writeFileSync(config.cacheFilePath, JSON.stringify(this.stats.cacheInfo, null, 2));
+      fs.writeFileSync(this.cacheFilePath, JSON.stringify(this.stats.cacheInfo, null, 2));
 
       stats.success = data.results.success && !data.results.numFailedTestSuites;
       if (this.config.debug) this.printLog(data);

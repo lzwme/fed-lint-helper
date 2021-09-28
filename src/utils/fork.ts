@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-25 10:12:21
  * @LastEditors: lzw
- * @LastEditTime: 2021-09-25 17:41:04
+ * @LastEditTime: 2021-09-28 15:52:26
  * @Description: 在 fork 子进程中执行 Check 任务
  */
 
@@ -41,14 +41,14 @@ export function createForkThread<T>(options: CreateThreadOptions = { type: 'tsch
       }
     });
 
-    worker.on('error', err => console.log('worker err:', err, options.type));
+    worker.on('error', err => console.log(`[worker][${options.type}]err:`, err));
     worker.on('exit', code => {
-      if (options.debug) console.log('exit worker', code);
+      if (options.debug) console.log(`[worker][${options.type}]exit worker`, code);
       if (code !== 0) reject(code);
     });
 
     if (options.debug) {
-      worker.once('close', code => console.log(`[worker]Child exited with code ${code}`, options.type));
+      worker.once('close', code => console.log(`[worker][${options.type}]Child exited with code ${code}`));
     }
   });
 }

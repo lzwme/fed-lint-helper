@@ -21,6 +21,12 @@ commitlint.config.js
 .editorconfig
 publish.bat
 .yarnrc
+.eslintrc.js
 .eslintrc.json
+.prettierrc
 .grs.config.js
-jest.confg.js
+jest.config.js
+.flh.config.js
+.husky
+eslintWhitelist.json
+tsCheckWhiteList.json

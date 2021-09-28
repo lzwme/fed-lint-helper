@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-09-25 18:07:49
+ * @LastEditTime: 2021-09-28 22:33:50
  * @Description:  eslint check
  */
 
@@ -30,6 +30,8 @@ export class ESLintCheck {
   private stats = this.getInitStats();
   /** 白名单列表 */
   private whiteList = {} as { [filepath: string]: 'e' | 'w' }; // ts.DiagnosticCategory
+  /** 缓存文件路径（eslintOptions.cacheLocation）。默认为 <config.rootDir>/node_modules/.cache/flh/eslintcache.json */
+  private cacheFilePath = 'node_modules/.cache/flh/eslintcache.json';
 
   constructor(private config: ESLintCheckConfig = {}) {
     this.parseConfig(config);
@@ -66,14 +68,14 @@ export class ESLintCheck {
 
     if (config !== this.config) config = assign<ESLintCheckConfig>({}, this.config, config);
     this.config = assign<ESLintCheckConfig>({}, baseConfig.eslint, config);
-    this.config.cacheFilePath = path.resolve(this.config.rootDir, this.config.cacheFilePath);
+    this.cacheFilePath = path.resolve(this.config.rootDir, baseConfig.cacheLocation, 'tsCheckCache.json');
     this.config.whiteListFilePath = path.resolve(this.config.rootDir, this.config.whiteListFilePath);
     return this;
   }
   private init() {
     const config = this.config;
 
-    if (fs.existsSync(config.cacheFilePath) && config.removeCache) fs.unlinkSync(config.cacheFilePath);
+    if (fs.existsSync(this.cacheFilePath) && config.removeCache) fs.unlinkSync(this.cacheFilePath);
 
     // 读取白名单列表
     if (fs.existsSync(config.whiteListFilePath)) {
@@ -97,7 +99,7 @@ export class ESLintCheck {
       globInputPaths: lintList.some(d => !/\.tsx?$/.test(d) || d.includes('*')),
       cwd: this.config.rootDir,
       cache: cfg.cache !== false,
-      cacheLocation: cfg.cacheFilePath || cfg.eslintOptions.cacheLocation,
+      cacheLocation: this.cacheFilePath || cfg.eslintOptions.cacheLocation,
       allowInlineConfig: !cfg.strict,
       fix: !!cfg.fix,
     };
