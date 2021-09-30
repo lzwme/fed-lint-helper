@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-09-28 22:42:21
+ * @LastEditTime: 2021-09-30 15:47:25
  * @Description: typescript Diagnostics report
  */
 
@@ -11,7 +11,7 @@ import fs from 'fs';
 import path from 'path';
 import * as ts from 'typescript';
 import glob from 'glob';
-import { fixToshortPath, md5, exit, createForkThread, assign } from './utils';
+import { fixToshortPath, md5, exit, createForkThread, assign, log } from './utils';
 import { TsCheckConfig, getConfig } from './config';
 
 export interface TsCheckResult {
@@ -41,7 +41,7 @@ export class TsCheck {
     if (this.config.silent) return;
     // 打印空行
     if (!args.length) console.log();
-    else console.log(chalk.cyan('[TSCheck]'), ...args);
+    else log(chalk.cyan('[TSCheck]'), ...args);
   }
   private getInitStats() {
     const stats = {

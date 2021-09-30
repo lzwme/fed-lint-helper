@@ -10,7 +10,7 @@ import chalk from 'chalk';
 import { ESLint } from 'eslint';
 import fs from 'fs';
 import path from 'path';
-import { fixToshortPath, exit, createForkThread, assign } from './utils';
+import { fixToshortPath, exit, createForkThread, assign, log } from './utils';
 import { ESLintCheckConfig, getConfig } from './config';
 
 export interface ESLintCheckResult {
@@ -41,7 +41,7 @@ export class ESLintCheck {
   private printLog(...args) {
     if (this.config.silent) return;
     if (!args.length) console.log();
-    else console.log(chalk.cyan('[ESLint]'), ...args);
+    else log(chalk.cyan('[ESLint]'), ...args);
   }
   /** 获取初始化的统计信息 */
   private getInitStats() {

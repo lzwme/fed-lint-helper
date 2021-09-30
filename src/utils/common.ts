@@ -24,6 +24,11 @@ export function logTimeCost(startTime: number, prefix = '') {
   console.log(`${prefix} TimeCost: ${chalk.bold.greenBright(Date.now() - startTime)}ms`);
 }
 
+/** 打印待时间戳前缀的日志信息 */
+export function log(...args: string[]) {
+  console.log(`[${chalk.cyanBright(new Date().toTimeString().slice(0, 8))}]`, ...args);
+}
+
 /**
  * 退出当前 process 进程
  * @param {number} code 退出码
@@ -77,8 +82,4 @@ export function assign<T = PlanObject>(a: T, b: PlanObject, c?: PlanObject): T {
   }
 
   return assign(a, c);
-}
-
-export function log(...args: string[]) {
-  console.log(`[${chalk.cyanBright(new Date().toTimeString().slice(0, 8))}]`, ...args);
 }

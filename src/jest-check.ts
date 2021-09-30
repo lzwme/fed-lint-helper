@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-09-28 22:40:56
+ * @LastEditTime: 2021-09-30 15:46:24
  * @Description:  jest check
  */
 
@@ -13,7 +13,7 @@ import chalk from 'chalk';
 import glob from 'glob';
 import { runCLI } from '@jest/core';
 import type { Config } from '@jest/types';
-import { fixToshortPath, md5, exit, createForkThread, assign } from './utils';
+import { fixToshortPath, md5, exit, createForkThread, assign, log } from './utils';
 import { JestCheckConfig, getConfig } from './config';
 
 export interface JestCheckResult {
@@ -41,7 +41,7 @@ export class JestCheck {
   private printLog(...args) {
     if (this.config.silent) return;
     if (!args.length) console.log();
-    else console.log(chalk.cyan('[Jest]'), ...args);
+    else log(chalk.cyan('[Jest]'), ...args);
   }
   /** 获取初始化的统计信息 */
   private getInitStats() {
