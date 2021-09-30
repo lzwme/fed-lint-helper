@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0](https://github.com/lzwme/fed-lint-helper/compare/v1.1.0...v1.2.0) (2021-09-30)
+
+
+### Features
+
+* 新增 jest 单元测试的 lint 约束支持 ([dc61f45](https://github.com/lzwme/fed-lint-helper/commit/dc61f4519c1eb5d8421fb0f8dbc986714dec11cc))
+* 增加 cli 命令行工具 ([310e060](https://github.com/lzwme/fed-lint-helper/commit/310e060f393ca38840c6866dd225244ecada0210))
+
+
+### Bug Fixes
+
+* 修正 ts-check 对诊断类型的次数统计方式 ([f74c85d](https://github.com/lzwme/fed-lint-helper/commit/f74c85d67153cf349befe7c4d50799d4b87c67f5))
+
 ## 1.1.0 (2021-08-25)
 
 
