@@ -53,8 +53,8 @@
     "clean": "node scripts/rmdir.mjs ./build"
   },
   "dependencies": {
-    "chalk": "*",
     "commander": "^8.2.0",
+    "console-log-colors": "^0.2.1",
     "glob": "^7.1.7"
   },
   "devDependencies": {

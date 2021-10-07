@@ -6,7 +6,7 @@
  * @Description:
  */
 
-import chalk from 'chalk';
+import { color } from 'console-log-colors';
 import fs from 'fs';
 import path from 'path';
 import { assign } from './utils';
@@ -182,7 +182,7 @@ export function getConfig(options?: FlhConfig, useCache = isInited) {
     const cfg: FlhConfig = require(configPath);
     assign(config, cfg);
   } else if (config.debug || (options && options.debug)) {
-    console.log(chalk.yellowBright(`配置文件不存在：${configPath}`));
+    console.log(color.yellowBright(`配置文件不存在：${configPath}`));
   }
 
   // 直接入参的优先级最高

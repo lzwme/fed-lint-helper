@@ -6,7 +6,7 @@
  * @Description: typescript Diagnostics report
  */
 
-import chalk from 'chalk';
+import { color } from 'console-log-colors';
 import fs from 'fs';
 import path from 'path';
 import * as ts from 'typescript';
@@ -14,6 +14,7 @@ import glob from 'glob';
 import { fixToshortPath, md5, exit, createForkThread, assign, log } from './utils';
 import { TsCheckConfig, getConfig } from './config';
 
+const { bold, redBright, yellowBright, cyanBright, red, greenBright, cyan } = color;
 export interface TsCheckResult {
   /**是否检测通过 */
   isPassed: boolean;
@@ -41,7 +42,7 @@ export class TsCheck {
     if (this.config.silent) return;
     // 打印空行
     if (!args.length) console.log();
-    else log(chalk.cyan('[TSCheck]'), ...args);
+    else log(cyan('[TSCheck]'), ...args);
   }
   private getInitStats() {
     const stats = {
@@ -124,7 +125,7 @@ export class TsCheck {
     this.stats.totalFiles += total;
 
     this.printLog();
-    this.printLog(chalk.bold.cyanBright('Checking'), subDir);
+    this.printLog(bold(cyanBright('Checking')), subDir);
     this.printLog(' - Total Number Of Files:', total);
 
     /** 缓存命中数量 */
@@ -222,14 +223,15 @@ export class TsCheck {
         const fileList = errDiagnostics.filter(d => d.file).map(d => d.file.fileName);
 
         this.printLog(
-          chalk.bold.redBright(`Diagnostics of need repair(not in whitelist)[${chalk.redBright(errDiagnostics.length)} files]:\n`),
+          bold(redBright(`Diagnostics of need repair(not in whitelist)[${errDiagnostics.length} files]:\n`)),
           config.printDetail ? ts.formatDiagnosticsWithColorAndContext(errDiagnostics, host) : `\n - ` + fileList.join('\n - ') + '\n'
         );
       } else if (whiteListDiagnostics.length) {
         const fileList = tmpDiagnostics.filter(d => d.file).map(d => d.file.fileName);
 
         this.printLog(
-          chalk.bold.yellowBright(`Diagnostics in whitelist[${chalk.redBright(errDiagnostics.length)} files]:\n`),
+          bold(yellowBright(`Diagnostics in whitelist[${redBright(errDiagnostics.length)}`)),
+          bold(yellowBright(`files]:\n`)),
           config.printDetail ? ts.formatDiagnosticsWithColorAndContext(tmpDiagnostics, host) : `\n - ` + fileList.join('\n - ') + '\n'
         );
       }
@@ -301,14 +303,14 @@ export class TsCheck {
 
       if (stats.tsCheckFilesPassedChanged) {
         fs.writeFileSync(this.cacheFilePath, JSON.stringify(tsCache, null, 2));
-        this.printLog('Write to cache:', chalk.cyanBright(fixToshortPath(this.cacheFilePath, config.rootDir)));
+        this.printLog('Write to cache:', cyanBright(fixToshortPath(this.cacheFilePath, config.rootDir)));
       }
     }
 
     if (config.toWhiteList) {
       if (!fs.existsSync(path.dirname(config.whiteListFilePath))) fs.mkdirSync(path.dirname(config.whiteListFilePath), { recursive: true });
       fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, null, 2));
-      this.printLog('Write to whitelist:', chalk.cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
+      this.printLog('Write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
     }
 
     const errFileList = Object.keys(stats.allDiagnosticsFileMap);
@@ -330,8 +332,8 @@ export class TsCheck {
     }
 
     this.printLog('Total Files:\t', result.total);
-    this.printLog('Passed:\t', chalk.bold.greenBright(result.passed));
-    this.printLog('Failed:\t', chalk.bold.red(result.failed));
+    this.printLog('Passed:\t', bold(greenBright(result.passed)));
+    this.printLog('Failed:\t', bold(red(result.failed)));
 
     // 异常类型统计
     if (result.failed) {
@@ -341,18 +343,18 @@ export class TsCheck {
         stats.allDiagnosticsCategory[cateStr] = (stats.allDiagnosticsCategory[cateStr] || 0) + 1;
       });
       Object.keys(stats.allDiagnosticsCategory).forEach(keyStr => {
-        this.printLog(chalk.bold.cyan(` -- ${keyStr} Count：`), chalk.bold.yellowBright(result.diagnosticCategory[keyStr]));
+        this.printLog(bold(cyan(` -- ${keyStr} Count：`)), bold(yellowBright(result.diagnosticCategory[keyStr])));
       });
     }
 
     if (!result.failed) {
-      this.printLog(chalk.bold.greenBright('Verification passed!'));
+      this.printLog(bold(greenBright('Verification passed!')));
     } else {
       if (config.exitOnError) exit(result.failed, stats.startTime, '[TsCheck]');
-      this.printLog(chalk.bold.redBright('Verification failed!'));
+      this.printLog(bold(redBright('Verification failed!')));
     }
 
-    this.printLog(`TimeCost: ${chalk.bold.greenBright(Date.now() - stats.startTime)}ms`);
+    this.printLog(`TimeCost: ${bold(greenBright(Date.now() - stats.startTime))}ms`);
 
     return result;
   }

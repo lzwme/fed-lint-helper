@@ -6,12 +6,14 @@
  * @Description:  eslint check
  */
 
-import chalk from 'chalk';
+import { color } from 'console-log-colors';
 import { ESLint } from 'eslint';
 import fs from 'fs';
 import path from 'path';
 import { fixToshortPath, exit, createForkThread, assign, log } from './utils';
 import { ESLintCheckConfig, getConfig } from './config';
+
+const { bold, red, redBright, yellowBright, greenBright, cyan, cyanBright } = color;
 
 export interface ESLintCheckResult {
   isPassed: boolean;
@@ -41,7 +43,7 @@ export class ESLintCheck {
   private printLog(...args) {
     if (this.config.silent) return;
     if (!args.length) console.log();
-    else log(chalk.cyan('[ESLint]'), ...args);
+    else log(cyan('[ESLint]'), ...args);
   }
   /** 获取初始化的统计信息 */
   private getInitStats() {
@@ -199,7 +201,7 @@ export class ESLintCheck {
       if (!results.length) {
         this.printLog('no new error file');
       } else {
-        this.printLog(' write whitelist to file:', chalk.cyanBright(fixToshortPath(config.whiteListFilePath)));
+        this.printLog(' write whitelist to file:', cyanBright(fixToshortPath(config.whiteListFilePath)));
         fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, null, 2));
         const resultText = formatter.format(results);
         this.printLog(`\n ${resultText}`);
@@ -214,7 +216,7 @@ export class ESLintCheck {
         const errResults = config.allowErrorToWhiteList ? newErrorReults : errorReults;
         const resultText = formatter.format(errResults);
         this.printLog(`\n ${resultText}`);
-        this.printLog(chalk.bold.redBright(`[Error]Verification failed![${errResults.length} files]`), chalk.yellowBright(tips), `\n`);
+        this.printLog(bold(redBright(`[Error]Verification failed![${errResults.length} files]`)), yellowBright(tips), `\n`);
 
         if (!config.fix && errorReults.length < 20 && errResults.some(d => d.fixableErrorCount || d.fixableWarningCount)) {
           // 运行此方法可以自动修复语法问题
@@ -231,7 +233,7 @@ export class ESLintCheck {
         // 不在白名单中的 warning
         if (newWaringReults.length) {
           const resultText = formatter.format(newWaringReults);
-          this.printLog(chalk.bold.red(`[Warning]Verification failed![${newWaringReults.length} files]`), chalk.yellowBright(tips), `\n`);
+          this.printLog(bold(red(`[Warning]Verification failed![${newWaringReults.length} files]`)), yellowBright(tips), `\n`);
           this.printLog(newWaringReults.map(d => fixToshortPath(d.filePath, config.rootDir)).join('\n'));
           this.printLog(`\n ${resultText}\n`);
         }
@@ -241,7 +243,7 @@ export class ESLintCheck {
         if (errorCount || warningCount) {
           const resultText = formatter.format(waringReults);
           this.printLog(
-            `[注意] 以下文件在白名单中，但存在异常信息[TOTAL: ${chalk.bold.yellowBright(waringReults.length)} files]${tips}：`,
+            `[注意] 以下文件在白名单中，但存在异常信息[TOTAL: ${bold(yellowBright(waringReults.length))} files]${tips}：`,
             '\n' + waringReults.map(d => fixToshortPath(d.filePath, config.rootDir)).join('\n'),
             '\n'
           );
@@ -249,14 +251,14 @@ export class ESLintCheck {
           // if (config.strict) exit(results.length, stats.startTime, '[ESLint]');
         }
 
-        this.printLog(chalk.bold.greenBright('Verification passed!'));
+        this.printLog(bold(greenBright('Verification passed!')));
       } else {
         if (this.config.exitOnError) exit(1, stats.startTime, '[ESLint]');
       }
     }
 
     stats.success = isPassed;
-    this.printLog(`TimeCost: ${chalk.bold.greenBright(Date.now() - stats.startTime)}ms`);
+    this.printLog(`TimeCost: ${bold(greenBright(Date.now() - stats.startTime))}ms`);
 
     const info = {
       /** 是否检测通过 */

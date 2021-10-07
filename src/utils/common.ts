@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
-import chalk from 'chalk';
+import { color } from 'console-log-colors';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type PlanObject = Record<string, any>;
@@ -21,12 +21,12 @@ export function fixToshortPath(filepath = '', rootDir = process.cwd()) {
  * @param {number} startTime 开始时间戳
  */
 export function logTimeCost(startTime: number, prefix = '') {
-  console.log(`${prefix} TimeCost: ${chalk.bold.greenBright(Date.now() - startTime)}ms`);
+  console.log(`${prefix} TimeCost: ${color.bold(color.greenBright(Date.now() - startTime))}ms`);
 }
 
 /** 打印待时间戳前缀的日志信息 */
 export function log(...args: string[]) {
-  console.log(`[${chalk.cyanBright(new Date().toTimeString().slice(0, 8))}]`, ...args);
+  console.log(`[${color.cyanBright(new Date().toTimeString().slice(0, 8))}]`, ...args);
 }
 
 /**

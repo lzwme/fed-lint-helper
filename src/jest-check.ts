@@ -9,13 +9,14 @@
 import fs from 'fs';
 import path from 'path';
 import { exec } from 'child_process';
-import chalk from 'chalk';
+import { color } from 'console-log-colors';
 import glob from 'glob';
 import { runCLI } from '@jest/core';
 import type { Config } from '@jest/types';
 import { fixToshortPath, md5, exit, createForkThread, assign, log } from './utils';
 import { JestCheckConfig, getConfig } from './config';
 
+const { bold, redBright, greenBright, cyan } = color;
 export interface JestCheckResult {
   /** 是否检测通过 */
   isPassed: boolean;
@@ -41,7 +42,7 @@ export class JestCheck {
   private printLog(...args) {
     if (this.config.silent) return;
     if (!args.length) console.log();
-    else log(chalk.cyan('[Jest]'), ...args);
+    else log(cyan('[Jest]'), ...args);
   }
   /** 获取初始化的统计信息 */
   private getInitStats() {
@@ -222,13 +223,13 @@ export class JestCheck {
     };
 
     if (info.isPassed) {
-      this.printLog(chalk.bold.greenBright('Verification passed!'));
+      this.printLog(bold(greenBright('Verification passed!')));
     } else {
       if (config.exitOnError) exit(1, stats.startTime, '[JestCheck]');
-      this.printLog(chalk.bold.redBright('Verification failed!'));
+      this.printLog(bold(redBright('Verification failed!')));
     }
 
-    this.printLog(`TimeCost: ${chalk.bold.greenBright(Date.now() - stats.startTime)}ms`);
+    this.printLog(`TimeCost: ${bold(greenBright(Date.now() - stats.startTime))}ms`);
 
     return info;
   }

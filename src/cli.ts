@@ -6,7 +6,7 @@
  * @Description: cli 工具
  */
 import { program } from 'commander';
-import chalk from 'chalk';
+import { color } from 'console-log-colors';
 import { getConfig, FlhConfig, TsCheckConfig, config } from './config';
 import path from 'path';
 import fs from 'fs';
@@ -25,8 +25,8 @@ interface POptions
 program
   // .aliases(['flh'])
   .version(pkg.version, '-v, --version')
-  .description(chalk.cyanBright(pkg.description))
-  .option('-c, --config-path <filepath>', `配置文件 ${chalk.yellow('.flh.config.js')} 的路径`)
+  .description(color.cyanBright(pkg.description))
+  .option('-c, --config-path <filepath>', `配置文件 ${color.yellow('.flh.config.js')} 的路径`)
   .option('--silent', `开启静默模式。`, false)
   .option('--debug', `开启调试模式。`, false)
   .option('--src <src...>', `指定要检测的源码目录。默认为 src`)
@@ -100,13 +100,13 @@ program
 
     if (opts.config) {
       if (fs.existsSync(config.configPath)) {
-        return console.log(chalk.yellowBright(`当前目录下已存在配置文件：`), chalk.cyan(config.configPath));
+        return console.log(color.yellowBright(`当前目录下已存在配置文件：`), color.cyan(config.configPath));
       }
 
       const tpl = path.resolve(__dirname, '../../.flh.config.sample.js');
       const cfgInfo = fs.readFileSync(tpl, 'utf8').replace(`./`, '@lzwme/fed-lint-helper');
       fs.writeFileSync(config.configPath, cfgInfo, 'utf8');
-      console.log(`已在当前目录下生成配置文件：`, chalk.cyan(config.configPath));
+      console.log(`已在当前目录下生成配置文件：`, color.cyan(config.configPath));
     }
   });
 

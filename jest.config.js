@@ -8,5 +8,12 @@ module.exports = {
     "tsx",
     "js"
   ],
+  globals: {
+    'ts-jest': {
+      tsconfig: {
+        sourceMap: true,
+      },
+    },
+  },
   testRegex: "/src/.*\\.spec\\.(ts|tsx|js)$"
 };
