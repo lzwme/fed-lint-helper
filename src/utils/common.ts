@@ -25,7 +25,7 @@ export function logTimeCost(startTime: number, prefix = '') {
 }
 
 /** 打印待时间戳前缀的日志信息 */
-export function log(...args: string[]) {
+export function log(...args) {
   console.log(`[${color.cyanBright(new Date().toTimeString().slice(0, 8))}]`, ...args);
 }
 

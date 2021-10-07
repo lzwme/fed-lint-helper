@@ -7,6 +7,7 @@ describe('utils/common', () => {
 
   it('logTimeCost', () => {
     comm.logTimeCost(Date.now());
+    comm.log(Date.now());
   });
 
   it('exit', () => {
@@ -38,6 +39,7 @@ describe('utils/common', () => {
 
     expect(comm.assign(a, b)).toEqual(a);
     expect(comm.assign(a, b).b).toEqual(2);
+    expect(comm.assign(a, [], b).b).toEqual(2);
     expect(Array.isArray(comm.assign(a, b)['c'])).toBeTruthy();
 
     expect(comm.assign(null, b) === null).toBeTruthy();
