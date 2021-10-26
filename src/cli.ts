@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2021-09-28 22:58:46
+ * @LastEditTime: 2021-10-26 21:59:45
  * @Description: cli 工具
  */
 import { program } from 'commander';
@@ -15,7 +15,7 @@ import fs from 'fs';
 const pkg = require('../../package.json');
 
 interface POptions
-  extends Pick<FlhConfig, 'configPath' | 'debug' | 'silent' | 'cache' | 'removeCache' | 'exitOnError' | 'src'>,
+  extends Pick<FlhConfig, 'configPath' | 'debug' | 'silent' | 'printDetail' | 'cache' | 'removeCache' | 'exitOnError' | 'src'>,
     Pick<TsCheckConfig, 'toWhiteList'> {
   tscheck?: boolean;
   eslint?: boolean;
@@ -29,6 +29,7 @@ program
   .option('-c, --config-path <filepath>', `配置文件 ${color.yellow('.flh.config.js')} 的路径`)
   .option('--silent', `开启静默模式。`, false)
   .option('--debug', `开启调试模式。`, false)
+  .option('--no-print-detail', `不打印异常详情。`, false)
   .option('--src <src...>', `指定要检测的源码目录。默认为 src`)
   .option('--cache', `开启缓存。默认为 true`)
   .option('--remove-cache', `移除已存在的缓存。`)
@@ -46,6 +47,7 @@ program
       checkOnInit: false,
       silent: !opts.debug && opts.silent,
       debug: opts.debug,
+      printDetail: opts.printDetail,
       tscheck: {
         toWhiteList: opts.toWhiteList,
         mode: 'proc',
@@ -93,18 +95,19 @@ program
   .command('init')
   .description('执行初始化操作')
   .option('--config', '在当前目录下生成默认的配置文件')
+  .option('--force', '是否强制执行(配置文件已存在，则覆盖生成)')
   .action((opts, destination) => {
     if (!opts.config) {
       return destination.help();
     }
 
     if (opts.config) {
-      if (fs.existsSync(config.configPath)) {
+      if (fs.existsSync(config.configPath) && !opts.force) {
         return console.log(color.yellowBright(`当前目录下已存在配置文件：`), color.cyan(config.configPath));
       }
 
       const tpl = path.resolve(__dirname, '../../.flh.config.sample.js');
-      const cfgInfo = fs.readFileSync(tpl, 'utf8').replace(`./`, '@lzwme/fed-lint-helper');
+      const cfgInfo = fs.readFileSync(tpl, 'utf8').replace(`import('./')`, `import('${pkg.name}')`);
       fs.writeFileSync(config.configPath, cfgInfo, 'utf8');
       console.log(`已在当前目录下生成配置文件：`, color.cyan(config.configPath));
     }

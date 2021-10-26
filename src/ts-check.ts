@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-09-30 15:47:25
+ * @LastEditTime: 2021-10-26 22:15:55
  * @Description: typescript Diagnostics report
  */
 
@@ -189,7 +189,6 @@ export class TsCheck {
       stats.totalDiagnostics += tmpDiagnostics.length;
 
       const errDiagnostics: ts.Diagnostic[] = [];
-      const whiteListDiagnostics: ts.Diagnostic[] = [];
 
       tmpDiagnostics.forEach(d => {
         if (!d.file) {
@@ -203,8 +202,6 @@ export class TsCheck {
         if (!this.whiteList[key]) {
           stats.allDiagnosticsFileMap[key] = d;
           errDiagnostics.push(d);
-        } else {
-          whiteListDiagnostics[key] = d;
         }
 
         if (config.toWhiteList) {
@@ -220,20 +217,24 @@ export class TsCheck {
       });
 
       if (errDiagnostics.length) {
-        const fileList = errDiagnostics.filter(d => d.file).map(d => d.file.fileName);
+        let fileList = errDiagnostics.filter(d => d.file).map(d => d.file.fileName);
+        // 去重
+        fileList = Array.from(new Set(fileList));
 
         this.printLog(
-          bold(redBright(`Diagnostics of need repair(not in whitelist)[${errDiagnostics.length} files]:\n`)),
+          bold(redBright(`Diagnostics of need repair(not in whitelist)[${fileList.length} files]:\n`)),
           config.printDetail ? ts.formatDiagnosticsWithColorAndContext(errDiagnostics, host) : `\n - ` + fileList.join('\n - ') + '\n'
         );
-      } else if (whiteListDiagnostics.length) {
+      } else {
         const fileList = tmpDiagnostics.filter(d => d.file).map(d => d.file.fileName);
 
-        this.printLog(
-          bold(yellowBright(`Diagnostics in whitelist[${redBright(errDiagnostics.length)}`)),
-          bold(yellowBright(`files]:\n`)),
-          config.printDetail ? ts.formatDiagnosticsWithColorAndContext(tmpDiagnostics, host) : `\n - ` + fileList.join('\n - ') + '\n'
-        );
+        if (fileList.length) {
+          this.printLog(
+            bold(yellowBright(`Diagnostics in whitelist[${redBright(errDiagnostics.length)}`)),
+            bold(yellowBright(`files]:\n`)),
+            config.printDetail ? ts.formatDiagnosticsWithColorAndContext(tmpDiagnostics, host) : `\n - ` + fileList.join('\n - ') + '\n'
+          );
+        }
       }
     }
   }
@@ -258,13 +259,14 @@ export class TsCheck {
     const { config, stats } = this;
     const { rootDir, debug } = config;
     const { tsCache } = stats;
-
-    if (debug) this.printLog('config：', config);
-
+    /** 在白名单列表中但本次检测无异常的文件列表（将从白名单列表中移除） */
+    const removeFromWhiteList = [];
     const dirMap = {
       // 没有 tsconfig.json 独立配置文件的子目录文件，也将全部放到这里一起编译
       [rootDir]: tsFiles || [],
     };
+
+    if (debug) this.printLog('config：', config);
 
     // 没有指定 tsFiles 文件列表，才按 src 指定规则匹配
     if (!dirMap[rootDir].length) {
@@ -292,11 +294,17 @@ export class TsCheck {
 
     if (config.cache || config.removeCache) {
       const passedFileList = Object.keys(tsCache.tsCheckFilesPassed);
+
       passedFileList.forEach(shortpath => {
         const item = tsCache.tsCheckFilesPassed[shortpath];
         if (!item.md5) {
           item.md5 = md5(path.resolve(config.rootDir, shortpath), true);
           stats.tsCheckFilesPassedChanged = true;
+        }
+
+        if (this.whiteList[shortpath]) {
+          delete this.whiteList[shortpath];
+          removeFromWhiteList.push(shortpath);
         }
         // if (item.updateTime === stats.startTime) stats.tsCheckFilesPassedChanged = true;
       });
@@ -310,7 +318,13 @@ export class TsCheck {
     if (config.toWhiteList) {
       if (!fs.existsSync(path.dirname(config.whiteListFilePath))) fs.mkdirSync(path.dirname(config.whiteListFilePath), { recursive: true });
       fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, null, 2));
-      this.printLog('Write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
+      this.printLog('[ADD]write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
+    } else {
+      if (removeFromWhiteList.length) {
+        this.printLog(' [REMOVE]write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
+        fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, null, 2));
+        this.printLog(' remove from whilelist:\n' + removeFromWhiteList.join('\n'));
+      }
     }
 
     const errFileList = Object.keys(stats.allDiagnosticsFileMap);
@@ -331,7 +345,7 @@ export class TsCheck {
       this.printLog('Failed Files:', '\n - ' + errFileList.join('\n - '), '\n');
     }
 
-    this.printLog('Total Files:\t', result.total);
+    this.printLog('Total :\t', result.total);
     this.printLog('Passed:\t', bold(greenBright(result.passed)));
     this.printLog('Failed:\t', bold(red(result.failed)));
 
@@ -350,8 +364,8 @@ export class TsCheck {
     if (!result.failed) {
       this.printLog(bold(greenBright('Verification passed!')));
     } else {
-      if (config.exitOnError) exit(result.failed, stats.startTime, '[TsCheck]');
       this.printLog(bold(redBright('Verification failed!')));
+      if (config.exitOnError) exit(result.failed, stats.startTime, '[TsCheck]');
     }
 
     this.printLog(`TimeCost: ${bold(greenBright(Date.now() - stats.startTime))}ms`);

@@ -21,12 +21,12 @@ export function fixToshortPath(filepath = '', rootDir = process.cwd()) {
  * @param {number} startTime 开始时间戳
  */
 export function logTimeCost(startTime: number, prefix = '') {
-  console.log(`${prefix} TimeCost: ${color.bold(color.greenBright(Date.now() - startTime))}ms`);
+  log(color.cyan(prefix), `TimeCost: ${color.bold(color.greenBright(Date.now() - startTime))}ms`);
 }
 
 /** 打印待时间戳前缀的日志信息 */
-export function log(...args) {
-  console.log(`[${color.cyanBright(new Date().toTimeString().slice(0, 8))}]`, ...args);
+export function log(prefix, ...args: string[]) {
+  console.log(`[${color.cyanBright(new Date().toTimeString().slice(0, 8))}]${prefix}`, ...args);
 }
 
 /**

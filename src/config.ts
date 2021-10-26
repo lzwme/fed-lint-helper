@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2021-09-28 22:42:47
+ * @LastEditTime: 2021-10-26 21:12:14
  * @Description:
  */
 
@@ -20,6 +20,8 @@ interface CommConfig {
   debug?: boolean;
   /** 静默模式。不打印任何信息，一般用于接口调用 */
   silent?: boolean;
+  /** 是否打印异常详情。默认为 true */
+  printDetail?: boolean;
   /** 要执行 lint 的源码目录，默认为 ['src'] */
   src?: string[];
   /** 初始化即执行check。默认为 false。设置为 true 则初始化后即调用 start 方法 */
@@ -62,9 +64,6 @@ export interface TsCheckConfig extends CommConfig {
    * @see https://www.tslang.cn/docs/handbook/error.html
    */
   tsCodeIgnore?: number[];
-  /** 是否开启调试模式(打印更多的细节) */
-  /** 是否打印诊断错误详情。默认为 true */
-  printDetail?: boolean;
   /**
    * 是否将异常文件输出至白名单列表文件中。默认为 false。注意：
    * - 追加模式，如需全新生成，应先删除白名单文件。
@@ -113,7 +112,7 @@ export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {
   configPath?: string;
   /** 根目录，默认为当前执行目录 */
   rootDir?: string;
-  /** 是否打印调试信息 */
+  /** 是否开启调试模式(打印更多的细节) */
   debug?: boolean;
   tscheck?: TsCheckConfig;
   eslint?: ESLintCheckConfig;
@@ -124,6 +123,7 @@ const commConfig: CommConfig = {
   rootDir: process.cwd(),
   debug: !!process.env.DEBUG,
   silent: false,
+  printDetail: true,
   src: ['src'],
   checkOnInit: false,
   exitOnError: true,
@@ -142,7 +142,6 @@ export const config: FlhConfig = {
     tsConfigFileName: 'tsconfig.json',
     tsCodeCheck: [],
     tsCodeIgnore: [],
-    printDetail: true,
   },
   eslint: {
     whiteListFilePath: 'eslintWhitelist.json',

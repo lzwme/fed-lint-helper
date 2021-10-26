@@ -1,9 +1,11 @@
 /**
- * @type {import('./build/main').FlhConfig}
+ * @type {import('./').FlhConfig}
  */
 module.exports = {
   src: ['src'],
   debug: false,
+  silent: false,
+  printDetail: true,
   exitOnError: true,
   cache: true,
   removeCache: process.argv.slice(2).includes('--removeCache'),
