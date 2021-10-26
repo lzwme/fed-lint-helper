@@ -53,14 +53,13 @@
     "clean": "node scripts/rmdir.mjs ./build"
   },
   "dependencies": {
-    "commander": "^8.2.0",
-    "console-log-colors": "^0.2.1",
-    "glob": "^7.1.7"
+    "commander": "^8.3.0",
+    "console-log-colors": "^0.2.2",
+    "glob": "^7.2.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^13.1.0",
     "@commitlint/config-angular": "^13.1.0",
-    "@types/commander": "^2.12.2",
     "@types/eslint": "^7.28.0",
     "@types/glob": "^7.1.4",
     "@types/jest": "^27.0.1",
