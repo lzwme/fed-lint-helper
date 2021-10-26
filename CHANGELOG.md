@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.3.0](https://github.com/lzwme/fed-lint-helper/compare/v1.2.0...v1.3.0) (2021-10-26)
+
+
+### Features
+
+* 从白名单中移除本次检测无异常的文件并写回白名单文件中 ([118dcbc](https://github.com/lzwme/fed-lint-helper/commit/118dcbc7cc5897e1305d3045ffb90d07624b70de))
+
 ## [1.2.0](https://github.com/lzwme/fed-lint-helper/compare/v1.1.0...v1.2.0) (2021-09-30)
 
 
