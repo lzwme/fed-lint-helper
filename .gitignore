@@ -8,6 +8,8 @@ coverage
 package-lock.json
 yarn.lock
 yarn-error.log
+pnpm-lock.yaml
+.pnpm-debug.log
 node_modules
 build
 eslintWhitelist.json
