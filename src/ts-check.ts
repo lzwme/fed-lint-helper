@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-10-26 22:15:55
+ * @LastEditTime: 2021-11-01 09:48:11
  * @Description: typescript Diagnostics report
  */
 
@@ -230,7 +230,7 @@ export class TsCheck {
 
         if (fileList.length) {
           this.printLog(
-            bold(yellowBright(`Diagnostics in whitelist[${redBright(errDiagnostics.length)}`)),
+            bold(yellowBright(`Diagnostics in whitelist[${redBright(fileList.length)}`)),
             bold(yellowBright(`files]:\n`)),
             config.printDetail ? ts.formatDiagnosticsWithColorAndContext(tmpDiagnostics, host) : `\n - ` + fileList.join('\n - ') + '\n'
           );
