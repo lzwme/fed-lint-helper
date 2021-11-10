@@ -48,5 +48,6 @@ module.exports = {
         indent: ['off', 2],
         '@typescript-eslint/explicit-module-boundary-types': 'off',
         '@typescript-eslint/no-unused-vars': ['warn', { varsIgnorePattern: '^_', argsIgnorePattern: '^_', ignoreRestSiblings: true }],
+        '@typescript-eslint/ban-ts-comment': 'off',
     },
 };

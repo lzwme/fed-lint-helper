@@ -1,10 +1,12 @@
+import childProcess from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
 import { color } from 'console-log-colors';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type PlanObject = Record<string, any>;
+export type PlainObject = Record<string, any>;
+export type ValueOf<T> = T[keyof T];
 
 /**
  * 将给定的文件路径规整为 a/b/c.js 格式
@@ -61,7 +63,7 @@ export function md5(str, isFile = false) {
 }
 
 /** 简易的对象深复制 */
-export function assign<T = PlanObject>(a: T, b: PlanObject, c?: PlanObject): T {
+export function assign<T = PlainObject>(a: T, b: PlainObject, c?: PlainObject): T {
   if (!a || typeof a !== 'object') return a;
   // 入参不是对象格式，忽略
   if (typeof b !== 'object' || b instanceof RegExp || Array.isArray(b)) {
@@ -82,4 +84,10 @@ export function assign<T = PlanObject>(a: T, b: PlanObject, c?: PlanObject): T {
   }
 
   return assign(a, c);
+}
+
+export function execSync(cmd: string, stdio?: childProcess.StdioOptions, debug = false, cwd = process.cwd()) {
+  if (debug) console.log(color.cyanBright('exec cmd:'), color.yellowBright(cmd), color.cyan(cwd));
+  const res = childProcess.execSync(cmd, { stdio, encoding: 'utf8', cwd });
+  if (res) return res.toString().trim();
 }

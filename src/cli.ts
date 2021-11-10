@@ -2,12 +2,12 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2021-10-26 21:59:45
+ * @LastEditTime: 2021-11-10 17:35:08
  * @Description: cli 工具
  */
-import { program } from 'commander';
+import { Option, program } from 'commander';
 import { color } from 'console-log-colors';
-import { getConfig, FlhConfig, TsCheckConfig, config } from './config';
+import { getConfig, FlhConfig, TsCheckConfig, JiraCheckConfig, config } from './config';
 import path from 'path';
 import fs from 'fs';
 
@@ -15,11 +15,14 @@ import fs from 'fs';
 const pkg = require('../../package.json');
 
 interface POptions
-  extends Pick<FlhConfig, 'configPath' | 'debug' | 'silent' | 'printDetail' | 'cache' | 'removeCache' | 'exitOnError' | 'src'>,
-    Pick<TsCheckConfig, 'toWhiteList'> {
+  extends Pick<TsCheckConfig, 'toWhiteList'>,
+    Pick<JiraCheckConfig, 'jiraHome' | 'projectName'>,
+    Pick<FlhConfig, 'configPath' | 'debug' | 'silent' | 'printDetail' | 'cache' | 'removeCache' | 'exitOnError' | 'src' | 'mode'> {
   tscheck?: boolean;
   eslint?: boolean;
   jest?: boolean;
+  jira?: boolean;
+  jiraType?: FlhConfig['jira']['type'];
 }
 
 program
@@ -29,6 +32,7 @@ program
   .option('-c, --config-path <filepath>', `配置文件 ${color.yellow('.flh.config.js')} 的路径`)
   .option('--silent', `开启静默模式。`, false)
   .option('--debug', `开启调试模式。`, false)
+  .addOption(new Option('--mode <mode>', `执行模式。`).choices(['current', 'proc', 'thread']))
   .option('--no-print-detail', `不打印异常详情。`, false)
   .option('--src <src...>', `指定要检测的源码目录。默认为 src`)
   .option('--cache', `开启缓存。默认为 true`)
@@ -36,10 +40,14 @@ program
   .option('--no-exit-on-error', `检测到异常时，不以非 0 值立即退出。`, false)
   .option('--toWhiteList', `是否将检测到异常的文件输出到白名单文件列表中。`, false)
   .option('--tscheck', `执行 TypeScript Diagnostics check`)
-  .option('--eslint', `执行 eslint`)
+  .option('--eslint', `执行 eslint 检查`)
+  .option('--jira', `执行 jira 检查`)
+  .option('--jira-home', `指定 jira 首页 url 地址`)
+  .option('--projectName', `指定 git 仓库项目名`)
+  .addOption(new Option('--jira-type <type>', `执行 jira 检查的类型。可选值：`).choices(['commit', 'pipeline']))
   .option('--jest', `执行 jest 单元测试`)
   .action((opts: POptions) => {
-    const baseConfig = getConfig({
+    const options: FlhConfig = {
       exitOnError: opts.exitOnError,
       src: Array.isArray(opts.src) ? opts.src : [opts.src || 'src'],
       cache: opts.cache,
@@ -48,9 +56,10 @@ program
       silent: !opts.debug && opts.silent,
       debug: opts.debug,
       printDetail: opts.printDetail,
+      mode: opts.mode || 'proc',
       tscheck: {
         toWhiteList: opts.toWhiteList,
-        mode: 'proc',
+        mode: opts.mode || 'proc',
       },
       eslint: {
         // tsConfigFileName: 'tsconfig.eslint.json',
@@ -59,7 +68,15 @@ program
       jest: {
         // mode: 'proc',
       },
-    });
+      jira: {
+        type: opts.jiraType === 'pipeline' ? 'pipeline' : 'commit',
+      },
+    };
+
+    if (opts.jiraHome) options.jira.jiraHome = opts.jiraHome;
+    if (opts.projectName) options.jira.projectName = opts.projectName;
+
+    const baseConfig = getConfig(options);
     let hasAction = false;
 
     if (opts.debug) console.log(opts, baseConfig);
@@ -84,6 +101,14 @@ program
       hasAction = true;
       import('./jest-check').then(({ JestCheck }) => {
         const jestCheck = new JestCheck(baseConfig.jest);
+        jestCheck.start().then(res => opts.debug && console.log('jestCheck done!', res));
+      });
+    }
+
+    if (opts.jira) {
+      hasAction = true;
+      import('./jira-check').then(({ JiraCheck }) => {
+        const jestCheck = new JiraCheck(baseConfig.jira);
         jestCheck.start().then(res => opts.debug && console.log('jestCheck done!', res));
       });
     }

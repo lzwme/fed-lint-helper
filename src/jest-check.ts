@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-09-30 15:46:24
+ * @LastEditTime: 2021-11-10 17:06:10
  * @Description:  jest check
  */
 
@@ -225,8 +225,8 @@ export class JestCheck {
     if (info.isPassed) {
       this.printLog(bold(greenBright('Verification passed!')));
     } else {
-      if (config.exitOnError) exit(1, stats.startTime, '[JestCheck]');
       this.printLog(bold(redBright('Verification failed!')));
+      if (config.exitOnError) exit(1, stats.startTime, '[JestCheck]');
     }
 
     this.printLog(`TimeCost: ${bold(greenBright(Date.now() - stats.startTime))}ms`);

@@ -2,16 +2,17 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2021-10-26 21:12:14
+ * @LastEditTime: 2021-11-10 17:23:31
  * @Description:
  */
 
 import { color } from 'console-log-colors';
 import fs from 'fs';
 import path from 'path';
-import { assign } from './utils';
+import { assign, ValueOf } from './utils';
 import type { ESLint } from 'eslint';
 import type { Config } from '@jest/types';
+import type { IncomingHttpHeaders } from 'http';
 
 interface CommConfig {
   /** 项目根目录，默认为当前工作目录 */
@@ -107,6 +108,33 @@ export interface JestCheckConfig extends CommConfig {
   strict?: boolean;
 }
 
+export interface JiraCheckConfig extends CommConfig {
+  /** 执行检测的类型 */
+  type?: 'pipeline' | 'commit';
+  /** jira 首页的 url 地址。如： http://jira.lzw.me */
+  jiraHome?: string;
+  /** gitlab 项目名称。如 lzwme/fed-lint-helper */
+  projectName?: string;
+  /** jira 请求自定义 headers 信息 */
+  headers?: IncomingHttpHeaders;
+  /** CI pipeline 阶段执行的批量检查相关配置 */
+  pipeline?: {
+    /** pipeline 批量获取 jira issues 的请求参数 */
+    requestParams: {
+      jql?: string;
+      fields?: string[];
+      maxResults?: number;
+      [key: string]: unknown;
+    };
+  };
+  /** 已封板后允许回复必须修复的人员列表 */
+  sealedCommentAuthors?: string[];
+  /** jira issue 编号前缀，如编号为 LZWME-4321，则设置为 LZWME- */
+  issuePrefix?: string;
+  /** 提取 commit-msg 信息的文件路径。默认为 ./.git/COMMIT_EDITMSG */
+  COMMIT_EDITMSG?: string;
+}
+
 export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {
   /** 用户自定义文件的路径 */
   configPath?: string;
@@ -117,6 +145,7 @@ export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {
   tscheck?: TsCheckConfig;
   eslint?: ESLintCheckConfig;
   jest?: JestCheckConfig;
+  jira?: JiraCheckConfig;
 }
 
 const commConfig: CommConfig = {
@@ -162,9 +191,21 @@ export const config: FlhConfig = {
       detectOpenHandles: true,
     },
   },
+  jira: {
+    mode: 'current',
+    type: 'commit',
+    sealedCommentAuthors: [],
+    jiraHome: 'http://jira.com.cn',
+    issuePrefix: 'JGCPS-',
+    projectName: 'fed-lint-helper',
+    pipeline: {
+      requestParams: { maxResults: 100, fields: ['comment', 'assignee'] },
+    },
+  },
 };
 
-const lintTypes = ['eslint', 'tscheck', 'jest'] as const;
+export const LintTypes = ['eslint', 'tscheck', 'jest', 'jira'] as const;
+export type ILintTypes = ValueOf<typeof LintTypes>;
 let isInited = false;
 
 /**
@@ -190,7 +231,7 @@ export function getConfig(options?: FlhConfig, useCache = isInited) {
 
   // 公共通用配置
   Object.keys(commConfig).forEach(key => {
-    lintTypes.forEach(type => {
+    LintTypes.forEach(type => {
       if (null == config[type][key]) {
         if (null == config[key]) config[type][key] = commConfig[key];
         else config[type][key] = config[key];
@@ -200,7 +241,7 @@ export function getConfig(options?: FlhConfig, useCache = isInited) {
 
   if (!config.cacheLocation) config.cacheLocation = `node_modules/.cache/flh/`;
   if (!fs.existsSync(config.cacheLocation)) {
-    fs.mkdirSync(config.cacheLocation);
+    fs.mkdirSync(config.cacheLocation, { recursive: true });
   }
 
   isInited = true;
