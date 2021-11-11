@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-11-01 09:48:11
+ * @LastEditTime: 2021-11-11 11:42:31
  * @Description: typescript Diagnostics report
  */
 
@@ -106,6 +106,15 @@ export class TsCheck {
         console.log(e.message || e.stack || e);
       }
     }
+
+    // 文件列表过滤
+    this.config.tsFiles = this.config.tsFiles.filter(filepath => {
+      // 过滤 .d.ts 文件
+      if (filepath.endsWith('.d.ts')) return false;
+      // 必须以 .tsx? 结尾
+      if (!/\.tsx?$/i.test(filepath)) return false;
+      return true;
+    });
   }
   /** 返回可检测的子项目路径 */
   private getCheckProjectDirs(src = this.config.src) {
@@ -403,11 +412,11 @@ export class TsCheck {
     });
   }
   /** 执行 check */
-  public async start(tsFiles = this.config.tsFiles) {
-    if (tsFiles !== this.config.tsFiles) this.config.tsFiles = tsFiles;
+  public async start(tsFiles?: string[]) {
+    if (tsFiles && tsFiles !== this.config.tsFiles) this.config.tsFiles = tsFiles;
     this.init();
 
-    if (!tsFiles.length && !this.config.src.length) {
+    if (!this.config.tsFiles.length && (tsFiles || !this.config.src.length)) {
       this.printLog('No files to process\n');
       return false;
     }

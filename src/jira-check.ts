@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-11-10 17:34:10
+ * @LastEditTime: 2021-11-11 14:12:24
  * @Description:  Jira check
  */
 
@@ -301,8 +301,8 @@ export class JiraCheck {
   private async commitMsgCheck() {
     const { config, stats } = this;
     /** 当前本地分支 */
-    const branch = getHeadBranch(); // execSync('git rev-parse --abbrev-ref HEAD').toString().trim();
-    /** 获取当前分支(的版本) */
+    const branch = getHeadBranch();
+    /** 根据本地分支获取分支所属迭代版本) */
     const currentBranch = branch.substr(0, branch.indexOf('_'));
     /** 允许提交的版本 - todo: cherry-pick 时的匿名分支也需要支持允许 commit */
     const allowedFixVersions = [currentBranch, branch];
@@ -313,26 +313,18 @@ export class JiraCheck {
     const smartRegWithMsg = new RegExp(`^\\[?${config.issuePrefix}\\d+\\]?([A-Za-z\\u4e00-\\u9fa5\\s【\\[]+.+)`);
     /**  智能匹配正则表达式，单纯匹配jira 例子: JGCPS-1234 或 [JGCPS-1234] => [ET][2.9.1][feature][JGCPS-1234]JIRA本身的标题 */
     const smartRegWithJIRA = new RegExp(`^\\[?${config.issuePrefix}(\\d+)\\]?`, 'g');
-    /**
-     * 问题类型url:
-     * http://jira.lzw.me/rest/api/2/issuetype
-     *  */
-    // const issueTypeList = ['bugfix', 'feature', 'task', 'improvement','Subtask'];
-
     const issueTypeList = await this.getIssueType();
     /** 禁止提交的类型 */
     const noAllowIssueType = [11007, 11019];
-
-    const issueTypeObj = issueTypeList.reduce((obj, item) => {
+    const issueTypeToDesc = issueTypeList.reduce((obj, item) => {
       obj[item.id] = item.name.replace(/[^a-zA-Z]/, '').toLowerCase();
       if (obj[item.id].includes('subtask')) obj[item.id] = 'feature';
       else if (obj[item.id].includes('bug')) obj[item.id] = 'bugfix';
 
-      // 非 bug 的主任务，不允许
+      // 非 bug 的主任务，不允许提交
       if (!item.subtask && obj[item.id].includes('bug')) noAllowIssueType.push(item.id);
       return obj;
     }, {} as Record<number, string>);
-
     /**
      * @url 忽略规则参考地址: https://github.com/conventional-changelog/commitlint/blob/master/%40commitlint/is-ignored/src/defaults.ts
      */
@@ -346,14 +338,14 @@ export class JiraCheck {
       test(/^Automatic merge(.*)/),
       test(/^Auto-merged (.*?) into (.*)/),
     ];
-
     const gitPath = path.join(config.rootDir, config.COMMIT_EDITMSG || './.git/COMMIT_EDITMSG');
     const commitMsg = fs.readFileSync(gitPath, 'utf-8').replace('\n', ''); // commitMsg 后面带有 \n
     const jiraIDReg = new RegExp(`${config.issuePrefix}(\\d+)`, 'g');
     const jiraIDs = commitMsg.match(jiraIDReg);
-    this.printLog('=================================== \n');
-    this.printLog(`[提交信息] commit消息 : ${commitMsg} `);
-    this.printLog('=================================== ');
+
+    this.printLog('===================================');
+    this.printLog(`[提交信息] [commit-msg] : ${commitMsg} `);
+    this.printLog('===================================');
 
     if (jiraIDs) {
       const jiraID = jiraIDs[0];
@@ -363,15 +355,16 @@ export class JiraCheck {
 
       const versionName = info.fields.fixVersions[0].name;
       const versionInfo = info.fields.fixVersions[0].description;
+      /** 是否已封板 */
+      const isSeal = (versionInfo && versionInfo.includes('[已封版]')) || false;
       const summary = info.fields.summary;
       const issuetype = +info.fields.issuetype.id;
-      this.printLog('[提交信息] jira消息 ', jiraID, summary);
+      this.printLog('[提交信息] [JIRA 标题]', jiraID, summary);
 
       if (info.fields.fixVersions.length === 0) {
         this.printLog('[提交信息]', 'JIRA没有挂修复版本，不允许提交');
         stats.success = false;
       }
-
       // 修复版本可能同时存在多个
       else if (!info.fields.fixVersions.some(item => allowedFixVersions.includes(item.name))) {
         this.printLog('[提交信息]', '修复版本与当前本地分支不一致，不允许提交');
@@ -381,7 +374,7 @@ export class JiraCheck {
         stats.success = false;
       }
 
-      const issueText = issueTypeObj[issuetype] || 'feature'; // 如果是其他类型，默认feature
+      const issueText = issueTypeToDesc[issuetype] || 'feature'; // 如果是其他类型，默认feature
       const reg = new RegExp(`^\\[ET]\\[${versionName}]\\[${issueText}]\\[${jiraID}]`);
 
       // 如果匹配到commit中包含中文，则保留提交信息
@@ -405,35 +398,23 @@ export class JiraCheck {
         stats.success = false;
       }
 
-      const isSeal = (versionInfo && versionInfo.includes('[已封版]')) || false;
-
-      if (isSeal) {
+      if (isSeal && stats.success) {
         this.printLog('[提交信息]', versionName, '已经封版');
-        // 查找由产品指派给当前用户的jira
+        // 查找由产品指派给当前用户的jira，备注了 [必须修复] 文案提交
         const comment = info.fields.comment.comments.find(comment => {
           return comment.body.includes('[必须修复]') && config.sealedCommentAuthors.includes(comment.author.name);
         });
 
-        // this.printLog(comment);
-        // 是否含有必须通过的标签
-        if (comment) {
-          stats.success = true;
-        } else {
+        if (!comment) {
           this.printLog('[提交信息]', 'JIRA并非必须修复，不允许提交');
           stats.success = false;
         }
-      } else {
-        stats.success = true;
       }
     } else {
       if (/Merge branch/.test(commitMsg)) {
         this.printLog('同分支提交禁止执行 Merge 操作请使用 git rebase 或 git pull -r 命令。若为跨分支合并，请增加 -n 参数\n');
         stats.success = false;
-      }
-
-      if (ignoredCommitList.some(check => check(commitMsg))) {
-        stats.success = true;
-      } else {
+      } else if (!ignoredCommitList.some(check => check(commitMsg))) {
         this.printLog('提交代码信息不符合规范，信息中应包含字符"JGCPS-XXXX".\n');
         this.printLog('例如：JGCPS-9171 【两融篮子】多组合卖出，指令预览只显示一个组合.\n');
         stats.success = false;

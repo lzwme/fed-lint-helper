@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-11-10 17:06:10
+ * @LastEditTime: 2021-11-11 11:42:24
  * @Description:  jest check
  */
 
@@ -81,6 +81,13 @@ export class JestCheck {
     const config = this.config;
 
     if (fs.existsSync(this.cacheFilePath) && config.removeCache) fs.unlinkSync(this.cacheFilePath);
+
+    // 文件列表过滤
+    this.config.fileList = this.config.fileList.filter(filepath => {
+      // 必须以 sepc|test.ts|js 结尾
+      if (!/\.(spec|test)\.(ts|js)x?$/i.test(filepath)) return false;
+      return true;
+    });
   }
   /**
    * 获取 Jest Options
@@ -266,11 +273,13 @@ export class JestCheck {
   /**
    * 启动 jest 校验
    */
-  async start(fileList = this.config.fileList) {
-    if (fileList !== this.config.fileList) this.config.fileList = fileList;
+  async start(fileList?: string[]) {
+    if (fileList && fileList !== this.config.fileList) this.config.fileList = fileList;
     this.init();
 
-    if (!fileList.length && !this.config.src.length) {
+    fileList && !this.config.fileList.length;
+
+    if (!this.config.fileList.length && (fileList || !this.config.src.length)) {
       this.printLog('No files to process\n');
       return false;
     }

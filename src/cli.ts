@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2021-11-10 17:35:08
+ * @LastEditTime: 2021-11-11 11:47:55
  * @Description: cli 工具
  */
 import { Option, program } from 'commander';
@@ -10,6 +10,7 @@ import { color } from 'console-log-colors';
 import { getConfig, FlhConfig, TsCheckConfig, JiraCheckConfig, config } from './config';
 import path from 'path';
 import fs from 'fs';
+import { getHeadDiffFileList } from './utils';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const pkg = require('../../package.json');
@@ -18,10 +19,17 @@ interface POptions
   extends Pick<TsCheckConfig, 'toWhiteList'>,
     Pick<JiraCheckConfig, 'jiraHome' | 'projectName'>,
     Pick<FlhConfig, 'configPath' | 'debug' | 'silent' | 'printDetail' | 'cache' | 'removeCache' | 'exitOnError' | 'src' | 'mode'> {
+  /** 是否仅检测 git 变化的文件 */
+  onlyChanges?: boolean;
+  /** 是否执行 tscheck */
   tscheck?: boolean;
+  /** 是否执行 eslint */
   eslint?: boolean;
+  /** 是否执行 jest */
   jest?: boolean;
+  /** 是否执行 jira check */
   jira?: boolean;
+  /** 执行 jira check 的类型 */
   jiraType?: FlhConfig['jira']['type'];
 }
 
@@ -35,6 +43,7 @@ program
   .addOption(new Option('--mode <mode>', `执行模式。`).choices(['current', 'proc', 'thread']))
   .option('--no-print-detail', `不打印异常详情。`, false)
   .option('--src <src...>', `指定要检测的源码目录。默认为 src`)
+  .option('--only-changes', `只检测 git 仓库变更的文件`, false)
   .option('--cache', `开启缓存。默认为 true`)
   .option('--remove-cache', `移除已存在的缓存。`)
   .option('--no-exit-on-error', `检测到异常时，不以非 0 值立即退出。`, false)
@@ -76,6 +85,12 @@ program
     if (opts.jiraHome) options.jira.jiraHome = opts.jiraHome;
     if (opts.projectName) options.jira.projectName = opts.projectName;
 
+    let changeFiles: string[] = null;
+    if (opts.onlyChanges) {
+      changeFiles = getHeadDiffFileList();
+      if (opts.debug) console.log('changeFiles:', changeFiles);
+    }
+
     const baseConfig = getConfig(options);
     let hasAction = false;
 
@@ -85,7 +100,7 @@ program
       hasAction = true;
       import('./ts-check').then(({ TsCheck }) => {
         const tsCheck = new TsCheck(baseConfig.tscheck);
-        tsCheck.start().then(res => opts.debug && console.log('tscheck done!', res));
+        tsCheck.start(changeFiles).then(res => opts.debug && console.log('tscheck done!', res));
       });
     }
 
@@ -93,7 +108,7 @@ program
       hasAction = true;
       import('./eslint-check').then(({ ESLintCheck }) => {
         const eslintCheck = new ESLintCheck(baseConfig.eslint);
-        eslintCheck.start().then(res => opts.debug && console.log('eslint done!', res));
+        eslintCheck.start(changeFiles).then(res => opts.debug && console.log('eslint done!', res));
       });
     }
 
@@ -101,7 +116,7 @@ program
       hasAction = true;
       import('./jest-check').then(({ JestCheck }) => {
         const jestCheck = new JestCheck(baseConfig.jest);
-        jestCheck.start().then(res => opts.debug && console.log('jestCheck done!', res));
+        jestCheck.start(changeFiles).then(res => opts.debug && console.log('jestCheck done!', res));
       });
     }
 

@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-10-26 22:12:45
+ * @LastEditTime: 2021-11-11 11:48:58
  * @Description:  eslint check
  */
 
@@ -344,11 +344,15 @@ export class ESLintCheck {
   /**
    * 启动 eslint 校验
    */
-  async start(lintList = this.config.src) {
-    if (lintList !== this.config.src) this.config.src = lintList;
+  async start(lintList?: string[]) {
+    if (lintList) {
+      // 只处理 ts、tsx、js、jsx 后缀的文件
+      lintList.filter(filepath => /\.(js|ts)x?/i.test(filepath));
+      this.config.src = lintList;
+    }
     this.init();
 
-    if (!lintList.length) {
+    if (!this.config.src.length) {
       this.printLog('No files to process\n');
       return false;
     }
