@@ -93,7 +93,7 @@ export function execSync(cmd: string, stdio?: childProcess.StdioOptions, cwd = p
     if (!stdio) stdio = debug ? 'inherit' : 'pipe';
     const res = childProcess.execSync(cmd, { stdio, encoding: 'utf8', cwd });
     return res ? res.toString().trim() : '';
-  } catch(err) {
+  } catch (err) {
     console.error(color.redBright(err.message));
     return null;
   }
