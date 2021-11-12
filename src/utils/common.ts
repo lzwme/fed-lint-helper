@@ -86,8 +86,15 @@ export function assign<T = PlainObject>(a: T, b: PlainObject, c?: PlainObject): 
   return assign(a, c);
 }
 
-export function execSync(cmd: string, stdio?: childProcess.StdioOptions, debug = false, cwd = process.cwd()) {
+export function execSync(cmd: string, stdio?: childProcess.StdioOptions, cwd = process.cwd(), debug = false) {
   if (debug) console.log(color.cyanBright('exec cmd:'), color.yellowBright(cmd), color.cyan(cwd));
-  const res = childProcess.execSync(cmd, { stdio, encoding: 'utf8', cwd });
-  if (res) return res.toString().trim();
+  try {
+    // 为 inherit 才会返回输出结果给 res；为 pipe 则打印至 stdout 中，res 为空
+    if (!stdio) stdio = debug ? 'inherit' : 'pipe';
+    const res = childProcess.execSync(cmd, { stdio, encoding: 'utf8', cwd });
+    return res ? res.toString().trim() : '';
+  } catch(err) {
+    console.error(color.redBright(err.message));
+    return null;
+  }
 }

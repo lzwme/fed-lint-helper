@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-11-11 11:48:58
+ * @LastEditTime: 2021-11-12 17:20:13
  * @Description:  eslint check
  */
 
@@ -10,7 +10,7 @@ import { color } from 'console-log-colors';
 import { ESLint } from 'eslint';
 import fs from 'fs';
 import path from 'path';
-import { fixToshortPath, exit, createForkThread, assign, log } from './utils';
+import { fixToshortPath, exit, createForkThread, assign, log, execSync } from './utils';
 import { ESLintCheckConfig, getConfig } from './config';
 
 const { bold, red, redBright, yellowBright, greenBright, cyan, cyanBright } = color;
@@ -208,6 +208,7 @@ export class ESLintCheck {
       } else {
         this.printLog('[ADD]write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
         fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, null, 2));
+        execSync(`git add ${config.whiteListFilePath}`, null, config.rootDir, !config.silent);
         if (config.printDetail !== false) {
           const resultText = formatter.format(results);
           this.printLog(`\n ${resultText}`);
@@ -218,6 +219,7 @@ export class ESLintCheck {
         this.printLog(' [REMOVE]write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
         fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, null, 2));
         this.printLog(' remove from whilelist:\n' + removeFromWhiteList.join('\n'));
+        execSync(`git add ${config.whiteListFilePath}`, null, config.rootDir, !config.silent);
       }
 
       const tips = config.warningTip || '';

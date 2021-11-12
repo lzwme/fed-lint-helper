@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-11-11 11:42:31
+ * @LastEditTime: 2021-11-12 17:20:25
  * @Description: typescript Diagnostics report
  */
 
@@ -11,7 +11,7 @@ import fs from 'fs';
 import path from 'path';
 import * as ts from 'typescript';
 import glob from 'glob';
-import { fixToshortPath, md5, exit, createForkThread, assign, log } from './utils';
+import { fixToshortPath, md5, exit, createForkThread, assign, log, execSync } from './utils';
 import { TsCheckConfig, getConfig } from './config';
 
 const { bold, redBright, yellowBright, cyanBright, red, greenBright, cyan } = color;
@@ -99,7 +99,7 @@ export class TsCheck {
     }
 
     // 读取白名单列表
-    if (fs.existsSync(whiteListFilePath)) {
+    if (!this.config.toWhiteList && fs.existsSync(whiteListFilePath)) {
       try {
         this.whiteList = JSON.parse(fs.readFileSync(whiteListFilePath, { encoding: 'utf-8' }));
       } catch (e) {
@@ -328,11 +328,13 @@ export class TsCheck {
       if (!fs.existsSync(path.dirname(config.whiteListFilePath))) fs.mkdirSync(path.dirname(config.whiteListFilePath), { recursive: true });
       fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, null, 2));
       this.printLog('[ADD]write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
+      execSync(`git add ${config.whiteListFilePath}`, null, config.rootDir, !config.silent);
     } else {
       if (removeFromWhiteList.length) {
         this.printLog(' [REMOVE]write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
         fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, null, 2));
         this.printLog(' remove from whilelist:\n' + removeFromWhiteList.join('\n'));
+        execSync(`git add ${config.whiteListFilePath}`, null, config.rootDir, !config.silent);
       }
     }
 
