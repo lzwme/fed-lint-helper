@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.4.0](https://github.com/lzwme/fed-lint-helper/compare/v1.3.0...v1.4.0) (2021-11-15)
+
+
+### Features
+
+* 新增 jira issue 关联检查支持 ([6d90eca](https://github.com/lzwme/fed-lint-helper/commit/6d90eca2a221b26347bfcda681bb79bf78449a90))
+* cli 增加 only-changes 参数，支持仅检查 git 仓库最近一次变更的文件 ([4fb03b5](https://github.com/lzwme/fed-lint-helper/commit/4fb03b529ce746456db73cec9d10e4d930bb2811))
+
+
+### Bug Fixes
+
+* 修正 tscheck 白名单中的异常文件计数取值错误 ([b9c0a1f](https://github.com/lzwme/fed-lint-helper/commit/b9c0a1fac4c802860d21586bd93aa97bbb3b713b))
+* eslint/tscheck白名单变更后执行 git add 命令以更新git暂存区 ([c484b39](https://github.com/lzwme/fed-lint-helper/commit/c484b39a8940597940161af762cf71fde507a435))
+* eslint/tscheck白名单变更后执行 git add 命令以更新git暂存区 ([a3b4117](https://github.com/lzwme/fed-lint-helper/commit/a3b411745187f20415527b94d2b42c9ec35cefc4))
+* fix lint error ([a014dea](https://github.com/lzwme/fed-lint-helper/commit/a014dea331bed9dfc8e229418f83d96e96db9485))
+
 ## [1.3.0](https://github.com/lzwme/fed-lint-helper/compare/v1.2.0...v1.3.0) (2021-10-26)
 
 
