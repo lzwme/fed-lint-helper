@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-11-11 11:42:24
+ * @LastEditTime: 2021-11-18 21:57:43
  * @Description:  jest check
  */
 
@@ -13,10 +13,11 @@ import { color } from 'console-log-colors';
 import glob from 'glob';
 import { runCLI } from '@jest/core';
 import type { Config } from '@jest/types';
-import { fixToshortPath, md5, exit, createForkThread, assign, log } from './utils';
+import { fixToshortPath, md5, exit, createForkThread, assign } from './utils';
 import { JestCheckConfig, getConfig } from './config';
+import { Logger } from './utils/Logger';
 
-const { bold, redBright, greenBright, cyan } = color;
+const { bold, redBright, greenBright } = color;
 export interface JestCheckResult {
   /** 是否检测通过 */
   isPassed: boolean;
@@ -33,16 +34,14 @@ export class JestCheck {
    * 默认为 `<config.rootDir>/node_modules/.cache/flh/jestcache.json`
    */
   private cacheFilePath = '';
+  private logger: Logger;
 
   constructor(private config: JestCheckConfig = {}) {
-    this.parseConfig(config);
+    config = this.parseConfig(config);
+    const level = config.silent ? 'silent' : config.debug ? 'debug' : 'info';
+    this.logger = Logger.getLogger(`[Jest]`, level);
+    this.logger.debug('config', this.config);
     if (this.config.checkOnInit) this.start();
-  }
-  /** 打印日志 */
-  private printLog(...args) {
-    if (this.config.silent) return;
-    if (!args.length) console.log();
-    else log(cyan('[Jest]'), ...args);
   }
   /** 获取初始化的统计信息 */
   private getInitStats() {
@@ -75,7 +74,7 @@ export class JestCheck {
     if (config !== this.config) config = assign<JestCheckConfig>({}, this.config, config);
     this.config = assign<JestCheckConfig>({}, baseConfig.jest, config);
     this.cacheFilePath = path.resolve(this.config.rootDir, baseConfig.cacheLocation, 'jestcache.json');
-    if (this.config.debug) this.printLog(this.config);
+    return this.config;
   }
   private init() {
     const config = this.config;
@@ -130,7 +129,7 @@ export class JestCheck {
     const totalFiles = specFileList.length;
     let cacheHits = 0;
 
-    this.printLog('total test files:', specFileList.length);
+    this.logger.debug('total test files:', color.magentaBright(specFileList.length));
 
     if (config.cache && fs.existsSync(this.cacheFilePath)) {
       Object.assign(jestPassedFiles, JSON.parse(fs.readFileSync(this.cacheFilePath, 'utf8')));
@@ -152,7 +151,7 @@ export class JestCheck {
 
       cacheHits = totalFiles - specFileList.length;
 
-      if (cacheHits) this.printLog(` - Cache hits:`, cacheHits);
+      if (cacheHits) this.logger.info(` - Cache hits:`, cacheHits);
     }
 
     this.stats.totalFiles = totalFiles;
@@ -164,21 +163,19 @@ export class JestCheck {
    * 执行 jest 校验
    */
   private async check(specFileList = this.config.fileList) {
-    this.printLog('start checking');
+    this.logger.info('start checking');
     this.init();
 
     const { config, stats } = this;
     stats.success = true;
-
-    if (config.debug) this.printLog('[options]:', config, specFileList);
-    // if (config.debug) this.printLog('[debug]', `TOTAL:`, fileList.length, `, Files:\n`, fileList);
+    this.logger.debug('[options]:', config, specFileList);
 
     specFileList = this.getSpecFileList(specFileList);
 
     if (!specFileList.length) return stats.success;
 
-    this.printLog(`Total Spec Files:`, specFileList.length);
-    if (config.debug) this.printLog(specFileList);
+    this.logger.info(`Total Spec Files:`, specFileList.length);
+    this.logger.debug(specFileList);
 
     if (config.silent) {
       stats.success = await new Promise(resolve => {
@@ -220,7 +217,7 @@ export class JestCheck {
       fs.writeFileSync(this.cacheFilePath, JSON.stringify(this.stats.cacheInfo, null, 2));
 
       stats.success = data.results.success && !data.results.numFailedTestSuites;
-      if (this.config.debug) this.printLog(data);
+      this.logger.debug(data);
     }
 
     const info: JestCheckResult = {
@@ -229,14 +226,9 @@ export class JestCheck {
       // total: results.length,
     };
 
-    if (info.isPassed) {
-      this.printLog(bold(greenBright('Verification passed!')));
-    } else {
-      this.printLog(bold(redBright('Verification failed!')));
-      if (config.exitOnError) exit(1, stats.startTime, '[JestCheck]');
-    }
-
-    this.printLog(`TimeCost: ${bold(greenBright(Date.now() - stats.startTime))}ms`);
+    this.logger.info(bold(info.isPassed ? greenBright('Verification passed!') : redBright('Verification failed!')));
+    this.logger.info(`TimeCost: ${bold(greenBright(Date.now() - stats.startTime))}ms`);
+    if (!info.isPassed && config.exitOnError) exit(1);
 
     return info;
   }
@@ -244,7 +236,7 @@ export class JestCheck {
    * 在 fork 子进程中执行
    */
   private checkInChildProc() {
-    this.printLog('start fork child progress');
+    this.logger.info('start fork child progress');
 
     return createForkThread<JestCheckResult>({
       type: 'jest',
@@ -258,7 +250,7 @@ export class JestCheck {
    * 在 work_threads 子线程中执行
    */
   private checkInWorkThreads() {
-    this.printLog('start create work threads');
+    this.logger.info('start create work threads');
 
     return import('./utils/worker-threads').then(({ createWorkerThreads }) => {
       return createWorkerThreads<JestCheckResult>({
@@ -280,7 +272,7 @@ export class JestCheck {
     fileList && !this.config.fileList.length;
 
     if (!this.config.fileList.length && (fileList || !this.config.src.length)) {
-      this.printLog('No files to process\n');
+      this.logger.info('No files to process\n');
       return false;
     }
 

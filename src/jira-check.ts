@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-11-18 17:42:56
+ * @LastEditTime: 2021-11-18 21:56:59
  * @Description:  Jira check
  */
 
@@ -10,10 +10,11 @@ import * as path from 'path';
 import fs from 'fs';
 import type { IncomingHttpHeaders } from 'http';
 import { color } from 'console-log-colors';
-import { exit, createForkThread, assign, log, getHeadBranch, PlainObject, Request } from './utils';
+import { exit, createForkThread, assign, getHeadBranch, PlainObject, Request } from './utils';
 import { JiraCheckConfig, getConfig } from './config';
+import { Logger } from './utils/Logger';
 
-const { bold, redBright, greenBright, cyan } = color;
+const { bold, redBright, greenBright } = color;
 export interface JiraCheckResult {
   /** 是否检测通过 */
   isPassed: boolean;
@@ -79,22 +80,20 @@ export class JiraCheck {
   /** 统计信息 */
   private stats = this.getInitStats();
   private reqeust: Request;
+  private logger: Logger;
 
   constructor(private config: JiraCheckConfig = {}) {
-    this.parseConfig(config);
-    if (this.config.checkOnInit) this.start();
-  }
-  /** 打印日志 */
-  private printLog(...args) {
-    if (this.config.silent) return;
-    if (!args.length) console.log();
-    else log(cyan(`[Jira][${this.config.type}]`), ...args);
+    config = this.parseConfig(config);
+    const level = config.silent ? 'silent' : config.debug ? 'debug' : 'info';
+    this.logger = Logger.getLogger(`[JIRA][${config.type}]`, level);
+    this.logger.debug('config', this.config);
+    if (config.checkOnInit) this.start();
   }
   /** 获取初始化的统计信息 */
   private getInitStats() {
     const stats = {
       /** 最近一次处理是否成功 */
-      success: false,
+      success: true,
       /** 最近一次处理的开始时间 */
       startTime: Date.now(),
       /** pipeline 检测不通过的 jira issues 数量 */
@@ -114,7 +113,7 @@ export class JiraCheck {
     if (config !== this.config) config = assign<JiraCheckConfig>({}, this.config, config);
     this.config = assign<JiraCheckConfig>({}, baseConfig.jira, config);
     if (!this.config.issuePrefix.endsWith('-')) this.config.issuePrefix += '-';
-    if (this.config.debug) this.printLog(this.config);
+    return this.config;
   }
   private init() {
     // const config = this.config;
@@ -161,7 +160,7 @@ export class JiraCheck {
 
     // 支持环境变量 JIRA_JSESSIONID 设置 cookie
     if (process.env.JIRA_JSESSIONID) headers.cookie = `JSESSIONID=${process.env.JIRA_JSESSIONID}`;
-    if (this.config.debug) this.printLog('headers', headers);
+    this.logger.debug('headers', headers);
 
     this.reqeust = new Request(headers.cookie, headers);
   }
@@ -180,7 +179,7 @@ export class JiraCheck {
     if (fs.existsSync(filePath)) return filePath;
 
     if (isPrintTips) {
-      this.printLog('请在项目根目录或当前用户主目录下添加 .jira.json 配置文件，以JSON格式配置 {username, pwd, proxy, cookie?}');
+      this.logger.warn('请在项目根目录或当前用户主目录下添加 .jira.json 配置文件，以JSON格式配置 {username, pwd, proxy, cookie?}');
     }
 
     return null;
@@ -192,14 +191,18 @@ export class JiraCheck {
 
     if (fs.existsSync(issueTypeCachePath)) {
       issueTypeList = JSON.parse(fs.readFileSync(issueTypeCachePath, 'utf-8'));
-    } else {
+    }
+
+    if (!issueTypeList.length) {
       const url = `${this.config.jiraHome}/rest/api/2/issuetype`;
       const result = await this.reqeust.get<typeof issueTypeList>(url);
       if (!Array.isArray(result.data)) {
-        this.printLog('[error]', result);
+        this.logger.error('[error]', result);
         return [];
       }
-      if (this.config.debug) this.printLog('[getIssueType]', result.data);
+
+      issueTypeList = result.data;
+      this.logger.debug('[getIssueType]', result.data);
 
       // 写入缓存文件中
       if (!fs.existsSync(path.dirname(issueTypeCachePath))) {
@@ -216,7 +219,7 @@ export class JiraCheck {
     const checkResult: JiraCheckResult = { isPassed: false };
 
     const branch = `${getHeadBranch()}`.replace('_dev', '');
-    const query = `project = JGCPS AND fixVersion = "${branch}" AND comment ~ "必须修复"${
+    const query = `project = ${config.issuePrefix.replace(/-$/, '')} AND fixVersion = "${branch}" AND comment ~ "必须修复"${
       config.projectName ? ` AND comment ~ "${config.projectName}"` : ''
     } AND status in ("新建(New)", "处理中(Inprocess)", "测试验收(Test Verification)", "调试与审查(Code Review)", "关闭(Closed)") ORDER BY due ASC, priority DESC, created ASC`;
     const url = `${config.jiraHome}/rest/api/2/search?`; // jql=${encodeURIComponent(query)}&maxResults=100&fields=comment,assignee`;
@@ -229,15 +232,15 @@ export class JiraCheck {
       errorMessages?: string[];
     }>(url, params);
 
-    if (config.debug) this.printLog('url:', url, info);
+    this.logger.debug('url:', url, info);
     if (!info.issues) {
-      this.printLog(info.errorMessages);
+      this.logger.error(info.errorMessages);
       return checkResult;
     }
 
-    this.printLog('[检查信息]', query);
-    this.printLog('[检查信息]', `提取的JIRA(${info.total}):`, info.issues.map(item => item.key).join(', '));
-    this.printLog('------------------------------------------------------------------------------------------');
+    this.logger.info('[检查信息]', query);
+    this.logger.info('[检查信息]', `提取的JIRA(${color.magentaBright(info.total)}):`, info.issues.map(item => item.key).join(', '));
+    this.logger.info('------------------------------------------------------------------------------------------');
 
     info.issues.forEach(async item => {
       let fields = item.fields;
@@ -248,12 +251,12 @@ export class JiraCheck {
           if (!data.fields) return (stats.errCount = -1);
           fields = data.fields;
         } catch (err) {
-          this.printLog(err);
+          this.logger.error(err);
           return (stats.errCount = -1);
         }
       }
 
-      if (config.debug) this.printLog(item.key, fields);
+      this.logger.debug(item.key, fields);
 
       // 查找必须修复的标记
       const mustRepairTagIndex = fields.comment.comments.findIndex(comment => comment.body.includes('[必须修复]'));
@@ -261,7 +264,7 @@ export class JiraCheck {
 
       if (config.debug) {
         const mustRepair = fields.comment.comments[mustRepairTagIndex];
-        this.printLog('[检查信息]', item.key, '被', mustRepair.author.displayName, '于', mustRepair.updated, '设为必须被修复');
+        this.logger.debug('[检查信息]', item.key, '被', mustRepair.author.displayName, '于', mustRepair.updated, '设为必须被修复');
       }
 
       const comments: PlainObject[] = fields.comment.comments.slice(mustRepairTagIndex).reverse();
@@ -269,7 +272,7 @@ export class JiraCheck {
       const gitlabComment = comments.find(item => item.author.name === 'gitlab' && !item.body.includes('Merge'));
 
       if (!gitlabComment) {
-        if (config.debug) this.printLog('[检查信息]', `[${item.key}]未有代码提交`);
+        this.logger.debug('[检查信息]', `[${item.key}]未有代码提交`);
         return;
       }
 
@@ -286,7 +289,7 @@ export class JiraCheck {
         if (gitlabCommiter === reviewComment.author.key) {
           errmsg = `[${reviewComment.author.displayName.split('（')[0]}]不能 review 自己的提交，请指派给熟悉相关模块的开发人员审阅！`;
         } else if (config.debug) {
-          this.printLog(
+          this.logger.debug(
             ' - [检查信息]',
             item.key,
             `[${gitlabCommiter}]的代码提交被`,
@@ -299,13 +302,13 @@ export class JiraCheck {
       }
 
       if (errmsg) {
-        this.printLog(
-          `[${++stats.errCount}][检查信息] 指派给`,
+        this.logger.info(
+          `[${++stats.errCount}] 指派给`,
           fields.assignee.displayName.split('（')[0],
           `http://jira.gf.com.cn/browse/${item.key}`,
           redBright(errmsg)
         );
-        this.printLog('------------------------------------------------------------------------------------------');
+        this.logger.info('------------------------------------------------------------------------------------------');
       }
     });
 
@@ -359,15 +362,15 @@ export class JiraCheck {
     const jiraIDReg = new RegExp(`${config.issuePrefix}(\\d+)`, 'g');
     const jiraIDs = commitMsg.match(jiraIDReg);
 
-    this.printLog('===================================');
-    this.printLog(`[提交信息] [commit-msg] : ${commitMsg} `);
-    this.printLog('===================================');
+    this.logger.info('===================================');
+    this.logger.info(`[COMMIT-MSG] ${color.yellowBright(commitMsg)}`);
+    this.logger.info('===================================');
 
     if (jiraIDs) {
       const jiraID = jiraIDs[0];
       const { data: info } = await this.reqeust.get<IssueItem>(`${config.jiraHome}/rest/api/latest/issue/${jiraID}`);
 
-      if (config.debug) this.printLog(`[${jiraID}]info`, info);
+      this.logger.debug(`[${jiraID}]info`, info);
 
       const versionName = info.fields.fixVersions[0].name;
       const versionInfo = info.fields.fixVersions[0].description;
@@ -375,18 +378,18 @@ export class JiraCheck {
       const isSeal = (versionInfo && versionInfo.includes('[已封版]')) || false;
       const summary = info.fields.summary;
       const issuetype = +info.fields.issuetype.id;
-      this.printLog('[提交信息] [JIRA 标题]', jiraID, summary);
+      this.logger.info('[JIRA信息]', color.cyanBright(jiraID), color.yellowBright(summary));
 
       if (info.fields.fixVersions.length === 0) {
-        this.printLog('[提交信息]', 'JIRA没有挂修复版本，不允许提交');
+        this.logger.error('JIRA没有挂修复版本，不允许提交');
         stats.success = false;
       }
       // 修复版本可能同时存在多个
       else if (!info.fields.fixVersions.some(item => allowedFixVersions.includes(item.name))) {
-        this.printLog('[提交信息]', '修复版本与当前本地分支不一致，不允许提交');
+        this.logger.error('修复版本与当前本地分支不一致，不允许提交');
         stats.success = false;
       } else if (noAllowIssueType.includes(issuetype)) {
-        this.printLog('不允许在父任务jira上提交, commit 提交不通过');
+        this.logger.error('不允许在父任务jira上提交, commit 提交不通过');
         stats.success = false;
       }
 
@@ -399,40 +402,40 @@ export class JiraCheck {
         const msg = commitMsg.match(smartRegWithMsg)[1].trim();
         const smartCommit = `[ET][${versionName}][${issueText}][${jiraID}] ${msg}`;
         fs.writeFileSync(gitPath, smartCommit, { encoding: 'utf-8' });
-        this.printLog(`[提交信息] [智能修改commit]: ${smartCommit} \n`);
+        this.logger.info(`[智能修改commit]: ${smartCommit} \n`);
       } else if (smartRegWithJIRA.test(commitMsg)) {
         // 如果只匹配到JIRA号
         const smartCommit = `[ET][${versionName}][${issueText}][${jiraID}] ${summary}`;
         fs.writeFileSync(gitPath, smartCommit, { encoding: 'utf-8' });
-        this.printLog(`[提交信息] [智能修改commit]: ${smartCommit} \n`);
+        this.logger.info(`[智能修改commit]: ${smartCommit} \n`);
       } else if (!reg.test(commitMsg)) {
         // 如果都是自己填的
-        this.printLog('[提交信息]', 'commit 校验不通过，请参考正确提交格式\n');
-        this.printLog('===================  Example  ===================\n');
-        this.printLog(`[ET][${versionName}][${issueText}][${jiraID}] 描述问题或改进\n`);
-        this.printLog('===================  Example  ===================\n');
+        this.logger.error('commit 校验不通过，请参考正确提交格式');
+        this.logger.error('===================  Example  ===================');
+        this.logger.error(`[ET][${versionName}][${issueText}][${jiraID}] 描述问题或改进`);
+        this.logger.error('===================  Example  ===================');
         stats.success = false;
       }
 
       if (isSeal && stats.success) {
-        this.printLog('[提交信息]', versionName, '已经封版');
+        this.logger.info(color.magentaBright(versionName), color.yellowBright('已经封版'));
         // 查找由产品指派给当前用户的jira，备注了 [必须修复] 文案提交
         const comment = info.fields.comment.comments.find(comment => {
           return comment.body.includes('[必须修复]') && config.sealedCommentAuthors.includes(comment.author.name);
         });
 
         if (!comment) {
-          this.printLog('[提交信息]', 'JIRA并非必须修复，不允许提交');
+          this.logger.error('[提交信息]', `[${jiraID}] JIRA并非必须修复，不允许提交`);
           stats.success = false;
         }
       }
     } else {
       if (/Merge branch/.test(commitMsg)) {
-        this.printLog('同分支提交禁止执行 Merge 操作请使用 git rebase 或 git pull -r 命令。若为跨分支合并，请增加 -n 参数\n');
+        this.logger.error('同分支提交禁止执行 Merge 操作请使用 git rebase 或 git pull -r 命令。若为跨分支合并，请增加 -n 参数\n');
         stats.success = false;
       } else if (!ignoredCommitList.some(check => check(commitMsg))) {
-        this.printLog('提交代码信息不符合规范，信息中应包含字符"JGCPS-XXXX".\n');
-        this.printLog('例如：JGCPS-9171 【两融篮子】多组合卖出，指令预览只显示一个组合.\n');
+        this.logger.error(`提交代码信息不符合规范，信息中应包含字符"${config.issuePrefix}XXXX".`);
+        this.logger.error('例如：', color.cyanBright(`${config.issuePrefix}9171 【两融篮子】多组合卖出，指令预览只显示一个组合。\n`));
         stats.success = false;
       }
     }
@@ -442,42 +445,39 @@ export class JiraCheck {
   private async check() {
     this.init();
     const stats = this.getInitStats();
-    this.printLog(`[${this.config.type}]start checking`);
+    this.logger.info(color.green(`start checking`));
 
     const checkResult = this.config.type === 'commit' ? await this.commitMsgCheck() : await this.pipelineCheck();
 
-    if (checkResult.isPassed) {
-      this.printLog(bold(greenBright('Verification passed!')));
-    } else {
-      this.printLog(bold(redBright('Verification failed!')));
-      if (this.config.exitOnError) exit(stats.errCount, stats.startTime, `[JiraCheck][${this.config.type}]`);
-    }
-
-    this.printLog(`TimeCost: ${bold(greenBright(Date.now() - stats.startTime))}ms`);
+    this.logger.info(bold(checkResult.isPassed ? greenBright('Verification passed!') : redBright('Verification failed!')));
+    this.logger.info(`TimeCost: ${bold(greenBright(Date.now() - stats.startTime))}ms`);
+    if (!checkResult.isPassed && this.config.exitOnError) exit(stats.errCount);
 
     return checkResult;
   }
   /** 在 fork 子进程中执行 */
   private checkInChildProc() {
-    this.printLog('start fork child progress');
+    this.logger.info('start fork child progress');
     return createForkThread<JiraCheckResult>({
       type: 'jira',
       debug: this.config.debug,
       jiraConfig: this.config,
     }).catch(code => {
-      if (this.config.exitOnError) exit(code, this.stats.startTime, '[JiraCheck]');
+      this.logger.error('checkInChildProc error, code:', code);
+      if (this.config.exitOnError) exit(code);
     });
   }
   /** 在 work_threads 子线程中执行 */
   private checkInWorkThreads() {
-    this.printLog('start create work threads');
+    this.logger.info('start create work threads');
     return import('./utils/worker-threads').then(({ createWorkerThreads }) => {
       return createWorkerThreads<JiraCheckResult>({
         type: 'jira',
         debug: this.config.debug,
         jiraConfig: this.config,
       }).catch(code => {
-        if (this.config.exitOnError) exit(code, this.stats.startTime, '[JiraCheck]');
+        this.logger.error('checkInWorkThreads error, code:', code);
+        if (this.config.exitOnError) exit(code);
       });
     });
   }

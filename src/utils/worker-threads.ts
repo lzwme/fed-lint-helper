@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-25 10:12:21
  * @LastEditors: lzw
- * @LastEditTime: 2021-11-10 15:21:38
+ * @LastEditTime: 2021-11-18 22:07:31
  * @Description: worker_threads 实现在 worker 线程中执行
  *
  * - worker_threads 比 child_process 和 cluster 更为轻量级的并行性，而且 worker_threads 可有效地共享内存
@@ -53,66 +53,46 @@ export function createWorkerThreads<T>(options: CreateThreadOptions = { type: 't
 if (!isMainThread) {
   const config: CreateThreadOptions = workerData;
   if (config.debug) console.log('workerData:', config, config.type);
+  const done = (data: unknown) => {
+    parentPort.postMessage({ type: config.type, data, end: true });
+  };
+  const resetConfig = { checkOnInit: false, exitOnError: false, mode: 'current' };
 
   switch (config.type) {
     case 'tscheck':
       if (config.tsCheckConfig) {
         import('../ts-check').then(({ TsCheck }) => {
-          config.jestConfig.checkOnInit = false;
-          config.tsCheckConfig.mode = 'current';
-
-          const tsCheck = new TsCheck(config.tsCheckConfig);
-          tsCheck.start().then(d => {
-            parentPort.postMessage({
-              type: 'tscheck',
-              data: d,
-              end: true,
-            });
-            process.exit(0);
-          });
+          const inc = new TsCheck(Object.assign(config.tsCheckConfig, resetConfig));
+          inc.start().then(d => done(d));
         });
       }
       break;
     case 'eslint':
       if (config.eslintConfig) {
         import('../eslint-check').then(({ ESLintCheck }) => {
-          config.jestConfig.checkOnInit = false;
-          config.eslintConfig.mode = 'current';
-
-          const eslintCheck = new ESLintCheck(config.eslintConfig);
-          eslintCheck.start().then(d => {
-            parentPort.postMessage({
-              type: 'eslint',
-              data: d,
-              end: true,
-            });
-            process.exit(0);
-          });
+          const inc = new ESLintCheck(Object.assign(config.eslintConfig, resetConfig));
+          inc.start().then(d => done(d));
         });
       }
       break;
     case 'jest':
       if (config.jestConfig) {
         import('../jest-check').then(({ JestCheck }) => {
-          config.jestConfig.checkOnInit = false;
-          config.jestConfig.mode = 'current';
-
-          const jestCheck = new JestCheck(config.jestConfig);
-          jestCheck.start().then(d => {
-            parentPort.postMessage({
-              type: 'jest',
-              data: d,
-              end: true,
-            });
-            process.exit(0);
-          });
+          const inc = new JestCheck(Object.assign(config.jestConfig, resetConfig));
+          inc.start().then(d => done(d));
         });
       }
       break;
     case 'jira':
-      console.log('TODO: jira');
+      if (config.jiraConfig) {
+        import('../jira-check').then(({ JiraCheck }) => {
+          const inc = new JiraCheck(Object.assign(config.jiraConfig, resetConfig));
+          inc.start().then(d => done(d));
+        });
+      }
       break;
     default:
-      console.log('TODO');
+      console.log('TODO', config);
+      process.exit(1);
   }
 }

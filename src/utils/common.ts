@@ -21,6 +21,7 @@ export function fixToshortPath(filepath = '', rootDir = process.cwd()) {
 /**
  * 打印时间消耗
  * @param {number} startTime 开始时间戳
+ * @deprecated 请使用 Logger 对象
  */
 export function logTimeCost(startTime: number, prefix = '') {
   log(color.cyan(prefix), `TimeCost: ${color.bold(color.greenBright(Date.now() - startTime))}ms`);

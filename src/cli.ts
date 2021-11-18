@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2021-11-11 11:47:55
+ * @LastEditTime: 2021-11-18 20:53:21
  * @Description: cli 工具
  */
 import { Option, program } from 'commander';
@@ -75,10 +75,11 @@ program
         toWhiteList: opts.toWhiteList,
       },
       jest: {
-        // mode: 'proc',
+        mode: opts.mode || 'proc',
       },
       jira: {
         type: opts.jiraType === 'pipeline' ? 'pipeline' : 'commit',
+        mode: opts.mode || 'current',
       },
     };
 

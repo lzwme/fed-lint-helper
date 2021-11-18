@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-11-12 17:20:25
+ * @LastEditTime: 2021-11-18 22:05:56
  * @Description: typescript Diagnostics report
  */
 
@@ -11,7 +11,7 @@ import fs from 'fs';
 import path from 'path';
 import * as ts from 'typescript';
 import glob from 'glob';
-import { fixToshortPath, md5, exit, createForkThread, assign, log, execSync } from './utils';
+import { fixToshortPath, md5, exit, createForkThread, assign, Logger, execSync } from './utils';
 import { TsCheckConfig, getConfig } from './config';
 
 const { bold, redBright, yellowBright, cyanBright, red, greenBright, cyan } = color;
@@ -32,17 +32,14 @@ export class TsCheck {
   private whiteList = {} as Record<string, keyof typeof ts.DiagnosticCategory>; // ts.DiagnosticCategory
   /** 检测缓存文件的路径。不应提交至 git 仓库: 默认为 <config.rootDir>/node_modules/.cache/flh/tsCheckCache.json */
   private cacheFilePath = 'node_modules/.cache/flh/tscheckcache.json';
+  private logger: Logger;
 
   constructor(private config: TsCheckConfig = {}) {
-    this.parseConfig(config);
-    if (this.config.checkOnInit) this.start();
-  }
-  /** 打印日志 */
-  private printLog(...args) {
-    if (this.config.silent) return;
-    // 打印空行
-    if (!args.length) console.log();
-    else log(cyan('[TSCheck]'), ...args);
+    config = this.parseConfig(config);
+    const level = config.silent ? 'silent' : config.debug ? 'debug' : 'info';
+    this.logger = Logger.getLogger(`[TSCheck]`, level);
+    this.logger.debug('config', this.config);
+    if (config.checkOnInit) this.start();
   }
   private getInitStats() {
     const stats = {
@@ -80,7 +77,7 @@ export class TsCheck {
     this.config = assign<TsCheckConfig>({}, baseConfig.tscheck);
     this.cacheFilePath = path.resolve(this.config.rootDir, baseConfig.cacheLocation, 'tsCheckCache.json');
     this.config.whiteListFilePath = path.resolve(this.config.rootDir, this.config.whiteListFilePath);
-    return this;
+    return this.config;
   }
   private init() {
     const { whiteListFilePath, removeCache, cache } = this.config;
@@ -133,9 +130,9 @@ export class TsCheck {
 
     this.stats.totalFiles += total;
 
-    this.printLog();
-    this.printLog(bold(cyanBright('Checking')), subDir);
-    this.printLog(' - Total Number Of Files:', total);
+    console.log();
+    this.logger.info(bold(cyanBright('Checking')), subDir);
+    this.logger.info(' - Total Number Of Files:', total);
 
     /** 缓存命中数量 */
     let cacheHits = 0;
@@ -166,8 +163,8 @@ export class TsCheck {
       return true;
     });
 
-    if (cacheHits) this.printLog(` - Cache hits:`, cacheHits);
-    if (whiteListHits) this.printLog(` - WhiteList hits:`, whiteListHits);
+    if (cacheHits) this.logger.info(` - Cache hits:`, cacheHits);
+    if (whiteListHits) this.logger.info(` - WhiteList hits:`, whiteListHits);
 
     if (!sourceFiles.length) return;
 
@@ -230,7 +227,7 @@ export class TsCheck {
         // 去重
         fileList = Array.from(new Set(fileList));
 
-        this.printLog(
+        this.logger.info(
           bold(redBright(`Diagnostics of need repair(not in whitelist)[${fileList.length} files]:\n`)),
           config.printDetail ? ts.formatDiagnosticsWithColorAndContext(errDiagnostics, host) : `\n - ` + fileList.join('\n - ') + '\n'
         );
@@ -238,7 +235,7 @@ export class TsCheck {
         const fileList = tmpDiagnostics.filter(d => d.file).map(d => d.file.fileName);
 
         if (fileList.length) {
-          this.printLog(
+          this.logger.info(
             bold(yellowBright(`Diagnostics in whitelist[${redBright(fileList.length)}`)),
             bold(yellowBright(`files]:\n`)),
             config.printDetail ? ts.formatDiagnosticsWithColorAndContext(tmpDiagnostics, host) : `\n - ` + fileList.join('\n - ') + '\n'
@@ -262,30 +259,29 @@ export class TsCheck {
   }
   /** 执行 ts check */
   public check(tsFiles = this.config.tsFiles) {
-    this.printLog('start checking');
+    this.logger.info('start checking');
     this.init();
 
     const { config, stats } = this;
-    const { rootDir, debug } = config;
     const { tsCache } = stats;
     /** 在白名单列表中但本次检测无异常的文件列表（将从白名单列表中移除） */
     const removeFromWhiteList = [];
     const dirMap = {
       // 没有 tsconfig.json 独立配置文件的子目录文件，也将全部放到这里一起编译
-      [rootDir]: tsFiles || [],
+      [config.rootDir]: tsFiles || [],
     };
 
-    if (debug) this.printLog('config：', config);
+    this.logger.debug('config：', config);
 
     // 没有指定 tsFiles 文件列表，才按 src 指定规则匹配
-    if (!dirMap[rootDir].length) {
+    if (!dirMap[config.rootDir].length) {
       const dirs = this.getCheckProjectDirs(config.src);
       if (!dirs) {
-        this.printLog('No files or directories to process\n');
+        this.logger.info('No files or directories to process\n');
         return false;
       }
 
-      if (debug) this.printLog('本次检测的子目录包括：', dirs);
+      this.logger.debug('本次检测的子目录包括：', dirs);
       dirs
         .map(d => this.getTsFiles(d))
         .forEach(info => {
@@ -294,7 +290,7 @@ export class TsCheck {
           if (fs.existsSync(path.resolve(info.subDir, config.tsConfigFileName))) {
             dirMap[info.subDir] = info.tsFiles;
           } else {
-            dirMap[rootDir].push(...info.tsFiles);
+            dirMap[config.rootDir].push(...info.tsFiles);
           }
         });
     }
@@ -320,20 +316,20 @@ export class TsCheck {
 
       if (stats.tsCheckFilesPassedChanged) {
         fs.writeFileSync(this.cacheFilePath, JSON.stringify(tsCache, null, 2));
-        this.printLog('Write to cache:', cyanBright(fixToshortPath(this.cacheFilePath, config.rootDir)));
+        this.logger.info('Write to cache:', cyanBright(fixToshortPath(this.cacheFilePath, config.rootDir)));
       }
     }
 
     if (config.toWhiteList) {
       if (!fs.existsSync(path.dirname(config.whiteListFilePath))) fs.mkdirSync(path.dirname(config.whiteListFilePath), { recursive: true });
       fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, null, 2));
-      this.printLog('[ADD]write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
+      this.logger.info('[ADD]write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
       execSync(`git add ${config.whiteListFilePath}`, null, config.rootDir, !config.silent);
     } else {
       if (removeFromWhiteList.length) {
-        this.printLog(' [REMOVE]write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
+        this.logger.info(' [REMOVE]write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
         fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, null, 2));
-        this.printLog(' remove from whilelist:\n' + removeFromWhiteList.join('\n'));
+        this.logger.info(' remove from whilelist:\n' + removeFromWhiteList.join('\n'));
         execSync(`git add ${config.whiteListFilePath}`, null, config.rootDir, !config.silent);
       }
     }
@@ -353,12 +349,12 @@ export class TsCheck {
     this.stats.success = result.failed !== 0;
 
     if (result.failed && config.printDetail) {
-      this.printLog('Failed Files:', '\n - ' + errFileList.join('\n - '), '\n');
+      this.logger.info('Failed Files:', '\n - ' + errFileList.join('\n - '), '\n');
     }
 
-    this.printLog('Total :\t', result.total);
-    this.printLog('Passed:\t', bold(greenBright(result.passed)));
-    this.printLog('Failed:\t', bold(red(result.failed)));
+    this.logger.info('Total :\t', result.total);
+    this.logger.info('Passed:\t', bold(greenBright(result.passed)));
+    this.logger.info('Failed:\t', bold(red(result.failed)));
 
     // 异常类型统计
     if (result.failed) {
@@ -368,18 +364,18 @@ export class TsCheck {
         stats.allDiagnosticsCategory[cateStr] = (stats.allDiagnosticsCategory[cateStr] || 0) + 1;
       });
       Object.keys(stats.allDiagnosticsCategory).forEach(keyStr => {
-        this.printLog(bold(cyan(` -- ${keyStr} Count：`)), bold(yellowBright(result.diagnosticCategory[keyStr])));
+        this.logger.info(bold(cyan(` -- ${keyStr} Count：`)), bold(yellowBright(result.diagnosticCategory[keyStr])));
       });
     }
 
     if (!result.failed) {
-      this.printLog(bold(greenBright('Verification passed!')));
+      this.logger.info(bold(greenBright('Verification passed!')));
     } else {
-      this.printLog(bold(redBright('Verification failed!')));
+      this.logger.info(bold(redBright('Verification failed!')));
       if (config.exitOnError) exit(result.failed, stats.startTime, '[TsCheck]');
     }
 
-    this.printLog(`TimeCost: ${bold(greenBright(Date.now() - stats.startTime))}ms`);
+    this.logger.info(`TimeCost: ${bold(greenBright(Date.now() - stats.startTime))}ms`);
 
     return result;
   }
@@ -387,7 +383,7 @@ export class TsCheck {
    * 在 fork 子进程中执行
    */
   private checkInChildProc() {
-    this.printLog('start fork child progress');
+    this.logger.info('start fork child progress');
 
     return createForkThread<TsCheckResult>({
       type: 'tscheck',
@@ -401,7 +397,7 @@ export class TsCheck {
    * 在 work_threads 子线程中执行
    */
   private checkInWorkThreads() {
-    this.printLog('start create work threads');
+    this.logger.info('start create work threads');
 
     return import('./utils/worker-threads').then(({ createWorkerThreads }) => {
       return createWorkerThreads<TsCheckResult>({
@@ -419,7 +415,7 @@ export class TsCheck {
     this.init();
 
     if (!this.config.tsFiles.length && (tsFiles || !this.config.src.length)) {
-      this.printLog('No files to process\n');
+      this.logger.info('No files to process\n');
       return false;
     }
 
