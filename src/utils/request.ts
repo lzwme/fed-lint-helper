@@ -55,7 +55,7 @@ export class Request {
   getCookie(isStr = true) {
     return isStr ? this.cookies.join('; ') : this.cookies;
   }
-  request<T = PlainObject>(method: string, url: string, params: Record<string, any>, headers?: http.IncomingHttpHeaders) {
+  request<T = PlainObject>(method: string, url: string, params: PlainObject, headers?: http.IncomingHttpHeaders) {
     const urlObj = new URL(url);
     const options: https.RequestOptions = {
       hostname: urlObj.host,
@@ -107,7 +107,7 @@ export class Request {
   get<T = PlainObject>(url: string, headers?: http.IncomingHttpHeaders) {
     return this.request<T>('GET', url, null, headers);
   }
-  post<T = PlainObject>(url: string, params: Record<string, unknown>, headers?: http.IncomingHttpHeaders) {
+  post<T = PlainObject>(url: string, params: PlainObject, headers?: http.IncomingHttpHeaders) {
     return this.request<T>('POST', url, params, headers);
   }
 }

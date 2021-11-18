@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-11-11 14:12:24
+ * @LastEditTime: 2021-11-18 17:42:56
  * @Description:  Jira check
  */
 
@@ -257,42 +257,58 @@ export class JiraCheck {
 
       // 查找必须修复的标记
       const mustRepairTagIndex = fields.comment.comments.findIndex(comment => comment.body.includes('[必须修复]'));
+      if (mustRepairTagIndex === -1) return;
 
-      if (mustRepairTagIndex > -1) {
-        if (config.debug) {
-          const mustRepair = fields.comment.comments[mustRepairTagIndex];
-          this.printLog('[检查信息]', item.key, '被', mustRepair.author.displayName, '于', mustRepair.updated, '设为必须被修复');
-        }
+      if (config.debug) {
+        const mustRepair = fields.comment.comments[mustRepairTagIndex];
+        this.printLog('[检查信息]', item.key, '被', mustRepair.author.displayName, '于', mustRepair.updated, '设为必须被修复');
+      }
 
-        const comments: PlainObject[] = fields.comment.comments.slice(mustRepairTagIndex);
-        const reviewCommentIndex = comments.findIndex(item => item.body.includes('[已阅]'));
-        // 判断问题是否是被合并 -- 已失效
-        const gitlabCommentIndex = comments.findIndex(item => item.author.name === 'gitlab' && !item.body.includes('Merge'));
-        const reviewComment = comments[reviewCommentIndex];
+      const comments: PlainObject[] = fields.comment.comments.slice(mustRepairTagIndex).reverse();
+      /** 最新一次的 gitlab 提交信息 */
+      const gitlabComment = comments.find(item => item.author.name === 'gitlab' && !item.body.includes('Merge'));
 
-        // review的留言需要在gitlab提交日志之后
-        if (reviewComment && (gitlabCommentIndex === -1 || gitlabCommentIndex < reviewCommentIndex)) {
-          if (config.debug) {
-            this.printLog('[检查信息]', item.key, '被', reviewComment.author.displayName, '于', reviewComment.updated, '阅读过');
-          }
-        } else {
-          if (gitlabCommentIndex > -1) {
-            const reviewers = fields.customfield_13002;
+      if (!gitlabComment) {
+        if (config.debug) this.printLog('[检查信息]', `[${item.key}]未有代码提交`);
+        return;
+      }
 
-            this.printLog(
-              `[${++stats.errCount}][检查信息] 指派给`,
-              fields.assignee.displayName,
-              `${config.jiraHome}/browse/${item.key}`,
-              `JIRA 未被[${reviewers && reviewers[0] ? reviewers[0].displayName : '未指定'}]阅读`
-            );
+      /** 最新一次的 review 信息 */
+      const reviewComment = comments.find(item => item.body.includes('[已阅]'));
+      const gitlabCommiter = gitlabComment.body.split('|')[0].slice(1);
+      const reviewers = fields.customfield_13002;
+      let errmsg = '';
 
-            this.printLog('------------------------------------------------------------------------------------------');
-          } else {
-            if (config.debug) this.printLog('[检查信息]', `[${item.key}]未有修改`);
-          }
+      // review的留言需要在gitlab提交日志之后
+      if (!reviewComment || reviewComment.id < gitlabComment.id) {
+        errmsg = `[${gitlabCommiter}]的代码提交未被[${reviewers && reviewers[0] ? reviewers[0].displayName : '未指定'}]审阅`;
+      } else {
+        if (gitlabCommiter === reviewComment.author.key) {
+          errmsg = `[${reviewComment.author.displayName.split('（')[0]}]不能 review 自己的提交，请指派给熟悉相关模块的开发人员审阅！`;
+        } else if (config.debug) {
+          this.printLog(
+            ' - [检查信息]',
+            item.key,
+            `[${gitlabCommiter}]的代码提交被`,
+            reviewComment.author.displayName,
+            '于',
+            reviewComment.updated,
+            '设为已阅'
+          );
         }
       }
+
+      if (errmsg) {
+        this.printLog(
+          `[${++stats.errCount}][检查信息] 指派给`,
+          fields.assignee.displayName.split('（')[0],
+          `http://jira.gf.com.cn/browse/${item.key}`,
+          redBright(errmsg)
+        );
+        this.printLog('------------------------------------------------------------------------------------------');
+      }
     });
+
     checkResult.isPassed = stats.success = stats.errCount === 0;
 
     return checkResult;
