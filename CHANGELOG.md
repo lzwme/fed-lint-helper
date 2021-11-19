@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.4.3](https://github.com/lzwme/fed-lint-helper/compare/v1.4.1...v1.4.3) (2021-11-19)
+
+
+### Bug Fixes
+
+* 修复 silent 参数无效的问题 ([4e8b238](https://github.com/lzwme/fed-lint-helper/commit/4e8b238ef297850d52a648853d937af302c15d75))
+* 修正 eslint-check 对非 js、ts 类文件的过滤无效问题 ([166911d](https://github.com/lzwme/fed-lint-helper/commit/166911decaca24b2ee3718e5595e1bea023f6664))
+
 ### [1.4.1](https://github.com/lzwme/fed-lint-helper/compare/v1.4.0...v1.4.1) (2021-11-18)
 
 ## [1.4.0](https://github.com/lzwme/fed-lint-helper/compare/v1.3.0...v1.4.0) (2021-11-15)
