@@ -2,12 +2,12 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2021-11-18 20:53:21
+ * @LastEditTime: 2021-11-19 09:11:50
  * @Description: cli 工具
  */
 import { Option, program } from 'commander';
 import { color } from 'console-log-colors';
-import { getConfig, FlhConfig, TsCheckConfig, JiraCheckConfig, config } from './config';
+import { getConfig, FlhConfig, TsCheckConfig, JiraCheckConfig, config, mergeCommConfig } from './config';
 import path from 'path';
 import fs from 'fs';
 import { getHeadDiffFileList } from './utils';
@@ -92,7 +92,7 @@ program
       if (opts.debug) console.log('changeFiles:', changeFiles);
     }
 
-    const baseConfig = getConfig(options);
+    const baseConfig = getConfig(mergeCommConfig(options));
     let hasAction = false;
 
     if (opts.debug) console.log(opts, baseConfig);
@@ -138,9 +138,7 @@ program
   .option('--config', '在当前目录下生成默认的配置文件')
   .option('--force', '是否强制执行(配置文件已存在，则覆盖生成)')
   .action((opts, destination) => {
-    if (!opts.config) {
-      return destination.help();
-    }
+    if (!opts.config) return destination.help();
 
     if (opts.config) {
       if (fs.existsSync(config.configPath) && !opts.force) {

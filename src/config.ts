@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2021-11-10 17:23:31
+ * @LastEditTime: 2021-11-19 09:05:32
  * @Description:
  */
 
@@ -208,6 +208,20 @@ export const LintTypes = ['eslint', 'tscheck', 'jest', 'jira'] as const;
 export type ILintTypes = ValueOf<typeof LintTypes>;
 let isInited = false;
 
+/** 将公共参数值合并进 LintTypes 内部 */
+export function mergeCommConfig(options: FlhConfig) {
+  // 公共通用配置
+  Object.keys(commConfig).forEach(key => {
+    LintTypes.forEach(type => {
+      if (null == options[type][key]) {
+        if (null == options[key]) options[type][key] = commConfig[key];
+        else options[type][key] = options[key];
+      }
+    });
+  });
+  return options;
+}
+
 /**
  * 获取配置信息
  */
@@ -230,14 +244,7 @@ export function getConfig(options?: FlhConfig, useCache = isInited) {
   if (config.debug) config.silent = false;
 
   // 公共通用配置
-  Object.keys(commConfig).forEach(key => {
-    LintTypes.forEach(type => {
-      if (null == config[type][key]) {
-        if (null == config[key]) config[type][key] = commConfig[key];
-        else config[type][key] = config[key];
-      }
-    });
-  });
+  mergeCommConfig(config);
 
   if (!config.cacheLocation) config.cacheLocation = `node_modules/.cache/flh/`;
   if (!fs.existsSync(config.cacheLocation)) {

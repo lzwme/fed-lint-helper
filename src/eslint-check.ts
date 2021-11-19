@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-11-18 22:05:54
+ * @LastEditTime: 2021-11-19 09:17:38
  * @Description:  eslint check
  */
 
@@ -345,7 +345,7 @@ export class ESLintCheck {
   async start(lintList?: string[]) {
     if (lintList) {
       // 只处理 ts、tsx、js、jsx 后缀的文件
-      lintList.filter(filepath => /\.(js|ts)x?/i.test(filepath));
+      lintList = lintList.filter(filepath => /\.(js|ts)x?/i.test(filepath));
       this.config.src = lintList;
     }
     this.init();
