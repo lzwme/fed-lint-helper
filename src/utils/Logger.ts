@@ -3,8 +3,8 @@ import { color } from 'console-log-colors';
 
 /** 日志级别 */
 export enum LogLevel {
-  silent,
   error,
+  silent,
   warn,
   info,
   log,
@@ -42,7 +42,8 @@ export class Logger {
 
     if (process.env.FLH_LOG_LEVEL) levelType = process.env.FLH_LOG_LEVEL as LogLevelType;
 
-    this.level = LogLevel[levelType] || LogLevel.log;
+    this.level = LogLevel[levelType];
+    if (this.level === null) this.level = LogLevel.log;
 
     this.error = this._log.bind(this, 'error');
     this.warn = this._log.bind(this, 'warn');
