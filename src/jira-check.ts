@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-11-18 21:56:59
+ * @LastEditTime: 2021-11-22 14:37:45
  * @Description:  Jira check
  */
 
@@ -218,8 +218,8 @@ export class JiraCheck {
     const { config, stats } = this;
     const checkResult: JiraCheckResult = { isPassed: false };
 
-    const branch = `${getHeadBranch()}`.replace('_dev', '');
-    const query = `project = ${config.issuePrefix.replace(/-$/, '')} AND fixVersion = "${branch}" AND comment ~ "必须修复"${
+    const sprintVersion = `${getHeadBranch()}`.split('_')[0];
+    const query = `project = ${config.issuePrefix.replace(/-$/, '')} AND fixVersion = "${sprintVersion}" AND comment ~ "必须修复"${
       config.projectName ? ` AND comment ~ "${config.projectName}"` : ''
     } AND status in ("新建(New)", "处理中(Inprocess)", "测试验收(Test Verification)", "调试与审查(Code Review)", "关闭(Closed)") ORDER BY due ASC, priority DESC, created ASC`;
     const url = `${config.jiraHome}/rest/api/2/search?`; // jql=${encodeURIComponent(query)}&maxResults=100&fields=comment,assignee`;
@@ -322,11 +322,11 @@ export class JiraCheck {
     /** 当前本地分支 */
     const branch = getHeadBranch();
     /** 根据本地分支获取分支所属迭代版本) */
-    const currentBranch = branch.substr(0, branch.indexOf('_'));
+    const sprintVersion = branch.split('_')[0];
     /** 允许提交的版本 - todo: cherry-pick 时的匿名分支也需要支持允许 commit */
-    const allowedFixVersions = [currentBranch, branch];
+    const allowedFixVersions = [sprintVersion, branch];
     // 自定义分支允许提交预研任务
-    if (currentBranch !== branch && !branch.includes('_dev')) allowedFixVersions.push('tech_ahead_v1');
+    if (sprintVersion !== branch && !branch.includes('_dev')) allowedFixVersions.push('tech_ahead_v1');
 
     /** 智能匹配正则表达式，commit覆盖, JIRA号后需要输入至少一个中文、【|[、英文或者空格进行隔开 例子: JGCPS-1234测试提交123 或 [JGCPS-1234] 测试提交123 => [ET][2.9.1][feature][JGCPS-1234]测试提交123 */
     const smartRegWithMsg = new RegExp(`^\\[?${config.issuePrefix}\\d+\\]?([A-Za-z\\u4e00-\\u9fa5\\s【\\[]+.+)`);
