@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.4.4](https://github.com/lzwme/fed-lint-helper/compare/v1.4.3...v1.4.4) (2021-11-22)
+
+
+### Bug Fixes
+
+* [jira-check]修正从分支名提取 sprint 主版本的规则逻辑 ([f786418](https://github.com/lzwme/fed-lint-helper/commit/f78641874faac627363cbd0c5fea0480987f1014))
+* cli 工具 cache 参数默认值修改为 false ([a6530b4](https://github.com/lzwme/fed-lint-helper/commit/a6530b4beb7df0ab728dd151fd860e87a14c1ca8))
+
 ### [1.4.3](https://github.com/lzwme/fed-lint-helper/compare/v1.4.1...v1.4.3) (2021-11-19)
 
 
