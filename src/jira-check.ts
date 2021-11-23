@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-11-22 14:37:45
+ * @LastEditTime: 2021-11-23 16:13:03
  * @Description:  Jira check
  */
 
@@ -18,6 +18,11 @@ const { bold, redBright, greenBright } = color;
 export interface JiraCheckResult {
   /** 是否检测通过 */
   isPassed: boolean;
+}
+
+interface JiraError {
+  errorMessages?: string[];
+  errors?: PlainObject;
 }
 
 interface IssueItem {
@@ -223,14 +228,9 @@ export class JiraCheck {
       config.projectName ? ` AND comment ~ "${config.projectName}"` : ''
     } AND status in ("新建(New)", "处理中(Inprocess)", "测试验收(Test Verification)", "调试与审查(Code Review)", "关闭(Closed)") ORDER BY due ASC, priority DESC, created ASC`;
     const url = `${config.jiraHome}/rest/api/2/search?`; // jql=${encodeURIComponent(query)}&maxResults=100&fields=comment,assignee`;
-    const params = assign<PlainObject>({ jql: query, maxResults: 100, fields: ['comment', 'assignee'] }, config.pipeline.requestParams);
-    const { data: info } = await this.reqeust.post<{
-      total: number;
-      issues: IssueItem[];
-      expand: string;
-      maxResults: number;
-      errorMessages?: string[];
-    }>(url, params);
+    const p = assign<PlainObject>({ jql: query, maxResults: 100, fields: ['comment', 'assignee'] }, config.pipeline.requestParams);
+    const r = await this.reqeust.post<{ total: number; issues: IssueItem[]; expand: string; maxResults: number } & JiraError>(url, p);
+    const info = r.data;
 
     this.logger.debug('url:', url, info);
     if (!info.issues) {
@@ -368,9 +368,14 @@ export class JiraCheck {
 
     if (jiraIDs) {
       const jiraID = jiraIDs[0];
-      const { data: info } = await this.reqeust.get<IssueItem>(`${config.jiraHome}/rest/api/latest/issue/${jiraID}`);
+      const { data: info } = await this.reqeust.get<IssueItem & JiraError>(`${config.jiraHome}/rest/api/latest/issue/${jiraID}`);
 
       this.logger.debug(`[${jiraID}]info`, info);
+
+      if (!info.fields || info.errorMessages) {
+        this.logger.error(info.errorMessages || info);
+        return { isPassed: stats.success } as JiraCheckResult;
+      }
 
       const versionName = info.fields.fixVersions[0].name;
       const versionInfo = info.fields.fixVersions[0].description;
@@ -447,7 +452,12 @@ export class JiraCheck {
     const stats = this.getInitStats();
     this.logger.info(color.green(`start checking`));
 
-    const checkResult = this.config.type === 'commit' ? await this.commitMsgCheck() : await this.pipelineCheck();
+    let checkResult = { isPassed: this.stats.success } as JiraCheckResult;
+    try {
+      checkResult = this.config.type === 'commit' ? await this.commitMsgCheck() : await this.pipelineCheck();
+    } catch (err) {
+      this.logger.error(err.message, err.stack);
+    }
 
     this.logger.info(bold(checkResult.isPassed ? greenBright('Verification passed!') : redBright('Verification failed!')));
     this.logger.info(`TimeCost: ${bold(greenBright(Date.now() - stats.startTime))}ms`);

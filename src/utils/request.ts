@@ -84,8 +84,8 @@ export class Request {
             try {
               result.data = JSON.parse(str);
               resolve(result);
-            } catch (e) {
-              console.error(e);
+            } catch (err) {
+              console.error(err.message, result);
               resolve(result);
             }
           };
