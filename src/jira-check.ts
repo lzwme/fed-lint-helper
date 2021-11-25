@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-11-23 16:13:03
+ * @LastEditTime: 2021-11-25 22:16:46
  * @Description:  Jira check
  */
 
@@ -461,7 +461,7 @@ export class JiraCheck {
 
     this.logger.info(bold(checkResult.isPassed ? greenBright('Verification passed!') : redBright('Verification failed!')));
     this.logger.info(`TimeCost: ${bold(greenBright(Date.now() - stats.startTime))}ms`);
-    if (!checkResult.isPassed && this.config.exitOnError) exit(stats.errCount);
+    if (!checkResult.isPassed && this.config.exitOnError) exit(stats.errCount || -1);
 
     return checkResult;
   }

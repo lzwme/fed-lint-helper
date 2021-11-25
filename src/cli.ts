@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2021-11-19 14:19:27
+ * @LastEditTime: 2021-11-25 11:11:28
  * @Description: cli 工具
  */
 import { Option, program } from 'commander';
@@ -31,6 +31,7 @@ interface POptions
   jira?: boolean;
   /** 执行 jira check 的类型 */
   jiraType?: FlhConfig['jira']['type'];
+  commitEdit?: FlhConfig['jira']['COMMIT_EDITMSG'];
 }
 
 program
@@ -53,6 +54,7 @@ program
   .option('--jira', `执行 jira 检查`)
   .option('--jira-home', `指定 jira 首页 url 地址`)
   .option('--projectName', `指定 git 仓库项目名`)
+  .option('--commit-edit', `指定 git commit msg 的文件路径。默认为 ${color.yellowBright('./.git/COMMIT_EDITMSG')}`)
   .addOption(new Option('--jira-type <type>', `执行 jira 检查的类型。可选值：`).choices(['commit', 'pipeline']))
   .option('--jest', `执行 jest 单元测试`)
   .action((opts: POptions) => {
@@ -85,6 +87,7 @@ program
 
     if (opts.jiraHome) options.jira.jiraHome = opts.jiraHome;
     if (opts.projectName) options.jira.projectName = opts.projectName;
+    if (opts.commitEdit) options.jira.COMMIT_EDITMSG = opts.commitEdit;
 
     let changeFiles: string[] = null;
     if (opts.onlyChanges) {
