@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.4.5](https://github.com/lzwme/fed-lint-helper/compare/v1.4.4...v1.4.5) (2021-11-25)
+
+
+### Bug Fixes
+
+* 修复 jira-check commit-msg 检测失败退出码仍为 0 的问题 ([9f103e1](https://github.com/lzwme/fed-lint-helper/commit/9f103e183ef4c4e3f1dafc3498c69e9a6e8e8b2e))
+* 增加对 jira-check 请求 jira 信息的异常处理 ([7254ac8](https://github.com/lzwme/fed-lint-helper/commit/7254ac8c0f30b6dcabe9665f4cabbc76e7cac60d))
+
 ### [1.4.4](https://github.com/lzwme/fed-lint-helper/compare/v1.4.3...v1.4.4) (2021-11-22)
 
 
