@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-11-25 22:16:46
+ * @LastEditTime: 2021-11-30 21:39:53
  * @Description:  Jira check
  */
 
@@ -97,7 +97,7 @@ export class JiraCheck {
   /** 获取初始化的统计信息 */
   private getInitStats() {
     const stats = {
-      /** 最近一次处理是否成功 */
+      /** 最近一次处理是否成功。默认为 true，遇到异常时应设置为 false */
       success: true,
       /** 最近一次处理的开始时间 */
       startTime: Date.now(),
@@ -235,6 +235,7 @@ export class JiraCheck {
     this.logger.debug('url:', url, info);
     if (!info.issues) {
       this.logger.error(info.errorMessages);
+      stats.success = false;
       return checkResult;
     }
 
@@ -373,7 +374,8 @@ export class JiraCheck {
       this.logger.debug(`[${jiraID}]info`, info);
 
       if (!info.fields || info.errorMessages) {
-        this.logger.error(info.errorMessages || info);
+        this.logger.error(info.errorMessages || `获取 ${jiraID} 信息异常`);
+        stats.success = false;
         return { isPassed: stats.success } as JiraCheckResult;
       }
 
@@ -450,18 +452,24 @@ export class JiraCheck {
   private async check() {
     this.init();
     const stats = this.getInitStats();
+    const checkResult: JiraCheckResult = { isPassed: false };
+
     this.logger.info(color.green(`start checking`));
 
-    let checkResult = { isPassed: this.stats.success } as JiraCheckResult;
     try {
-      checkResult = this.config.type === 'commit' ? await this.commitMsgCheck() : await this.pipelineCheck();
+      this.config.type === 'commit' ? await this.commitMsgCheck() : await this.pipelineCheck();
+      checkResult.isPassed = stats.success;
     } catch (err) {
       this.logger.error(err.message, err.stack);
     }
 
     this.logger.info(bold(checkResult.isPassed ? greenBright('Verification passed!') : redBright('Verification failed!')));
     this.logger.info(`TimeCost: ${bold(greenBright(Date.now() - stats.startTime))}ms`);
-    if (!checkResult.isPassed && this.config.exitOnError) exit(stats.errCount || -1);
+    if (!checkResult.isPassed && this.config.exitOnError) {
+      const exitCode = stats.errCount || -1;
+      this.logger.debug('退出码', exitCode);
+      exit(exitCode);
+    }
 
     return checkResult;
   }
