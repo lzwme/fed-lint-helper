@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.4.6](https://github.com/lzwme/fed-lint-helper/compare/v1.4.5...v1.4.6) (2021-11-30)
+
+
+### Bug Fixes
+
+* 修正 jira 信息获取失败默认返回为 true 的问题 ([4f20108](https://github.com/lzwme/fed-lint-helper/commit/4f201083308fcd56bfb1f7429d2a9c464e369c95))
+
 ### [1.4.5](https://github.com/lzwme/fed-lint-helper/compare/v1.4.4...v1.4.5) (2021-11-25)
 
 
