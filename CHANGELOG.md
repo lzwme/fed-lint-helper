@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.4.7](https://github.com/lzwme/fed-lint-helper/compare/v1.4.6...v1.4.7) (2021-12-01)
+
+
+### Bug Fixes
+
+* 修复 cli 命令执行时默认参数值优先级高于配置文件的问题 ([a5d6e42](https://github.com/lzwme/fed-lint-helper/commit/a5d6e42aabf57a933ca33a68b0c96002da245754))
+
 ### [1.4.6](https://github.com/lzwme/fed-lint-helper/compare/v1.4.5...v1.4.6) (2021-11-30)
 
 
