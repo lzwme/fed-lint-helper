@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2021-11-19 09:05:32
+ * @LastEditTime: 2021-12-01 14:39:00
  * @Description:
  */
 
@@ -209,13 +209,14 @@ export type ILintTypes = ValueOf<typeof LintTypes>;
 let isInited = false;
 
 /** 将公共参数值合并进 LintTypes 内部 */
-export function mergeCommConfig(options: FlhConfig) {
+export function mergeCommConfig(options: FlhConfig, useDefault = true) {
   // 公共通用配置
   Object.keys(commConfig).forEach(key => {
     LintTypes.forEach(type => {
       if (null == options[type][key]) {
-        if (null == options[key]) options[type][key] = commConfig[key];
-        else options[type][key] = options[key];
+        if (null == options[key]) {
+          if (useDefault) options[type][key] = commConfig[key];
+        } else options[type][key] = options[key];
       }
     });
   });

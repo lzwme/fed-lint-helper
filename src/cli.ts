@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2021-11-25 11:11:28
+ * @LastEditTime: 2021-12-01 14:39:19
  * @Description: cli 工具
  */
 import { Option, program } from 'commander';
@@ -60,7 +60,6 @@ program
   .action((opts: POptions) => {
     const options: FlhConfig = {
       exitOnError: opts.exitOnError,
-      src: Array.isArray(opts.src) ? opts.src : [opts.src || 'src'],
       cache: !!opts.cache,
       removeCache: opts.removeCache,
       checkOnInit: false,
@@ -85,6 +84,7 @@ program
       },
     };
 
+    if (opts.src) options.src = Array.isArray(opts.src) ? opts.src : [opts.src];
     if (opts.jiraHome) options.jira.jiraHome = opts.jiraHome;
     if (opts.projectName) options.jira.projectName = opts.projectName;
     if (opts.commitEdit) options.jira.COMMIT_EDITMSG = opts.commitEdit;
@@ -95,7 +95,7 @@ program
       if (opts.debug) console.log('changeFiles:', changeFiles);
     }
 
-    const baseConfig = getConfig(mergeCommConfig(options));
+    const baseConfig = getConfig(mergeCommConfig(options, false));
     let hasAction = false;
 
     if (opts.debug) console.log(opts, baseConfig);
