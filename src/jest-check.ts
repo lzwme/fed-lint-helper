@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-11-18 21:57:43
+ * @LastEditTime: 2021-12-02 15:48:54
  * @Description:  jest check
  */
 
@@ -242,9 +242,14 @@ export class JestCheck {
       type: 'jest',
       debug: this.config.debug,
       jestConfig: this.config,
-    }).catch(code => {
-      if (this.config.exitOnError) exit(code, this.stats.startTime, '[JestCheck]');
-    });
+    })
+      .then(d => {
+        if (!d.isPassed && this.config.exitOnError) process.exit(-1);
+        return d;
+      })
+      .catch(code => {
+        if (this.config.exitOnError) exit(code, this.stats.startTime, '[JestCheck]');
+      });
   }
   /**
    * 在 work_threads 子线程中执行
@@ -257,9 +262,14 @@ export class JestCheck {
         type: 'jest',
         debug: this.config.debug,
         jestConfig: this.config,
-      }).catch(code => {
-        if (this.config.exitOnError) exit(code, this.stats.startTime, '[JestCheck]');
-      });
+      })
+        .then(d => {
+          if (!d.isPassed && this.config.exitOnError) process.exit(-1);
+          return d;
+        })
+        .catch(code => {
+          if (this.config.exitOnError) exit(code, this.stats.startTime, '[JestCheck]');
+        });
     });
   }
   /**

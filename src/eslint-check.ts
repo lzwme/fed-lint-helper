@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-11-19 09:44:59
+ * @LastEditTime: 2021-12-02 15:47:58
  * @Description:  eslint check
  */
 
@@ -319,9 +319,12 @@ export class ESLintCheck {
       type: 'eslint',
       debug: this.config.debug,
       eslintConfig: this.config,
-    }).catch(code => {
-      if (this.config.exitOnError) process.exit(code);
-    });
+    })
+      .then(d => {
+        if (!d.isPassed && this.config.exitOnError) process.exit(d.errorCount || -1);
+        return d;
+      })
+      .catch(code => this.config.exitOnError && process.exit(code));
   }
   /**
    * 在 work_threads 子线程中执行
@@ -334,9 +337,12 @@ export class ESLintCheck {
         type: 'eslint',
         debug: this.config.debug,
         eslintConfig: this.config,
-      }).catch(code => {
-        if (this.config.exitOnError) process.exit(code);
-      });
+      })
+        .then(d => {
+          if (!d.isPassed && this.config.exitOnError) process.exit(d.errorCount || -1);
+          return d;
+        })
+        .catch(code => this.config.exitOnError && process.exit(code));
     });
   }
   /**

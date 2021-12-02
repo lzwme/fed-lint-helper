@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-11-30 21:39:53
+ * @LastEditTime: 2021-12-02 15:47:48
  * @Description:  Jira check
  */
 
@@ -480,10 +480,15 @@ export class JiraCheck {
       type: 'jira',
       debug: this.config.debug,
       jiraConfig: this.config,
-    }).catch(code => {
-      this.logger.error('checkInChildProc error, code:', code);
-      if (this.config.exitOnError) exit(code);
-    });
+    })
+      .then(d => {
+        if (!d.isPassed && this.config.exitOnError) process.exit(-1);
+        return d;
+      })
+      .catch(code => {
+        this.logger.error('checkInChildProc error, code:', code);
+        if (this.config.exitOnError) exit(code);
+      });
   }
   /** 在 work_threads 子线程中执行 */
   private checkInWorkThreads() {
@@ -493,10 +498,15 @@ export class JiraCheck {
         type: 'jira',
         debug: this.config.debug,
         jiraConfig: this.config,
-      }).catch(code => {
-        this.logger.error('checkInWorkThreads error, code:', code);
-        if (this.config.exitOnError) exit(code);
-      });
+      })
+        .then(d => {
+          if (!d.isPassed && this.config.exitOnError) process.exit(-1);
+          return d;
+        })
+        .catch(code => {
+          this.logger.error('checkInWorkThreads error, code:', code);
+          if (this.config.exitOnError) exit(code);
+        });
     });
   }
   async start() {
