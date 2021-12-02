@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.4.8](https://github.com/lzwme/fed-lint-helper/compare/v1.4.7...v1.4.8) (2021-12-02)
+
+
+### Bug Fixes
+
+* 修复在子进程中执行失败不会退出的问题 ([8fb45ff](https://github.com/lzwme/fed-lint-helper/commit/8fb45ffb348c5689a260fd76c024098f1d5ceaf7))
+
 ### [1.4.7](https://github.com/lzwme/fed-lint-helper/compare/v1.4.6...v1.4.7) (2021-12-01)
 
 
