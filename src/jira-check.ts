@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-12-02 21:27:56
+ * @LastEditTime: 2021-12-02 21:56:19
  * @Description:  Jira check
  */
 
@@ -121,8 +121,6 @@ export class JiraCheck {
     return this.config;
   }
   private init() {
-    // const config = this.config;
-
     this.initRequest();
   }
   private initRequest() {
@@ -140,7 +138,6 @@ export class JiraCheck {
       },
       this.config.headers
     );
-
     // 在当前工作目录下存在 .jira.json 文件
     const jiraPath = this.getJiraCfgPath(true);
 
@@ -154,12 +151,10 @@ export class JiraCheck {
         headers.cookie += `;JSESSIONID=${jiraConfig.JSESSIONID}`;
       }
 
-      if (jiraConfig.username && jiraConfig.pwd) {
-        headers.Authorization = `Basic ${Buffer.from(`${jiraConfig.username}:${jiraConfig.pwd}`).toString('base64')}`;
-      }
-
       if (jiraConfig.authorization) {
         headers.Authorization = `Basic ${jiraConfig.authorization}`;
+      } else if (jiraConfig.username && jiraConfig.pwd) {
+        headers.Authorization = `Basic ${Buffer.from(`${jiraConfig.username}:${jiraConfig.pwd}`).toString('base64')}`;
       }
     }
 
@@ -177,8 +172,7 @@ export class JiraCheck {
     if (!fs.existsSync(filePath)) {
       // 支持用户主目录下全局配置查找
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const homedir = require('os').homedir();
-      filePath = path.resolve(homedir, jiraFileName);
+      filePath = path.resolve(require('os').homedir(), jiraFileName);
     }
 
     if (fs.existsSync(filePath)) return filePath;
@@ -186,8 +180,6 @@ export class JiraCheck {
     if (isPrintTips) {
       this.logger.warn('请在项目根目录或当前用户主目录下添加 .jira.json 配置文件，以JSON格式配置 {username, pwd, proxy, cookie?}');
     }
-
-    return null;
   }
   /** 获取 issueType 列表 */
   private async getIssueType() {
@@ -202,7 +194,7 @@ export class JiraCheck {
       const url = `${this.config.jiraHome}/rest/api/2/issuetype`;
       const result = await this.reqeust.get<typeof issueTypeList>(url);
       if (!Array.isArray(result.data)) {
-        this.logger.error('[error]', result);
+        this.logger.warn('获取 issuetype 列表异常：', result);
         return [];
       }
 
@@ -210,9 +202,7 @@ export class JiraCheck {
       this.logger.debug('[getIssueType]', result.data);
 
       // 写入缓存文件中
-      if (!fs.existsSync(path.dirname(issueTypeCachePath))) {
-        fs.mkdirSync(path.dirname(issueTypeCachePath), { recursive: true });
-      }
+      if (!fs.existsSync(path.dirname(issueTypeCachePath))) fs.mkdirSync(path.dirname(issueTypeCachePath), { recursive: true });
       fs.writeFileSync(issueTypeCachePath, JSON.stringify(issueTypeList), 'utf8');
     }
 
@@ -320,7 +310,7 @@ export class JiraCheck {
   /** git hooks commit-msg 检查 */
   private async commitMsgCheck() {
     const { config, stats } = this;
-    /** 当前本地分支 */
+    /** 当前本地分支。分支命名格式：3.10.1<_dev><_fix-xxx> */
     const branch = getHeadBranch();
     /** 根据本地分支获取分支所属迭代版本) */
     const sprintVersion = branch.split('_')[0];
@@ -380,7 +370,7 @@ export class JiraCheck {
         return false;
       }
 
-      if (info.fields.fixVersions.length === 0) {
+      if (!info.fields.fixVersions || info.fields.fixVersions.length === 0) {
         this.logger.error('JIRA没有挂修复版本，不允许提交');
         return false;
       }
@@ -420,7 +410,7 @@ export class JiraCheck {
       } else if (!reg.test(commitMsg)) {
         // 如果都是自己填的
         this.logger.debug(reg, commitMsg, reg.test(commitMsg));
-        this.logger.error('commit 校验不通过，请参考正确提交格式');
+        this.logger.error('commit 格式校验不通过，请参考正确提交格式');
         this.logger.log('===================  Example  ===================');
         this.logger.log(color.greenBright(`${config.commitMsgPrefix}[${versionName}][${issueText}][${jiraID}] 描述问题或改进`));
         this.logger.log('===================  Example  ===================');
