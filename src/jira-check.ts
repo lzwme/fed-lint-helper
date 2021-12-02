@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-12-02 15:47:48
+ * @LastEditTime: 2021-12-02 21:27:56
  * @Description:  Jira check
  */
 
@@ -89,7 +89,7 @@ export class JiraCheck {
 
   constructor(private config: JiraCheckConfig = {}) {
     config = this.parseConfig(config);
-    const level = config.silent ? 'silent' : config.debug ? 'debug' : 'info';
+    const level = config.silent ? 'silent' : config.debug ? 'debug' : 'log';
     this.logger = Logger.getLogger(`[JIRA][${config.type}]`, level);
     this.logger.debug('config', this.config);
     if (config.checkOnInit) this.start();
@@ -116,7 +116,7 @@ export class JiraCheck {
     const baseConfig = getConfig();
 
     if (config !== this.config) config = assign<JiraCheckConfig>({}, this.config, config);
-    this.config = assign<JiraCheckConfig>({}, baseConfig.jira, config);
+    this.config = assign<JiraCheckConfig>({ commitMsgPrefix: '[ET]' }, baseConfig.jira, config);
     if (!this.config.issuePrefix.endsWith('-')) this.config.issuePrefix += '-';
     return this.config;
   }
@@ -221,8 +221,6 @@ export class JiraCheck {
   /** CI pipeline 阶段执行的批量检查，主要用于 MR 阶段 */
   private async pipelineCheck() {
     const { config, stats } = this;
-    const checkResult: JiraCheckResult = { isPassed: false };
-
     const sprintVersion = `${getHeadBranch()}`.split('_')[0];
     const query = `project = ${config.issuePrefix.replace(/-$/, '')} AND fixVersion = "${sprintVersion}" AND comment ~ "必须修复"${
       config.projectName ? ` AND comment ~ "${config.projectName}"` : ''
@@ -235,25 +233,29 @@ export class JiraCheck {
     this.logger.debug('url:', url, info);
     if (!info.issues) {
       this.logger.error(info.errorMessages);
-      stats.success = false;
-      return checkResult;
+      stats.errCount = -1;
+      return false;
     }
 
     this.logger.info('[检查信息]', query);
     this.logger.info('[检查信息]', `提取的JIRA(${color.magentaBright(info.total)}):`, info.issues.map(item => item.key).join(', '));
     this.logger.info('------------------------------------------------------------------------------------------');
 
-    info.issues.forEach(async item => {
+    for (const item of info.issues) {
       let fields = item.fields;
 
       if (!fields) {
         try {
           const { data } = await this.reqeust.get(item.self);
-          if (!data.fields) return (stats.errCount = -1);
+          if (!data.fields) {
+            stats.errCount = -1;
+            return false;
+          }
           fields = data.fields;
         } catch (err) {
           this.logger.error(err);
-          return (stats.errCount = -1);
+          stats.errCount = -1;
+          return false;
         }
       }
 
@@ -311,11 +313,9 @@ export class JiraCheck {
         );
         this.logger.info('------------------------------------------------------------------------------------------');
       }
-    });
+    }
 
-    checkResult.isPassed = stats.success = stats.errCount === 0;
-
-    return checkResult;
+    return stats.errCount === 0;
   }
   /** git hooks commit-msg 检查 */
   private async commitMsgCheck() {
@@ -335,7 +335,7 @@ export class JiraCheck {
     const smartRegWithJIRA = new RegExp(`^\\[?${config.issuePrefix}(\\d+)\\]?`, 'g');
     const issueTypeList = await this.getIssueType();
     /** 禁止提交的类型 */
-    const noAllowIssueType = [11007, 11019];
+    const noAllowIssueType: number[] = [];
     const issueTypeToDesc = issueTypeList.reduce((obj, item) => {
       obj[item.id] = item.name.replace(/[^a-zA-Z]/, '').toLowerCase();
       if (obj[item.id].includes('subtask')) obj[item.id] = 'feature';
@@ -370,38 +370,40 @@ export class JiraCheck {
     if (jiraIDs) {
       const jiraID = jiraIDs[0];
       const { data: info } = await this.reqeust.get<IssueItem & JiraError>(`${config.jiraHome}/rest/api/latest/issue/${jiraID}`);
+      const summary = info.fields.summary;
 
       this.logger.debug(`[${jiraID}]info`, info);
+      this.logger.info('[JIRA信息]', color.cyanBright(jiraID), color.yellowBright(summary));
 
       if (!info.fields || info.errorMessages) {
         this.logger.error(info.errorMessages || `获取 ${jiraID} 信息异常`);
-        stats.success = false;
-        return { isPassed: stats.success } as JiraCheckResult;
+        return false;
+      }
+
+      if (info.fields.fixVersions.length === 0) {
+        this.logger.error('JIRA没有挂修复版本，不允许提交');
+        return false;
+      }
+
+      // 修复版本可能同时存在多个
+      if (!info.fields.fixVersions.some(item => allowedFixVersions.includes(item.name))) {
+        this.logger.error('修复版本与当前本地分支不一致，不允许提交');
+        return false;
       }
 
       const versionName = info.fields.fixVersions[0].name;
       const versionInfo = info.fields.fixVersions[0].description;
       /** 是否已封板 */
       const isSeal = (versionInfo && versionInfo.includes('[已封版]')) || false;
-      const summary = info.fields.summary;
       const issuetype = +info.fields.issuetype.id;
-      this.logger.info('[JIRA信息]', color.cyanBright(jiraID), color.yellowBright(summary));
 
-      if (info.fields.fixVersions.length === 0) {
-        this.logger.error('JIRA没有挂修复版本，不允许提交');
-        stats.success = false;
-      }
-      // 修复版本可能同时存在多个
-      else if (!info.fields.fixVersions.some(item => allowedFixVersions.includes(item.name))) {
-        this.logger.error('修复版本与当前本地分支不一致，不允许提交');
-        stats.success = false;
-      } else if (noAllowIssueType.includes(issuetype)) {
+      if (noAllowIssueType.includes(issuetype)) {
         this.logger.error('不允许在父任务jira上提交, commit 提交不通过');
-        stats.success = false;
+        return false;
       }
 
       const issueText = issueTypeToDesc[issuetype] || 'feature'; // 如果是其他类型，默认feature
-      const reg = new RegExp(`^\\[ET]\\[${versionName}]\\[${issueText}]\\[${jiraID}]`);
+      const reg = new RegExp(`^${config.commitMsgPrefix.replace(/(\[|-|\.)/g, '\\$1')}\\[${versionName}]\\[${issueText}]\\[${jiraID}]`);
 
       // 如果匹配到commit中包含中文，则保留提交信息
       if (smartRegWithMsg.test(commitMsg)) {
@@ -417,11 +419,12 @@ export class JiraCheck {
         this.logger.info(`[智能修改commit]: ${smartCommit} \n`);
       } else if (!reg.test(commitMsg)) {
         // 如果都是自己填的
+        this.logger.debug(reg, commitMsg, reg.test(commitMsg));
         this.logger.error('commit 校验不通过，请参考正确提交格式');
-        this.logger.error('===================  Example  ===================');
-        this.logger.error(`[ET][${versionName}][${issueText}][${jiraID}] 描述问题或改进`);
-        this.logger.error('===================  Example  ===================');
-        stats.success = false;
+        this.logger.log('===================  Example  ===================');
+        this.logger.log(color.greenBright(`${config.commitMsgPrefix}[${versionName}][${issueText}][${jiraID}] 描述问题或改进`));
+        this.logger.log('===================  Example  ===================');
+        return false;
       }
 
       if (isSeal && stats.success) {
@@ -433,21 +436,21 @@ export class JiraCheck {
 
         if (!comment) {
           this.logger.error('[提交信息]', `[${jiraID}] JIRA并非必须修复，不允许提交`);
-          stats.success = false;
+          return false;
         }
       }
     } else {
       if (/Merge branch/.test(commitMsg)) {
         this.logger.error('同分支提交禁止执行 Merge 操作请使用 git rebase 或 git pull -r 命令。若为跨分支合并，请增加 -n 参数\n');
-        stats.success = false;
+        return false;
       } else if (!ignoredCommitList.some(check => check(commitMsg))) {
         this.logger.error(`提交代码信息不符合规范，信息中应包含字符"${config.issuePrefix}XXXX".`);
         this.logger.error('例如：', color.cyanBright(`${config.issuePrefix}9171 【两融篮子】多组合卖出，指令预览只显示一个组合。\n`));
-        stats.success = false;
+        return false;
       }
     }
 
-    return { isPassed: stats.success } as JiraCheckResult;
+    return true;
   }
   private async check() {
     this.init();
@@ -457,7 +460,7 @@ export class JiraCheck {
     this.logger.info(color.green(`start checking`));
 
     try {
-      this.config.type === 'commit' ? await this.commitMsgCheck() : await this.pipelineCheck();
+      stats.success = this.config.type === 'commit' ? await this.commitMsgCheck() : await this.pipelineCheck();
       checkResult.isPassed = stats.success;
     } catch (err) {
       this.logger.error(err.message, err.stack);

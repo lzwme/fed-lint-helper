@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-12-02 15:48:54
+ * @LastEditTime: 2021-12-02 21:27:04
  * @Description:  jest check
  */
 
@@ -38,7 +38,7 @@ export class JestCheck {
 
   constructor(private config: JestCheckConfig = {}) {
     config = this.parseConfig(config);
-    const level = config.silent ? 'silent' : config.debug ? 'debug' : 'info';
+    const level = config.silent ? 'silent' : config.debug ? 'debug' : 'log';
     this.logger = Logger.getLogger(`[Jest]`, level);
     this.logger.debug('config', this.config);
     if (this.config.checkOnInit) this.start();

@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-12-02 15:47:58
+ * @LastEditTime: 2021-12-02 21:27:20
  * @Description:  eslint check
  */
 
@@ -38,7 +38,7 @@ export class ESLintCheck {
 
   constructor(private config: ESLintCheckConfig = {}) {
     config = this.parseConfig(config);
-    const level = config.silent ? 'silent' : config.debug ? 'debug' : 'info';
+    const level = config.silent ? 'silent' : config.debug ? 'debug' : 'log';
     this.logger = Logger.getLogger(`[ESLint]`, level);
     this.logger.debug('config', this.config);
     if (config.checkOnInit) this.start();

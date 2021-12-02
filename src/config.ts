@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2021-12-01 14:39:00
+ * @LastEditTime: 2021-12-02 21:00:03
  * @Description:
  */
 
@@ -131,6 +131,8 @@ export interface JiraCheckConfig extends CommConfig {
   sealedCommentAuthors?: string[];
   /** jira issue 编号前缀，如编号为 LZWME-4321，则设置为 LZWME- */
   issuePrefix?: string;
+  /** commit 提交固定前缀，如： [ET] */
+  commitMsgPrefix?: string;
   /** 提取 commit-msg 信息的文件路径。默认为 ./.git/COMMIT_EDITMSG */
   COMMIT_EDITMSG?: string;
 }

@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-12-02 15:46:46
+ * @LastEditTime: 2021-12-02 21:27:14
  * @Description: typescript Diagnostics report
  */
 
@@ -36,7 +36,7 @@ export class TsCheck {
 
   constructor(private config: TsCheckConfig = {}) {
     config = this.parseConfig(config);
-    const level = config.silent ? 'silent' : config.debug ? 'debug' : 'info';
+    const level = config.silent ? 'silent' : config.debug ? 'debug' : 'log';
     this.logger = Logger.getLogger(`[TSCheck]`, level);
     this.logger.debug('config', this.config);
     if (config.checkOnInit) this.start();
