@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-12-02 21:27:04
+ * @LastEditTime: 2021-12-07 18:08:26
  * @Description:  jest check
  */
 
@@ -47,7 +47,7 @@ export class JestCheck {
   private getInitStats() {
     const stats = {
       /** 最近一次处理是否成功 */
-      success: false,
+      isPassed: false,
       /** 最近一次处理的开始时间 */
       startTime: Date.now(),
       /** 匹配到的 spec 单元测试文件总数 */
@@ -162,23 +162,28 @@ export class JestCheck {
   /**
    * 执行 jest 校验
    */
-  private async check(specFileList = this.config.fileList) {
+  private async check(specFileList = this.config.fileList): Promise<JestCheckResult> {
     this.logger.info('start checking');
     this.init();
+    this.stats.isPassed = true;
 
     const { config, stats } = this;
-    stats.success = true;
-    this.logger.debug('[options]:', config, specFileList);
+    const info: JestCheckResult = {
+      isPassed: stats.isPassed,
+      /** 文件总数 */
+      // total: results.length,
+    };
 
+    this.logger.debug('[options]:', config, specFileList);
     specFileList = this.getSpecFileList(specFileList);
 
-    if (!specFileList.length) return stats.success;
+    if (!specFileList.length) info;
 
     this.logger.info(`Total Spec Files:`, specFileList.length);
     this.logger.debug(specFileList);
 
     if (config.silent) {
-      stats.success = await new Promise(resolve => {
+      stats.isPassed = await new Promise(resolve => {
         exec(
           `node --max_old_space_size=4096 ./node_modules/jest/bin/jest.js --unhandled-rejections=strict --forceExit ${specFileList
             .map(f => f.replace(/[\\]/g, '\\\\'))
@@ -216,19 +221,13 @@ export class JestCheck {
 
       fs.writeFileSync(this.cacheFilePath, JSON.stringify(this.stats.cacheInfo, null, 2));
 
-      stats.success = data.results.success && !data.results.numFailedTestSuites;
+      stats.isPassed = data.results.success && !data.results.numFailedTestSuites;
       this.logger.debug(data);
     }
 
-    const info: JestCheckResult = {
-      isPassed: stats.success,
-      /** 文件总数 */
-      // total: results.length,
-    };
-
-    this.logger.info(bold(info.isPassed ? greenBright('Verification passed!') : redBright('Verification failed!')));
+    this.logger.info(bold(stats.isPassed ? greenBright('Verification passed!') : redBright('Verification failed!')));
     this.logger.info(`TimeCost: ${bold(greenBright(Date.now() - stats.startTime))}ms`);
-    if (!info.isPassed && config.exitOnError) exit(1);
+    if (!stats.isPassed && config.exitOnError) exit(1);
 
     return info;
   }
@@ -248,7 +247,9 @@ export class JestCheck {
         return d;
       })
       .catch(code => {
+        this.stats.isPassed = false;
         if (this.config.exitOnError) exit(code, this.stats.startTime, '[JestCheck]');
+        return { isPassed: false } as JestCheckResult;
       });
   }
   /**
@@ -268,7 +269,9 @@ export class JestCheck {
           return d;
         })
         .catch(code => {
+          this.stats.isPassed = false;
           if (this.config.exitOnError) exit(code, this.stats.startTime, '[JestCheck]');
+          return { isPassed: false } as JestCheckResult;
         });
     });
   }
@@ -283,7 +286,7 @@ export class JestCheck {
 
     if (!this.config.fileList.length && (fileList || !this.config.src.length)) {
       this.logger.info('No files to process\n');
-      return false;
+      return { isPassed: true } as JestCheckResult;
     }
 
     if (this.config.mode === 'current') return this.check();

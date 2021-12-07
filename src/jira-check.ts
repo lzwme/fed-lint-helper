@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-12-02 21:56:19
+ * @LastEditTime: 2021-12-07 22:57:22
  * @Description:  Jira check
  */
 
@@ -327,7 +327,7 @@ export class JiraCheck {
     /** 禁止提交的类型 */
     const noAllowIssueType: number[] = [];
     const issueTypeToDesc = issueTypeList.reduce((obj, item) => {
-      obj[item.id] = item.name.replace(/[^a-zA-Z]/, '').toLowerCase();
+      obj[item.id] = item.name.replace(/[^a-zA-Z]/g, '').toLowerCase();
       if (obj[item.id].includes('subtask')) obj[item.id] = 'feature';
       else if (obj[item.id].includes('bug')) obj[item.id] = 'bugfix';
 
