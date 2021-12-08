@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.4.9](https://github.com/lzwme/fed-lint-helper/compare/v1.4.8...v1.4.9) (2021-12-08)
+
+
+### Bug Fixes
+
+* 修复 jira-check 获取修复版本为空时直接抛异常的问题 ([f1b6311](https://github.com/lzwme/fed-lint-helper/commit/f1b6311c2f88475d53e939c9d61abdfaf8550d33))
+* 修正 jira-check 获取 issueType desc 时替换非英文字符的正则规则；jest 执行返回值类型优化 ([a4d0b22](https://github.com/lzwme/fed-lint-helper/commit/a4d0b22baaede75b60a16fba6e78ed6f1226cc3d))
+
 ### [1.4.8](https://github.com/lzwme/fed-lint-helper/compare/v1.4.7...v1.4.8) (2021-12-02)
 
 
