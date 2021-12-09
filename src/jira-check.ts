@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-12-07 22:57:22
+ * @LastEditTime: 2021-12-09 17:51:32
  * @Description:  Jira check
  */
 
@@ -253,7 +253,7 @@ export class JiraCheck {
 
       // 查找必须修复的标记
       const mustRepairTagIndex = fields.comment.comments.findIndex(comment => comment.body.includes('[必须修复]'));
-      if (mustRepairTagIndex === -1) return;
+      if (mustRepairTagIndex === -1) continue;
 
       if (config.debug) {
         const mustRepair = fields.comment.comments[mustRepairTagIndex];
@@ -266,7 +266,7 @@ export class JiraCheck {
 
       if (!gitlabComment) {
         this.logger.debug('[检查信息]', `[${item.key}]未有代码提交`);
-        return;
+        continue;
       }
 
       /** 最新一次的 review 信息 */
@@ -458,11 +458,6 @@ export class JiraCheck {
 
     this.logger.info(bold(checkResult.isPassed ? greenBright('Verification passed!') : redBright('Verification failed!')));
     this.logger.info(`TimeCost: ${bold(greenBright(Date.now() - stats.startTime))}ms`);
-    if (!checkResult.isPassed && this.config.exitOnError) {
-      const exitCode = stats.errCount || -1;
-      this.logger.debug('退出码', exitCode);
-      exit(exitCode);
-    }
 
     return checkResult;
   }
@@ -473,15 +468,12 @@ export class JiraCheck {
       type: 'jira',
       debug: this.config.debug,
       jiraConfig: this.config,
-    })
-      .then(d => {
-        if (!d.isPassed && this.config.exitOnError) process.exit(-1);
-        return d;
-      })
-      .catch(code => {
-        this.logger.error('checkInChildProc error, code:', code);
-        if (this.config.exitOnError) exit(code);
-      });
+    }).catch(code => {
+      this.logger.error('checkInChildProc error, code:', code);
+      this.stats.success = false;
+      this.stats.errCount = code;
+      return { isPassed: false } as JiraCheckResult;
+    });
   }
   /** 在 work_threads 子线程中执行 */
   private checkInWorkThreads() {
@@ -491,21 +483,26 @@ export class JiraCheck {
         type: 'jira',
         debug: this.config.debug,
         jiraConfig: this.config,
-      })
-        .then(d => {
-          if (!d.isPassed && this.config.exitOnError) process.exit(-1);
-          return d;
-        })
-        .catch(code => {
-          this.logger.error('checkInWorkThreads error, code:', code);
-          if (this.config.exitOnError) exit(code);
-        });
+      }).catch(code => {
+        this.logger.error('checkInWorkThreads error, code:', code);
+        this.stats.success = false;
+        this.stats.errCount = code;
+        return { isPassed: false } as JiraCheckResult;
+      });
     });
   }
   async start() {
     this.init();
-    if (this.config.mode === 'current') return this.check();
-    if (this.config.mode === 'thread') return this.checkInWorkThreads();
-    return this.checkInChildProc();
+    let result: JiraCheckResult;
+    if (this.config.mode === 'current') result = await this.check();
+    if (this.config.mode === 'thread') result = await this.checkInWorkThreads();
+    result = await this.checkInChildProc();
+
+    if (!result.isPassed && this.config.exitOnError) {
+      const exitCode = this.stats.errCount || -1;
+      this.logger.debug('退出码', exitCode);
+      exit(exitCode);
+    }
+    return result;
   }
 }
