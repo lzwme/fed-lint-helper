@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.4.10](https://github.com/lzwme/fed-lint-helper/compare/v1.4.9...v1.4.10) (2021-12-10)
+
+
+### Bug Fixes
+
+* 修正 jira-check pipeline 循环处理逻辑的异常返回 ([91f1ca5](https://github.com/lzwme/fed-lint-helper/commit/91f1ca58ca4c2a79f572a27fa604a71285e423d0))
+
 ### [1.4.9](https://github.com/lzwme/fed-lint-helper/compare/v1.4.8...v1.4.9) (2021-12-08)
 
 
