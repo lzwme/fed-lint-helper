@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-12-02 21:27:14
+ * @LastEditTime: 2021-12-10 11:13:43
  * @Description: typescript Diagnostics report
  */
 
@@ -271,14 +271,14 @@ export class TsCheck {
       [config.rootDir]: tsFiles || [],
     };
 
-    this.logger.debug('config：', config);
+    this.logger.debug('config:', config);
 
     // 没有指定 tsFiles 文件列表，才按 src 指定规则匹配
     if (!dirMap[config.rootDir].length) {
       const dirs = this.getCheckProjectDirs(config.src);
       if (!dirs) {
         this.logger.info('No files or directories to process\n');
-        return false;
+        return { isPassed: true } as TsCheckResult;
       }
 
       this.logger.debug('本次检测的子目录包括：', dirs);
@@ -389,12 +389,10 @@ export class TsCheck {
       type: 'tscheck',
       debug: this.config.debug,
       tsCheckConfig: this.config,
-    })
-      .then(d => {
-        if (!d.isPassed && this.config.exitOnError) process.exit(d.failed || -1);
-        return d;
-      })
-      .catch(code => this.config.exitOnError && process.exit(code));
+    }).catch(code => {
+      this.logger.error('checkInChildProc error, code:', code);
+      return { isPassed: false, failed: code } as TsCheckResult;
+    });
   }
   /**
    * 在 work_threads 子线程中执行
@@ -407,12 +405,10 @@ export class TsCheck {
         type: 'tscheck',
         debug: this.config.debug,
         tsCheckConfig: this.config,
-      })
-        .then(d => {
-          if (!d.isPassed && this.config.exitOnError) process.exit(d.failed || -1);
-          return d;
-        })
-        .catch(code => this.config.exitOnError && process.exit(code));
+      }).catch(code => {
+        this.logger.error('checkInWorkThreads error, code:', code);
+        return { isPassed: false, failed: code } as TsCheckResult;
+      });
     });
   }
   /** 执行 check */
@@ -422,11 +418,18 @@ export class TsCheck {
 
     if (!this.config.tsFiles.length && (tsFiles || !this.config.src.length)) {
       this.logger.info('No files to process\n');
-      return false;
+      return { isPassed: true } as TsCheckResult;
     }
 
-    if (this.config.mode === 'current') return this.check(tsFiles);
-    if (this.config.mode === 'thread') return this.checkInWorkThreads();
-    return this.checkInChildProc();
+    let result: TsCheckResult;
+    if (this.config.mode === 'proc') result = await this.checkInChildProc();
+    else if (this.config.mode === 'thread') result = await this.checkInWorkThreads();
+    else result = await this.check(this.config.tsFiles);
+
+    this.stats.success = !!result.isPassed;
+    this.logger.debug('result', result);
+    if (!result.isPassed && this.config.exitOnError) exit(result.failed || -1);
+
+    return result;
   }
 }

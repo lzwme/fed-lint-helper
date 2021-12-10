@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-12-02 21:27:20
+ * @LastEditTime: 2021-12-10 11:12:28
  * @Description:  eslint check
  */
 
@@ -16,16 +16,30 @@ import { ESLintCheckConfig, getConfig } from './config';
 const { bold, red, redBright, yellowBright, greenBright, cyanBright } = color;
 
 export interface ESLintCheckResult {
+  /** 是否检测通过 */
   isPassed: boolean;
+  /** 文件总数 */
   total: number;
+  /** error 类型异常的总数量 */
   errorCount: number;
+  /** warning 类型异常的总数量 */
   warningCount: number;
+  /** 可修复的 Error 类异常数量 */
   fixableErrorCount: number;
+  /** 可修复的 Warning 类异常数量 */
   fixableWarningCount: number;
+  /** 自动修复的错误数量 */
   fixedCount: number;
+  /** 本次检测的目录或文件列表 */
   lintList: string[];
+  /** 存在 error 异常的文件列表（必须修复，否则应将其规则设置为 warning 级别并生成至白名单中） */
   errorFiles: string[];
+  /** 存在 warning 异常的文件列表 */
   warningFiles: string[];
+  // newErrCount: newErrorReults.length,
+  // newWarningCount: newWaringReults.length,
+  // /** LintResult，用于 API 调用自行处理相关逻辑 */
+  // results,
 }
 export class ESLintCheck {
   /** 统计信息 */
@@ -121,13 +135,14 @@ export class ESLintCheck {
   /**
    * 执行 eslint 校验
    */
-  private async check(lintList = this.config.src) {
+  private async check(lintList: string[]) {
     this.logger.info('start checking');
     this.init();
 
     const config = this.config;
     const stats = this.stats;
 
+    if (!lintList) lintList = config.src;
     this.logger.debug('[options]:', config);
     this.logger.debug(`TOTAL:`, lintList.length, `, Files:\n`, lintList);
 
@@ -272,15 +287,13 @@ export class ESLintCheck {
         }
 
         this.logger.info(bold(greenBright('Verification passed!')));
-      } else {
-        if (this.config.exitOnError) exit(1, stats.startTime, '[ESLint]');
       }
     }
 
     stats.success = isPassed;
     this.logger.info(`TimeCost: ${bold(greenBright(Date.now() - stats.startTime))}ms`);
 
-    const info = {
+    const info: ESLintCheckResult = {
       /** 是否检测通过 */
       isPassed,
       /** 文件总数 */
@@ -319,12 +332,10 @@ export class ESLintCheck {
       type: 'eslint',
       debug: this.config.debug,
       eslintConfig: this.config,
-    })
-      .then(d => {
-        if (!d.isPassed && this.config.exitOnError) process.exit(d.errorCount || -1);
-        return d;
-      })
-      .catch(code => this.config.exitOnError && process.exit(code));
+    }).catch(code => {
+      this.logger.error('checkInChildProc error, code:', code);
+      return { isPassed: false, errorCount: code } as ESLintCheckResult;
+    });
   }
   /**
    * 在 work_threads 子线程中执行
@@ -337,12 +348,10 @@ export class ESLintCheck {
         type: 'eslint',
         debug: this.config.debug,
         eslintConfig: this.config,
-      })
-        .then(d => {
-          if (!d.isPassed && this.config.exitOnError) process.exit(d.errorCount || -1);
-          return d;
-        })
-        .catch(code => this.config.exitOnError && process.exit(code));
+      }).catch(code => {
+        this.logger.error('checkInWorkThreads error, code:', code);
+        return { isPassed: false, errorCount: code } as ESLintCheckResult;
+      });
     });
   }
   /**
@@ -353,7 +362,7 @@ export class ESLintCheck {
       // 只处理 ts、tsx、js、jsx 后缀的文件
       lintList = lintList.filter(filepath => !filepath.includes('.') || /\.(js|ts)x?$/i.test(filepath));
       this.config.src = lintList;
-    }
+    } else lintList = this.config.src;
     this.init();
 
     if (!this.config.src.length) {
@@ -361,8 +370,15 @@ export class ESLintCheck {
       return false;
     }
 
-    if (this.config.mode === 'current') return this.check(lintList);
-    if (this.config.mode === 'thread') return this.checkInWorkThreads();
-    return this.checkInChildProc();
+    let result: ESLintCheckResult;
+    if (this.config.mode === 'proc') result = await this.checkInChildProc();
+    else if (this.config.mode === 'thread') result = await this.checkInWorkThreads();
+    else result = await this.check(lintList);
+
+    this.stats.success = !!result.isPassed;
+    this.logger.debug('result', result);
+    if (!result.isPassed && this.config.exitOnError) exit(result.errorCount || -1);
+
+    return result;
   }
 }

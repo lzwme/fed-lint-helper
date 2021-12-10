@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-25 10:12:21
  * @LastEditors: lzw
- * @LastEditTime: 2021-11-10 15:22:34
+ * @LastEditTime: 2021-12-09 19:05:10
  * @Description: 在 fork 子进程中执行 Check 任务
  */
 
@@ -26,13 +26,13 @@ export interface WorkerMsgBody<T = unknown> {
   end?: boolean;
 }
 
-export function createForkThread<T>(options: CreateThreadOptions = { type: 'tscheck' }, onMessage?: (d) => void): Promise<T> {
+export function createForkThread<T>(options: CreateThreadOptions, onMessage?: (d: WorkerMsgBody<T>) => void): Promise<T> {
   return new Promise((resolve, reject) => {
     const worker = fork(path.resolve(__dirname, './forked-process.js'), { silent: false });
     worker.send(options);
 
-    worker.on('message', data => {
-      const info: WorkerMsgBody = typeof data === 'string' ? JSON.parse(data) : data;
+    worker.on('message', (info: WorkerMsgBody<T>) => {
+      if (typeof info === 'string') info = JSON.parse(info);
       if (options.debug) console.log('received from child proc:', info);
       if (onMessage) onMessage(info);
 

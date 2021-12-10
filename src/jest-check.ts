@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-12-07 18:08:26
+ * @LastEditTime: 2021-12-10 10:26:32
  * @Description:  jest check
  */
 
@@ -191,7 +191,6 @@ export class JestCheck {
           (err, _stdout, _stderr) => {
             if (err) {
               console.error(err);
-              if (this.config.exitOnError) exit(-1, stats.startTime, '[JestCheck]');
               return resolve(false);
             }
 
@@ -227,7 +226,6 @@ export class JestCheck {
 
     this.logger.info(bold(stats.isPassed ? greenBright('Verification passed!') : redBright('Verification failed!')));
     this.logger.info(`TimeCost: ${bold(greenBright(Date.now() - stats.startTime))}ms`);
-    if (!stats.isPassed && config.exitOnError) exit(1);
 
     return info;
   }
@@ -241,16 +239,10 @@ export class JestCheck {
       type: 'jest',
       debug: this.config.debug,
       jestConfig: this.config,
-    })
-      .then(d => {
-        if (!d.isPassed && this.config.exitOnError) process.exit(-1);
-        return d;
-      })
-      .catch(code => {
-        this.stats.isPassed = false;
-        if (this.config.exitOnError) exit(code, this.stats.startTime, '[JestCheck]');
-        return { isPassed: false } as JestCheckResult;
-      });
+    }).catch(code => {
+      this.logger.error('checkInChildProc error, code:', code);
+      return { isPassed: false } as JestCheckResult;
+    });
   }
   /**
    * 在 work_threads 子线程中执行
@@ -263,34 +255,32 @@ export class JestCheck {
         type: 'jest',
         debug: this.config.debug,
         jestConfig: this.config,
-      })
-        .then(d => {
-          if (!d.isPassed && this.config.exitOnError) process.exit(-1);
-          return d;
-        })
-        .catch(code => {
-          this.stats.isPassed = false;
-          if (this.config.exitOnError) exit(code, this.stats.startTime, '[JestCheck]');
-          return { isPassed: false } as JestCheckResult;
-        });
+      }).catch(code => {
+        this.logger.error('checkInWorkThreads error, code:', code);
+        return { isPassed: false } as JestCheckResult;
+      });
     });
   }
-  /**
-   * 启动 jest 校验
-   */
+  /** 执行 jest 校验 */
   async start(fileList?: string[]) {
     if (fileList && fileList !== this.config.fileList) this.config.fileList = fileList;
     this.init();
 
-    fileList && !this.config.fileList.length;
+    let result: JestCheckResult = { isPassed: true };
 
     if (!this.config.fileList.length && (fileList || !this.config.src.length)) {
       this.logger.info('No files to process\n');
-      return { isPassed: true } as JestCheckResult;
+      return result;
     }
 
-    if (this.config.mode === 'current') return this.check();
-    if (this.config.mode === 'thread') return this.checkInWorkThreads();
-    return this.checkInChildProc();
+    if (this.config.mode === 'proc') result = await this.checkInChildProc();
+    else if (this.config.mode === 'thread') result = await this.checkInWorkThreads();
+    else result = await this.check();
+
+    this.stats.isPassed = !!result.isPassed;
+    this.logger.debug('result', result);
+    if (!result.isPassed && this.config.exitOnError) exit(-1);
+
+    return result;
   }
 }

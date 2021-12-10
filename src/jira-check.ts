@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-12-09 17:51:32
+ * @LastEditTime: 2021-12-10 10:20:57
  * @Description:  Jira check
  */
 
@@ -160,7 +160,7 @@ export class JiraCheck {
 
     // 支持环境变量 JIRA_JSESSIONID 设置 cookie
     if (process.env.JIRA_JSESSIONID) headers.cookie = `JSESSIONID=${process.env.JIRA_JSESSIONID}`;
-    this.logger.debug('headers', headers);
+    this.logger.debug('[initRequest]headers', headers);
 
     this.reqeust = new Request(headers.cookie, headers);
   }
@@ -209,7 +209,7 @@ export class JiraCheck {
     return issueTypeList;
   }
   /** CI pipeline 阶段执行的批量检查，主要用于 MR 阶段 */
-  private async pipelineCheck() {
+  private async pipelineCheck(): Promise<boolean> {
     const { config, stats } = this;
     const sprintVersion = `${getHeadBranch()}`.split('_')[0];
     const query = `project = ${config.issuePrefix.replace(/-$/, '')} AND fixVersion = "${sprintVersion}" AND comment ~ "必须修复"${
@@ -308,7 +308,7 @@ export class JiraCheck {
     return stats.errCount === 0;
   }
   /** git hooks commit-msg 检查 */
-  private async commitMsgCheck() {
+  private async commitMsgCheck(): Promise<boolean> {
     const { config, stats } = this;
     /** 当前本地分支。分支命名格式：3.10.1<_dev><_fix-xxx> */
     const branch = getHeadBranch();
@@ -399,14 +399,14 @@ export class JiraCheck {
       if (smartRegWithMsg.test(commitMsg)) {
         // 如果用户需要手动填入commit信息
         const msg = commitMsg.match(smartRegWithMsg)[1].trim();
-        const smartCommit = `[ET][${versionName}][${issueText}][${jiraID}] ${msg}`;
+        const smartCommit = `${config.commitMsgPrefix}[${versionName}][${issueText}][${jiraID}] ${msg}`;
         fs.writeFileSync(gitPath, smartCommit, { encoding: 'utf-8' });
-        this.logger.info(`[智能修改commit]: ${smartCommit} \n`);
+        this.logger.info(`[智能修改commit]: ${color.greenBright(smartCommit)} \n`);
       } else if (smartRegWithJIRA.test(commitMsg)) {
         // 如果只匹配到JIRA号
-        const smartCommit = `[ET][${versionName}][${issueText}][${jiraID}] ${summary}`;
+        const smartCommit = `${config.commitMsgPrefix}[${versionName}][${issueText}][${jiraID}] ${summary}`;
         fs.writeFileSync(gitPath, smartCommit, { encoding: 'utf-8' });
-        this.logger.info(`[智能修改commit]: ${smartCommit} \n`);
+        this.logger.info(`[智能修改commit]: ${color.greenBright(smartCommit)} \n`);
       } else if (!reg.test(commitMsg)) {
         // 如果都是自己填的
         this.logger.debug(reg, commitMsg, reg.test(commitMsg));
@@ -446,7 +446,6 @@ export class JiraCheck {
     this.init();
     const stats = this.getInitStats();
     const checkResult: JiraCheckResult = { isPassed: false };
-
     this.logger.info(color.green(`start checking`));
 
     try {
@@ -470,7 +469,6 @@ export class JiraCheck {
       jiraConfig: this.config,
     }).catch(code => {
       this.logger.error('checkInChildProc error, code:', code);
-      this.stats.success = false;
       this.stats.errCount = code;
       return { isPassed: false } as JiraCheckResult;
     });
@@ -485,7 +483,6 @@ export class JiraCheck {
         jiraConfig: this.config,
       }).catch(code => {
         this.logger.error('checkInWorkThreads error, code:', code);
-        this.stats.success = false;
         this.stats.errCount = code;
         return { isPassed: false } as JiraCheckResult;
       });
@@ -494,15 +491,14 @@ export class JiraCheck {
   async start() {
     this.init();
     let result: JiraCheckResult;
-    if (this.config.mode === 'current') result = await this.check();
-    if (this.config.mode === 'thread') result = await this.checkInWorkThreads();
-    result = await this.checkInChildProc();
+    if (this.config.mode === 'proc') result = await this.checkInChildProc();
+    else if (this.config.mode === 'thread') result = await this.checkInWorkThreads();
+    else result = await this.check();
 
-    if (!result.isPassed && this.config.exitOnError) {
-      const exitCode = this.stats.errCount || -1;
-      this.logger.debug('退出码', exitCode);
-      exit(exitCode);
-    }
+    this.stats.success = !!result.isPassed;
+    this.logger.debug('result', result);
+    if (!result.isPassed && this.config.exitOnError) exit(this.stats.errCount || -1);
+
     return result;
   }
 }

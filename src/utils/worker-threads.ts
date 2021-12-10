@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-25 10:12:21
  * @LastEditors: lzw
- * @LastEditTime: 2021-11-18 22:07:31
+ * @LastEditTime: 2021-12-10 11:10:49
  * @Description: worker_threads 实现在 worker 线程中执行
  *
  * - worker_threads 比 child_process 和 cluster 更为轻量级的并行性，而且 worker_threads 可有效地共享内存
@@ -21,11 +21,15 @@ interface CreateThreadOptions {
   jiraConfig?: JiraCheckConfig;
 }
 
-export function createWorkerThreads<T>(options: CreateThreadOptions = { type: 'tscheck' }, onMessage?: (d) => void): Promise<T> {
-  return new Promise((resolve, reject) => {
-    if (!isMainThread) return;
+interface WorkerMsgBody<T = unknown> {
+  type: ILintTypes;
+  data: T;
+  end: boolean;
+}
 
-    if (options.debug) console.log('createWorkerThreads:', options);
+export function createWorkerThreads<T>(options: CreateThreadOptions, onMessage?: (d: WorkerMsgBody<T>) => void): Promise<T> {
+  return new Promise((resolve, reject) => {
+    if (!isMainThread) return reject(-2);
 
     const worker = new Worker(__filename, {
       workerData: options,
@@ -33,18 +37,18 @@ export function createWorkerThreads<T>(options: CreateThreadOptions = { type: 't
       // stdout: true,
     });
 
-    worker.on('message', data => {
-      if (options.debug) console.log('onmessage from worker:', data);
-      if (onMessage) onMessage(data);
+    worker.on('message', (info: WorkerMsgBody<T>) => {
+      if (options.debug) console.log(`received from worker thread:`, info);
+      if (onMessage) onMessage(info);
 
-      if (data.end) {
-        worker.terminate();
-        resolve(data);
+      if (info.end) {
+        resolve(info.data);
+        process.nextTick(() => worker.terminate());
       }
     });
 
     worker.on('exit', code => {
-      if (options.debug) console.log('exit worker', code, options.type);
+      if (options.debug) console.log(`[${options.type}] exit worker with code:`, code);
       if (code !== 0) reject(code);
     });
   });
@@ -52,9 +56,12 @@ export function createWorkerThreads<T>(options: CreateThreadOptions = { type: 't
 
 if (!isMainThread) {
   const config: CreateThreadOptions = workerData;
-  if (config.debug) console.log('workerData:', config, config.type);
+  if (config.debug) console.log('workerData:', config);
   const done = (data: unknown) => {
-    parentPort.postMessage({ type: config.type, data, end: true });
+    if (config.debug) console.log('emit msg from worker thread:', { type: config.type, data, end: true });
+    setTimeout(() => {
+      parentPort.postMessage({ type: config.type, data, end: true } as WorkerMsgBody);
+    }, 300);
   };
   const resetConfig = { checkOnInit: false, exitOnError: false, mode: 'current' };
 
