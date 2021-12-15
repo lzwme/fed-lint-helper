@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2021-12-02 21:00:03
+ * @LastEditTime: 2021-12-15 09:08:57
  * @Description:
  */
 
@@ -229,17 +229,20 @@ export function mergeCommConfig(options: FlhConfig, useDefault = true) {
  * 获取配置信息
  */
 export function getConfig(options?: FlhConfig, useCache = isInited) {
-  if (useCache) return config;
+  if (useCache && !options) return config;
 
   if (options && options.configPath) config.configPath = options.configPath;
 
-  const configPath = path.resolve(config.configPath);
-  if (fs.existsSync(configPath)) {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const cfg: FlhConfig = require(configPath);
-    assign(config, cfg);
-  } else if (config.debug || (options && options.debug)) {
-    console.log(color.yellowBright(`配置文件不存在：${configPath}`));
+  // 配置文件只处理一次
+  if (!isInited) {
+    const configPath = path.resolve(config.configPath);
+    if (fs.existsSync(configPath)) {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const cfg: FlhConfig = require(configPath);
+      assign(config, cfg);
+    } else if (config.debug || (options && options.debug)) {
+      console.log(color.yellowBright(`配置文件不存在：${configPath}`));
+    }
   }
 
   // 直接入参的优先级最高
