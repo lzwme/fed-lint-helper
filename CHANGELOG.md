@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.4.11](https://github.com/lzwme/fed-lint-helper/compare/v1.4.10...v1.4.11) (2021-12-15)
+
+
+### Bug Fixes
+
+* 修复配置信息二次初始化入参被忽略的问题 ([ace3fd5](https://github.com/lzwme/fed-lint-helper/commit/ace3fd5a0628349bd7db94444a04cc41e8f99ddb))
+
 ### [1.4.10](https://github.com/lzwme/fed-lint-helper/compare/v1.4.9...v1.4.10) (2021-12-10)
 
 
