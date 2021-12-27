@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-12-27 14:02:24
+ * @LastEditTime: 2021-12-27 14:18:39
  * @Description: typescript Diagnostics report
  */
 
@@ -190,12 +190,13 @@ export class TsCheck {
         }
 
         if (item.file) {
-          const fileName = item.file.fileName;
+          const shortpath = fixToshortPath(path.normalize(item.file.fileName));
+          item.file.moduleName = shortpath;
 
           // 过滤间接依赖进来的文件
-          if (fileName.includes('node_modules') || fileName.endsWith('.d.ts')) return false;
+          if (shortpath.includes('node_modules') || shortpath.endsWith('.d.ts')) return false;
           for (const p of config.exclude) {
-            if (minimatch(fileName, p, { debug: config.debug })) return false;
+            if (minimatch(shortpath, p, { debug: config.debug })) return false;
           }
         }
 
@@ -207,29 +208,28 @@ export class TsCheck {
 
       const errDiagnostics: ts.Diagnostic[] = [];
 
-      tmpDiagnostics.forEach(d => {
-        if (!d.file) {
-          errDiagnostics.push(d);
+      tmpDiagnostics.forEach(item => {
+        if (!item.file) {
+          errDiagnostics.push(item);
           return;
         }
 
-        const shortpath = fixToshortPath(path.normalize(d.file.fileName));
-        const key = shortpath; // d.file.id ||
+        const shortpath = item.file.moduleName || fixToshortPath(path.normalize(item.file.fileName));
 
-        if (!this.whiteList[key]) {
-          stats.allDiagnosticsFileMap[key] = d;
-          errDiagnostics.push(d);
+        if (!this.whiteList[shortpath]) {
+          stats.allDiagnosticsFileMap[shortpath] = item;
+          errDiagnostics.push(item);
         }
 
         if (config.toWhiteList) {
           // Error 级别最高
-          if (this.whiteList[key] !== 'Error') this.whiteList[key] = ts.DiagnosticCategory[d.category] as never;
+          if (this.whiteList[shortpath] !== 'Error') this.whiteList[shortpath] = ts.DiagnosticCategory[item.category] as never;
         }
 
-        if (tsCheckFilesPassed[key]) {
+        if (tsCheckFilesPassed[shortpath]) {
           // 移除缓存
-          if (tsCheckFilesPassed[key].updateTime === stats.startTime) stats.tsCheckFilesPassedChanged = true;
-          delete tsCheckFilesPassed[key];
+          if (tsCheckFilesPassed[shortpath].updateTime === stats.startTime) stats.tsCheckFilesPassedChanged = true;
+          delete tsCheckFilesPassed[shortpath];
         }
       });
 
