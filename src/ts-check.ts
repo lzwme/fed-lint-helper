@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-12-27 12:21:23
+ * @LastEditTime: 2021-12-27 12:47:39
  * @Description: typescript Diagnostics report
  */
 
@@ -208,8 +208,8 @@ export class TsCheck {
 
         // 过滤间接依赖进来的文件
         if (shortpath.includes('node_modules') || shortpath.endsWith('.d.ts')) return;
-        for (let p of config.exclude) {
-          if ((minimatch(shortpath, p), { debug: config.debug })) return;
+        for (const p of config.exclude) {
+          if (minimatch(shortpath, p, { debug: config.debug })) return;
         }
 
         if (!this.whiteList[key]) {

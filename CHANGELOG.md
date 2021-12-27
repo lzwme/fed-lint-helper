@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.4.12](https://github.com/lzwme/fed-lint-helper/compare/v1.4.11...v1.4.12) (2021-12-27)
+
+
+### Bug Fixes
+
+* tscheck 检测结果列表应过滤间接依赖的文件 ([ef9884d](https://github.com/lzwme/fed-lint-helper/commit/ef9884d4caf2d05d184a5f1ecb26c6e25edcd922))
+
 ### [1.4.11](https://github.com/lzwme/fed-lint-helper/compare/v1.4.10...v1.4.11) (2021-12-15)
 
 
