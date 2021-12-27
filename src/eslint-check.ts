@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-12-10 11:12:28
+ * @LastEditTime: 2021-12-27 16:59:52
  * @Description:  eslint check
  */
 
@@ -82,7 +82,7 @@ export class ESLintCheck {
 
     if (config !== this.config) config = assign<ESLintCheckConfig>({}, this.config, config);
     this.config = assign<ESLintCheckConfig>({}, baseConfig.eslint, config);
-    this.cacheFilePath = path.resolve(this.config.rootDir, baseConfig.cacheLocation, 'tsCheckCache.json');
+    this.cacheFilePath = path.resolve(this.config.rootDir, baseConfig.cacheLocation, 'eslintCache.json');
     this.config.whiteListFilePath = path.resolve(this.config.rootDir, this.config.whiteListFilePath);
     return this.config;
   }
