@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-12-10 11:13:43
+ * @LastEditTime: 2021-12-27 12:21:23
  * @Description: typescript Diagnostics report
  */
 
@@ -13,6 +13,7 @@ import * as ts from 'typescript';
 import glob from 'glob';
 import { fixToshortPath, md5, exit, createForkThread, assign, Logger, execSync } from './utils';
 import { TsCheckConfig, getConfig } from './config';
+import minimatch from 'minimatch';
 
 const { bold, redBright, yellowBright, cyanBright, red, greenBright, cyan } = color;
 export interface TsCheckResult {
@@ -204,6 +205,12 @@ export class TsCheck {
 
         const shortpath = fixToshortPath(path.normalize(d.file.fileName));
         const key = shortpath; // d.file.id ||
+
+        // 过滤间接依赖进来的文件
+        if (shortpath.includes('node_modules') || shortpath.endsWith('.d.ts')) return;
+        for (let p of config.exclude) {
+          if ((minimatch(shortpath, p), { debug: config.debug })) return;
+        }
 
         if (!this.whiteList[key]) {
           stats.allDiagnosticsFileMap[key] = d;
