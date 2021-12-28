@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.4.13](https://github.com/lzwme/fed-lint-helper/compare/v1.4.12...v1.4.13) (2021-12-28)
+
+
+### Bug Fixes
+
+* 修正 eslint 缓存文件名与 tscheck 相同的问题 ([3fa6d7a](https://github.com/lzwme/fed-lint-helper/commit/3fa6d7af740d458003bcd19192d3d3d269b6b127))
+* tscheck 过滤间接依赖文件逻辑前置 ([e10dc97](https://github.com/lzwme/fed-lint-helper/commit/e10dc97bd8c2b0a0482db2db733aead0c286ad8c))
+* tscheck 使用 minimatch 过滤 glob 规则应使用文件相对路径 ([9249e88](https://github.com/lzwme/fed-lint-helper/commit/9249e8875f929a8fcff90e316b16f7bfc19722f3))
+
 ### [1.4.12](https://github.com/lzwme/fed-lint-helper/compare/v1.4.11...v1.4.12) (2021-12-27)
 
 
