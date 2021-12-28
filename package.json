@@ -14,7 +14,7 @@
   },
   "private": false,
   "engines": {
-    "node": ">=12"
+    "node": ">=8"
   },
   "keywords": [
     "fed",
