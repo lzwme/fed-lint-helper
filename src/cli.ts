@@ -2,15 +2,16 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2021-12-01 14:39:19
+ * @LastEditTime: 2022-01-11 10:30:54
  * @Description: cli 工具
  */
 import { Option, program } from 'commander';
 import { color } from 'console-log-colors';
-import { getConfig, FlhConfig, TsCheckConfig, JiraCheckConfig, config, mergeCommConfig } from './config';
 import path from 'path';
 import fs from 'fs';
 import { getHeadDiffFileList } from './utils';
+import { getConfig, config, mergeCommConfig } from './config';
+import type { FlhConfig, TsCheckConfig, JiraCheckConfig, CommitLintOptions } from './config';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const pkg = require('../../package.json');
@@ -29,6 +30,8 @@ interface POptions
   jest?: boolean;
   /** 是否执行 jira check */
   jira?: boolean;
+  /** 是否执行 commitlint */
+  commitlint?: boolean | string;
   /** 执行 jira check 的类型 */
   jiraType?: FlhConfig['jira']['type'];
   commitEdit?: FlhConfig['jira']['COMMIT_EDITMSG'];
@@ -51,6 +54,7 @@ program
   .option('--toWhiteList', `是否将检测到异常的文件输出到白名单文件列表中。`, false)
   .option('--tscheck', `执行 TypeScript Diagnostics check`)
   .option('--eslint', `执行 eslint 检查`)
+  .option('--commitlint [verifyReg]', `执行 commitlint 检查`)
   .option('--jira', `执行 jira 检查`)
   .option('--jira-home', `指定 jira 首页 url 地址`)
   .option('--projectName', `指定 git 仓库项目名`)
@@ -129,6 +133,15 @@ program
       import('./jira-check').then(({ JiraCheck }) => {
         const jestCheck = new JiraCheck(baseConfig.jira);
         jestCheck.start().then(res => opts.debug && console.log('jestCheck done!', res));
+      });
+    }
+
+    if (opts.commitlint) {
+      hasAction = true;
+      import('./commit-lint').then(({ commitMsgVerify }) => {
+        const cmvOpts: CommitLintOptions = { msgPath: opts.commitEdit, exitOnError: opts.exitOnError };
+        if (typeof opts.commitlint === 'string') cmvOpts.verify = opts.commitlint;
+        commitMsgVerify(cmvOpts);
       });
     }
 

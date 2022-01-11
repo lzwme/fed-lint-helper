@@ -85,7 +85,7 @@ export class Logger {
     // todo: 增加写入日志文件的能力
   }
 
-  public static getLogger(tag = '[general]', levelType: LogLevelType = 'log'): Logger {
+  public static getLogger(tag = '[flh]', levelType: LogLevelType = 'log'): Logger {
     if (!Logger.map[tag]) Logger.map[tag] = new Logger(tag, levelType);
     return Logger.map[tag];
   }

@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2021-12-15 09:08:57
+ * @LastEditTime: 2022-01-11 10:29:53
  * @Description:
  */
 
@@ -137,6 +137,14 @@ export interface JiraCheckConfig extends CommConfig {
   COMMIT_EDITMSG?: string;
 }
 
+export interface CommitLintOptions extends CommConfig {
+  msgPath?: string;
+  /** 是否使用 Angular commit 风格验证。当自定义了 verify 时允许设置为 false */
+  useAngularStyle?: boolean;
+  /** 自定义验证规则 */
+  verify?: ((msg: string) => boolean | string) | string;
+}
+
 export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {
   /** 用户自定义文件的路径 */
   configPath?: string;
@@ -148,6 +156,7 @@ export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {
   eslint?: ESLintCheckConfig;
   jest?: JestCheckConfig;
   jira?: JiraCheckConfig;
+  commitlint?: CommitLintOptions;
 }
 
 const commConfig: CommConfig = {
@@ -203,6 +212,9 @@ export const config: FlhConfig = {
     pipeline: {
       requestParams: { maxResults: 100, fields: ['comment', 'assignee'] },
     },
+  },
+  commitlint: {
+    useAngularStyle: true,
   },
 };
 
