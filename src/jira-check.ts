@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-12-10 10:20:57
+ * @LastEditTime: 2022-03-03 20:30:32
  * @Description:  Jira check
  */
 
@@ -349,7 +349,7 @@ export class JiraCheck {
       test(/^Auto-merged (.*?) into (.*)/),
     ];
     const gitPath = path.join(config.rootDir, config.COMMIT_EDITMSG || './.git/COMMIT_EDITMSG');
-    const commitMsg = fs.readFileSync(gitPath, 'utf-8').replace('\n', ''); // commitMsg 后面带有 \n
+    const commitMsg = fs.readFileSync(gitPath, 'utf-8').trim();
     const jiraIDReg = new RegExp(`${config.issuePrefix}(\\d+)`, 'g');
     const jiraIDs = commitMsg.match(jiraIDReg);
 
@@ -431,7 +431,7 @@ export class JiraCheck {
       }
     } else {
       if (/Merge branch/.test(commitMsg)) {
-        this.logger.error('同分支提交禁止执行 Merge 操作请使用 git rebase 或 git pull -r 命令。若为跨分支合并，请增加 -n 参数\n');
+        this.logger.error('同分支提交禁止执行 Merge 操作，请使用 git rebase 或 git pull -r 命令。若为跨分支合并，请增加 -n 参数\n');
         return false;
       } else if (!ignoredCommitList.some(check => check(commitMsg))) {
         this.logger.error(`提交代码信息不符合规范，信息中应包含字符"${config.issuePrefix}XXXX".`);
