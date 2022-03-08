@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.5.0](https://github.com/lzwme/fed-lint-helper/compare/v1.4.13...v1.5.0) (2022-03-08)
+
+
+### Features
+
+* 新增遵循 Angular git commit style 的 commitlint 支持 ([a0c17e6](https://github.com/lzwme/fed-lint-helper/commit/a0c17e6576d8fe9d4c9e23bd9c538e99e8f340c6))
+
+
+### Bug Fixes
+
+* trim for commit-msg ([3cc6bf3](https://github.com/lzwme/fed-lint-helper/commit/3cc6bf3a3ced75967e63b36c889a352187f1fd43))
+
 ### [1.4.13](https://github.com/lzwme/fed-lint-helper/compare/v1.4.12...v1.4.13) (2021-12-28)
 
 
