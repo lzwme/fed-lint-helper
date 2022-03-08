@@ -15,7 +15,8 @@ export function commitMsgVerify(options?: CommitLintOptions) {
   const msg = readFileSync(options.msgPath, 'utf-8').trim();
   const logger = Logger.getLogger('[commitlint]', config.debug ? 'debug' : 'log');
 
-  logger.debug(options, msg);
+  if (!config.silent) logger.info('[msg] =>', msg);
+  logger.debug('options =>', options);
 
   if (options.verify) {
     if (typeof options.verify === 'function') {
@@ -45,6 +46,7 @@ export function commitMsgVerify(options?: CommitLintOptions) {
   }
 
   if (!isPass && options.exitOnError !== false) process.exit(1);
+  if (!config.silent) logger.info('Passed!');
 
   return isPass;
 }
