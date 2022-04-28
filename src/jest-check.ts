@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-12-10 10:26:32
+ * @LastEditTime: 2022-03-29 11:21:46
  * @Description:  jest check
  */
 
@@ -83,7 +83,7 @@ export class JestCheck {
 
     // 文件列表过滤
     this.config.fileList = this.config.fileList.filter(filepath => {
-      // 必须以 sepc|test.ts|js 结尾
+      // 必须以 spec|test.ts|js 结尾
       if (!/\.(spec|test)\.(ts|js)x?$/i.test(filepath)) return false;
       return true;
     });
