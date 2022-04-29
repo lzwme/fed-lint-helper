@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-04-29 18:29:04
+ * @LastEditTime: 2022-04-29 18:49:53
  * @Description:
  */
 
@@ -154,6 +154,8 @@ export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {
   rootDir?: string;
   /** 是否开启调试模式(打印更多的细节) */
   debug?: boolean;
+  /** 企业微信 web hooks，用于 ci 中发送通知 */
+  wxWorkNotify?: string[];
   tscheck?: TsCheckConfig;
   eslint?: ESLintCheckConfig;
   jest?: JestCheckConfig;
