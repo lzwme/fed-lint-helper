@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-03-03 20:30:32
+ * @LastEditTime: 2022-04-29 18:32:45
  * @Description:  Jira check
  */
 
@@ -377,8 +377,14 @@ export class JiraCheck {
 
       // 修复版本可能同时存在多个
       if (!info.fields.fixVersions.some(item => allowedFixVersions.includes(item.name))) {
-        this.logger.error('修复版本与当前本地分支不一致，不允许提交');
-        return false;
+        if (Array.isArray(config.allowedFixVersions)) {
+          if (info.fields.fixVersions.some(item => allowedFixVersions.includes(item.name))) {
+            this.logger.warn('修复版本与当前本地分支不一致，但在允许跳过检查的列表中', info.fields.fixVersions, config.allowedFixVersions);
+          }
+        } else {
+          this.logger.error('修复版本与当前本地分支不一致，不允许提交');
+          return false;
+        }
       }
 
       const versionName = info.fields.fixVersions[0].name;

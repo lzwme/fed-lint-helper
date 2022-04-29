@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-01-11 10:29:53
+ * @LastEditTime: 2022-04-29 18:29:04
  * @Description:
  */
 
@@ -135,6 +135,8 @@ export interface JiraCheckConfig extends CommConfig {
   commitMsgPrefix?: string;
   /** 提取 commit-msg 信息的文件路径。默认为 ./.git/COMMIT_EDITMSG */
   COMMIT_EDITMSG?: string;
+  /** 允许跳过分支版本检查提交的 jira 版本号 */
+  allowedFixVersions?: string[];
 }
 
 export interface CommitLintOptions extends CommConfig {
