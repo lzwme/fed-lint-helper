@@ -6,13 +6,14 @@
  * @Description:  Jira check
  */
 
-import * as path from 'path';
+import path from 'path';
 import fs from 'fs';
 import type { IncomingHttpHeaders } from 'http';
 import { color } from 'console-log-colors';
-import { exit, createForkThread, assign, getHeadBranch, PlainObject, Request } from './utils';
+import { createForkThread, assign, getHeadBranch, PlainObject, getLogger } from './utils';
 import { JiraCheckConfig, getConfig } from './config';
-import { Logger } from './utils/Logger';
+import { Request } from './lib';
+import { exit } from './exit';
 
 const { bold, redBright, greenBright } = color;
 export interface JiraCheckResult {
@@ -85,12 +86,12 @@ export class JiraCheck {
   /** 统计信息 */
   private stats = this.getInitStats();
   private reqeust: Request;
-  private logger: Logger;
+  private logger: ReturnType<typeof getLogger>;
 
   constructor(private config: JiraCheckConfig = {}) {
     config = this.parseConfig(config);
     const level = config.silent ? 'silent' : config.debug ? 'debug' : 'log';
-    this.logger = Logger.getLogger(`[JIRA][${config.type}]`, level);
+    this.logger = getLogger(`[JIRA][${config.type}]`, level);
     this.logger.debug('config', this.config);
     if (config.checkOnInit) this.start();
   }
@@ -187,10 +188,10 @@ export class JiraCheck {
     let issueTypeList: { id: number; subtask: boolean; name: string }[] = [];
 
     if (fs.existsSync(issueTypeCachePath)) {
-      issueTypeList = JSON.parse(fs.readFileSync(issueTypeCachePath, 'utf-8'));
+      issueTypeList = JSON.parse(fs.readFileSync(issueTypeCachePath, 'utf8'));
     }
 
-    if (!issueTypeList.length) {
+    if (issueTypeList.length === 0) {
       const url = `${this.config.jiraHome}/rest/api/2/issuetype`;
       const result = await this.reqeust.get<typeof issueTypeList>(url);
       if (!Array.isArray(result.data)) {
@@ -242,8 +243,8 @@ export class JiraCheck {
             return false;
           }
           fields = data.fields;
-        } catch (err) {
-          this.logger.error(err);
+        } catch (error) {
+          this.logger.error(error);
           stats.errCount = -1;
           return false;
         }
@@ -320,41 +321,41 @@ export class JiraCheck {
     if (sprintVersion !== branch && !branch.includes('_dev')) allowedFixVersions.push('tech_ahead_v1');
 
     /** 智能匹配正则表达式，commit覆盖, JIRA号后需要输入至少一个中文、【|[、英文或者空格进行隔开 例子: JGCPS-1234测试提交123 或 [JGCPS-1234] 测试提交123 => [ET][2.9.1][feature][JGCPS-1234]测试提交123 */
-    const smartRegWithMsg = new RegExp(`^\\[?${config.issuePrefix}\\d+\\]?([A-Za-z\\u4e00-\\u9fa5\\s【\\[]+.+)`);
+    const smartRegWithMessage = new RegExp(`^\\[?${config.issuePrefix}\\d+\\]?([A-Za-z\\u4e00-\\u9fa5\\s【\\[]+.+)`);
     /**  智能匹配正则表达式，单纯匹配jira 例子: JGCPS-1234 或 [JGCPS-1234] => [ET][2.9.1][feature][JGCPS-1234]JIRA本身的标题 */
     const smartRegWithJIRA = new RegExp(`^\\[?${config.issuePrefix}(\\d+)\\]?`, 'g');
     const issueTypeList = await this.getIssueType();
     /** 禁止提交的类型 */
     const noAllowIssueType: number[] = [];
-    const issueTypeToDesc = issueTypeList.reduce((obj, item) => {
-      obj[item.id] = item.name.replace(/[^a-zA-Z]/g, '').toLowerCase();
-      if (obj[item.id].includes('subtask')) obj[item.id] = 'feature';
-      else if (obj[item.id].includes('bug')) obj[item.id] = 'bugfix';
+    // eslint-disable-next-line unicorn/no-array-reduce
+    const issueTypeToDesc = issueTypeList.reduce((object, item) => {
+      object[item.id] = item.name.replace(/[^A-Za-z]/g, '').toLowerCase();
+      if (object[item.id].includes('subtask')) object[item.id] = 'feature';
+      else if (object[item.id].includes('bug')) object[item.id] = 'bugfix';
 
       // 非 bug 的主任务，不允许提交
-      if (!item.subtask && obj[item.id].includes('bug')) noAllowIssueType.push(item.id);
-      return obj;
+      if (!item.subtask && object[item.id].includes('bug')) noAllowIssueType.push(item.id);
+      return object;
     }, {} as Record<number, string>);
     /**
      * @url 忽略规则参考地址: https://github.com/conventional-changelog/commitlint/blob/master/%40commitlint/is-ignored/src/defaults.ts
      */
-    const test = r => r.test.bind(r);
     const ignoredCommitList = [
-      test(/^((Merge pull request)|(Merge (.*?) into (.*?)|(Merge branch (.*?)))(?:\r?\n)*$)/m),
-      test(/^(R|r)evert (.*)/),
-      test(/^(fixup|squash)!/),
-      test(/^Merged (.*?)(in|into) (.*)/),
-      test(/^Merge remote-tracking branch (.*)/),
-      test(/^Automatic merge(.*)/),
-      test(/^Auto-merged (.*?) into (.*)/),
+      /^((Merge pull request)|(Merge (.*?) into (.*?)|(Merge branch (.*?)))(?:\r?\n)*$)/m,
+      /^(R|r)evert (.*)/,
+      /^(fixup|squash)!/,
+      /^Merged (.*?)(in|into) (.*)/,
+      /^Merge remote-tracking branch (.*)/,
+      /^Automatic merge(.*)/,
+      /^Auto-merged (.*?) into (.*)/,
     ];
     const gitPath = path.join(config.rootDir, config.COMMIT_EDITMSG || './.git/COMMIT_EDITMSG');
-    const commitMsg = fs.readFileSync(gitPath, 'utf-8').trim();
+    const commitMessage = fs.readFileSync(gitPath, 'utf8').trim();
     const jiraIDReg = new RegExp(`${config.issuePrefix}(\\d+)`, 'g');
-    const jiraIDs = commitMsg.match(jiraIDReg);
+    const jiraIDs = commitMessage.match(jiraIDReg);
 
     this.logger.info('===================================');
-    this.logger.info(`[COMMIT-MSG] ${color.yellowBright(commitMsg)}`);
+    this.logger.info(`[COMMIT-MSG] ${color.yellowBright(commitMessage)}`);
     this.logger.info('===================================');
 
     if (jiraIDs) {
@@ -399,23 +400,23 @@ export class JiraCheck {
       }
 
       const issueText = issueTypeToDesc[issuetype] || 'feature'; // 如果是其他类型，默认feature
-      const reg = new RegExp(`^${config.commitMsgPrefix.replace(/(\[|-|\.)/g, '\\$1')}\\[${versionName}]\\[${issueText}]\\[${jiraID}]`);
+      const reg = new RegExp(`^${config.commitMsgPrefix.replace(/([.[-])/g, '\\$1')}\\[${versionName}]\\[${issueText}]\\[${jiraID}]`);
 
       // 如果匹配到commit中包含中文，则保留提交信息
-      if (smartRegWithMsg.test(commitMsg)) {
+      if (smartRegWithMessage.test(commitMessage)) {
         // 如果用户需要手动填入commit信息
-        const msg = commitMsg.match(smartRegWithMsg)[1].trim();
-        const smartCommit = `${config.commitMsgPrefix}[${versionName}][${issueText}][${jiraID}] ${msg}`;
-        fs.writeFileSync(gitPath, smartCommit, { encoding: 'utf-8' });
+        const message = commitMessage.match(smartRegWithMessage)[1].trim();
+        const smartCommit = `${config.commitMsgPrefix}[${versionName}][${issueText}][${jiraID}] ${message}`;
+        fs.writeFileSync(gitPath, smartCommit, { encoding: 'utf8' });
         this.logger.info(`[智能修改commit]: ${color.greenBright(smartCommit)} \n`);
-      } else if (smartRegWithJIRA.test(commitMsg)) {
+      } else if (smartRegWithJIRA.test(commitMessage)) {
         // 如果只匹配到JIRA号
         const smartCommit = `${config.commitMsgPrefix}[${versionName}][${issueText}][${jiraID}] ${summary}`;
-        fs.writeFileSync(gitPath, smartCommit, { encoding: 'utf-8' });
+        fs.writeFileSync(gitPath, smartCommit, { encoding: 'utf8' });
         this.logger.info(`[智能修改commit]: ${color.greenBright(smartCommit)} \n`);
-      } else if (!reg.test(commitMsg)) {
+      } else if (!reg.test(commitMessage)) {
         // 如果都是自己填的
-        this.logger.debug(reg, commitMsg, reg.test(commitMsg));
+        this.logger.debug(reg, commitMessage, reg.test(commitMessage));
         this.logger.error('commit 格式校验不通过，请参考正确提交格式');
         this.logger.log('===================  Example  ===================');
         this.logger.log(color.greenBright(`${config.commitMsgPrefix}[${versionName}][${issueText}][${jiraID}] 描述问题或改进`));
@@ -436,10 +437,10 @@ export class JiraCheck {
         }
       }
     } else {
-      if (/Merge branch/.test(commitMsg)) {
+      if (/Merge branch/.test(commitMessage)) {
         this.logger.error('同分支提交禁止执行 Merge 操作，请使用 git rebase 或 git pull -r 命令。若为跨分支合并，请增加 -n 参数\n');
         return false;
-      } else if (!ignoredCommitList.some(check => check(commitMsg))) {
+      } else if (!ignoredCommitList.some(reg => reg.test(commitMessage))) {
         this.logger.error(`提交代码信息不符合规范，信息中应包含字符"${config.issuePrefix}XXXX".`);
         this.logger.error('例如：', color.cyanBright(`${config.issuePrefix}9171 【两融篮子】多组合卖出，指令预览只显示一个组合。\n`));
         return false;
@@ -457,8 +458,8 @@ export class JiraCheck {
     try {
       stats.success = this.config.type === 'commit' ? await this.commitMsgCheck() : await this.pipelineCheck();
       checkResult.isPassed = stats.success;
-    } catch (err) {
-      this.logger.error(err.message, err.stack);
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
     }
 
     this.logger.info(bold(checkResult.isPassed ? greenBright('Verification passed!') : redBright('Verification failed!')));
@@ -473,9 +474,9 @@ export class JiraCheck {
       type: 'jira',
       debug: this.config.debug,
       jiraConfig: this.config,
-    }).catch(code => {
-      this.logger.error('checkInChildProc error, code:', code);
-      this.stats.errCount = code;
+    }).catch(error => {
+      this.logger.error('checkInChildProc error, code:', error);
+      this.stats.errCount = error;
       return { isPassed: false } as JiraCheckResult;
     });
   }
@@ -487,9 +488,9 @@ export class JiraCheck {
         type: 'jira',
         debug: this.config.debug,
         jiraConfig: this.config,
-      }).catch(code => {
-        this.logger.error('checkInWorkThreads error, code:', code);
-        this.stats.errCount = code;
+      }).catch(error => {
+        this.logger.error('checkInWorkThreads error, code:', error);
+        this.stats.errCount = error;
         return { isPassed: false } as JiraCheckResult;
       });
     });
@@ -503,7 +504,7 @@ export class JiraCheck {
 
     this.stats.success = !!result.isPassed;
     this.logger.debug('result', result);
-    if (!result.isPassed && this.config.exitOnError) exit(this.stats.errCount || -1);
+    if (!result.isPassed && this.config.exitOnError) exit(this.stats.errCount || -1, 0, 'JiraCheck');
 
     return result;
   }

@@ -20,18 +20,18 @@ export interface CreateThreadOptions {
   jiraConfig?: JiraCheckConfig;
 }
 
-export interface WorkerMsgBody<T = unknown> {
+export interface WorkerMessageBody<T = unknown> {
   type: ILintTypes;
   data?: T;
   end?: boolean;
 }
 
-export function createForkThread<T>(options: CreateThreadOptions, onMessage?: (d: WorkerMsgBody<T>) => void): Promise<T> {
+export function createForkThread<T>(options: CreateThreadOptions, onMessage?: (d: WorkerMessageBody<T>) => void): Promise<T> {
   return new Promise((resolve, reject) => {
     const worker = fork(path.resolve(__dirname, './forked-process.js'), { silent: false });
     worker.send(options);
 
-    worker.on('message', (info: WorkerMsgBody<T>) => {
+    worker.on('message', (info: WorkerMessageBody<T>) => {
       if (typeof info === 'string') info = JSON.parse(info);
       if (options.debug) console.log('received from child proc:', info);
       if (onMessage) onMessage(info);
@@ -42,7 +42,7 @@ export function createForkThread<T>(options: CreateThreadOptions, onMessage?: (d
       }
     });
 
-    worker.on('error', err => console.log(`[worker][${options.type}]err:`, err));
+    worker.on('error', error => console.log(`[worker][${options.type}]err:`, error));
     worker.on('exit', code => {
       if (options.debug) console.log(`[worker][${options.type}]exit worker`, code);
       if (code !== 0) reject(code);

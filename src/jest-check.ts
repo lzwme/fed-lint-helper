@@ -13,9 +13,9 @@ import { color } from 'console-log-colors';
 import glob from 'glob';
 import { runCLI } from '@jest/core';
 import type { Config } from '@jest/types';
-import { fixToshortPath, md5, exit, createForkThread, assign } from './utils';
+import { fixToshortPath, md5, createForkThread, assign, getLogger } from './utils';
 import { JestCheckConfig, getConfig } from './config';
-import { Logger } from './utils/Logger';
+import { exit } from './exit';
 
 const { bold, redBright, greenBright } = color;
 export interface JestCheckResult {
@@ -34,12 +34,12 @@ export class JestCheck {
    * 默认为 `<config.rootDir>/node_modules/.cache/flh/jestcache.json`
    */
   private cacheFilePath = '';
-  private logger: Logger;
+  private logger: ReturnType<typeof getLogger>;
 
   constructor(private config: JestCheckConfig = {}) {
     config = this.parseConfig(config);
     const level = config.silent ? 'silent' : config.debug ? 'debug' : 'log';
-    this.logger = Logger.getLogger(`[Jest]`, level);
+    this.logger = getLogger(`[Jest]`, level);
     this.logger.debug('config', this.config);
     if (this.config.checkOnInit) this.start();
   }
@@ -82,7 +82,7 @@ export class JestCheck {
     if (fs.existsSync(this.cacheFilePath) && config.removeCache) fs.unlinkSync(this.cacheFilePath);
 
     // 文件列表过滤
-    this.config.fileList = this.config.fileList.filter(filepath => {
+    config.fileList = config.fileList.filter(filepath => {
       // 必须以 spec|test.ts|js 结尾
       if (!/\.(spec|test)\.(ts|js)x?$/i.test(filepath)) return false;
       return true;
@@ -114,16 +114,16 @@ export class JestCheck {
     const config = this.config;
     const jestPassedFiles = this.stats.cacheInfo.passed;
 
-    if (!specFileList || !specFileList.length) {
+    if (!specFileList || specFileList.length === 0) {
       specFileList = [];
 
-      this.config.src.forEach(d => {
+      for (const d of this.config.src) {
         const p = path.resolve(config.rootDir, d);
-        if (!fs.existsSync(p) && fs.statSync(p).isDirectory()) return;
+        if (!fs.existsSync(p) && fs.statSync(p).isDirectory()) continue;
 
         const files = glob.sync('**/*.spec.{ts,js,tsx,jsx}', { cwd: p, realpath: true });
         specFileList.push(...files);
-      });
+      }
     }
 
     const totalFiles = specFileList.length;
@@ -165,32 +165,32 @@ export class JestCheck {
   private async check(specFileList = this.config.fileList): Promise<JestCheckResult> {
     this.logger.info('start checking');
     this.init();
-    this.stats.isPassed = true;
 
-    const { config, stats } = this;
+    const { logger, stats, config, cacheFilePath } = this;
     const info: JestCheckResult = {
-      isPassed: stats.isPassed,
+      isPassed: true,
       /** 文件总数 */
       // total: results.length,
     };
 
-    this.logger.debug('[options]:', config, specFileList);
+    stats.isPassed = true;
+    logger.debug('[options]:', config, specFileList);
     specFileList = this.getSpecFileList(specFileList);
 
-    if (!specFileList.length) info;
+    if (specFileList.length === 0) info;
 
-    this.logger.info(`Total Spec Files:`, specFileList.length);
-    this.logger.debug(specFileList);
+    logger.info(`Total Spec Files:`, specFileList.length);
+    logger.debug(specFileList);
 
     if (config.silent) {
       stats.isPassed = await new Promise(resolve => {
         exec(
           `node --max_old_space_size=4096 ./node_modules/jest/bin/jest.js --unhandled-rejections=strict --forceExit ${specFileList
-            .map(f => f.replace(/[\\]/g, '\\\\'))
+            .map(f => f.replace(/\\/g, '\\\\'))
             .join(' ')}`,
-          (err, _stdout, _stderr) => {
-            if (err) {
-              console.error(err);
+          (error, _stdout, _stderr) => {
+            if (error) {
+              console.error(error);
               return resolve(false);
             }
 
@@ -201,9 +201,9 @@ export class JestCheck {
     } else {
       const options = this.getJestOptions(specFileList);
       const data = await runCLI(options, ['.']);
-      const jestPassedFiles = this.stats.cacheInfo.passed;
+      const jestPassedFiles = stats.cacheInfo.passed;
 
-      data.results.testResults.forEach(d => {
+      for (const d of data.results.testResults) {
         const testFilePath = fixToshortPath(d.testFilePath, config.rootDir);
         // console.log(testFilePath, d.testFilePath);
         if (d.numFailingTests) {
@@ -216,16 +216,16 @@ export class JestCheck {
             updateTime: data.results.startTime,
           };
         }
-      });
+      }
 
-      fs.writeFileSync(this.cacheFilePath, JSON.stringify(this.stats.cacheInfo, null, 2));
+      fs.writeFileSync(cacheFilePath, JSON.stringify(stats.cacheInfo, undefined, 2));
 
       stats.isPassed = data.results.success && !data.results.numFailedTestSuites;
-      this.logger.debug(data);
+      logger.debug(data);
     }
 
-    this.logger.info(bold(stats.isPassed ? greenBright('Verification passed!') : redBright('Verification failed!')));
-    this.logger.info(`TimeCost: ${bold(greenBright(Date.now() - stats.startTime))}ms`);
+    logger.info(bold(stats.isPassed ? greenBright('Verification passed!') : redBright('Verification failed!')));
+    logger.info(`TimeCost: ${bold(greenBright(Date.now() - stats.startTime))}ms`);
 
     return info;
   }
@@ -239,8 +239,8 @@ export class JestCheck {
       type: 'jest',
       debug: this.config.debug,
       jestConfig: this.config,
-    }).catch(code => {
-      this.logger.error('checkInChildProc error, code:', code);
+    }).catch(error => {
+      this.logger.error('checkInChildProc error, code:', error);
       return { isPassed: false } as JestCheckResult;
     });
   }
@@ -255,8 +255,8 @@ export class JestCheck {
         type: 'jest',
         debug: this.config.debug,
         jestConfig: this.config,
-      }).catch(code => {
-        this.logger.error('checkInWorkThreads error, code:', code);
+      }).catch(error => {
+        this.logger.error('checkInWorkThreads error, code:', error);
         return { isPassed: false } as JestCheckResult;
       });
     });
@@ -268,7 +268,7 @@ export class JestCheck {
 
     let result: JestCheckResult = { isPassed: true };
 
-    if (!this.config.fileList.length && (fileList || !this.config.src.length)) {
+    if (this.config.fileList.length === 0 && (fileList || this.config.src.length === 0)) {
       this.logger.info('No files to process\n');
       return result;
     }
@@ -279,7 +279,7 @@ export class JestCheck {
 
     this.stats.isPassed = !!result.isPassed;
     this.logger.debug('result', result);
-    if (!result.isPassed && this.config.exitOnError) exit(-1);
+    if (!result.isPassed && this.config.exitOnError) exit(-1, 0, 'JestCheck');
 
     return result;
   }

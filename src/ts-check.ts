@@ -11,9 +11,10 @@ import fs from 'fs';
 import path from 'path';
 import * as ts from 'typescript';
 import glob from 'glob';
-import { fixToshortPath, md5, exit, createForkThread, assign, Logger, execSync } from './utils';
+import { fixToshortPath, md5, createForkThread, assign, getLogger, execSync } from './utils';
 import { TsCheckConfig, getConfig } from './config';
 import minimatch from 'minimatch';
+import { exit } from './exit';
 
 const { bold, redBright, yellowBright, cyanBright, red, greenBright, cyan } = color;
 export interface TsCheckResult {
@@ -33,12 +34,12 @@ export class TsCheck {
   private whiteList = {} as Record<string, keyof typeof ts.DiagnosticCategory>; // ts.DiagnosticCategory
   /** 检测缓存文件的路径。不应提交至 git 仓库: 默认为 <config.rootDir>/node_modules/.cache/flh/tsCheckCache.json */
   private cacheFilePath = 'node_modules/.cache/flh/tscheckcache.json';
-  private logger: Logger;
+  private logger: ReturnType<typeof getLogger>;
 
   constructor(private config: TsCheckConfig = {}) {
     config = this.parseConfig(config);
     const level = config.silent ? 'silent' : config.debug ? 'debug' : 'log';
-    this.logger = Logger.getLogger(`[TSCheck]`, level);
+    this.logger = getLogger(`[TSCheck]`, level);
     this.logger.debug('config', this.config);
     if (config.checkOnInit) this.start();
   }
@@ -88,20 +89,20 @@ export class TsCheck {
         if (removeCache) {
           fs.unlinkSync(this.cacheFilePath);
         } else if (cache) {
-          const cacheInfo = JSON.parse(fs.readFileSync(this.cacheFilePath, { encoding: 'utf-8' }));
+          const cacheInfo = JSON.parse(fs.readFileSync(this.cacheFilePath, { encoding: 'utf8' }));
           if (cacheInfo.tsCheckFilesPassed) this.stats.tsCache = cacheInfo;
         }
-      } catch (e) {
-        console.log(e.message || e.stack || e);
+      } catch (error) {
+        console.log(error.message || error.stack || error);
       }
     }
 
     // 读取白名单列表
     if (!this.config.toWhiteList && fs.existsSync(whiteListFilePath)) {
       try {
-        this.whiteList = JSON.parse(fs.readFileSync(whiteListFilePath, { encoding: 'utf-8' }));
-      } catch (e) {
-        console.log(e.message || e.stack || e);
+        this.whiteList = JSON.parse(fs.readFileSync(whiteListFilePath, { encoding: 'utf8' }));
+      } catch (error) {
+        console.log(error.message || error.stack || error);
       }
     }
 
@@ -115,16 +116,16 @@ export class TsCheck {
     });
   }
   /** 返回可检测的子项目路径 */
-  private getCheckProjectDirs(src = this.config.src) {
+  private getCheckProjectDirs(source = this.config.src) {
     const { rootDir } = this.config;
-    return src.filter(d => {
+    return source.filter(d => {
       const p = path.resolve(rootDir, d);
       return fs.existsSync(p) && fs.statSync(p).isDirectory();
     });
   }
 
   /** ts 编译 */
-  private compile(sourceFiles: string[], subDir: string): void {
+  private compile(sourceFiles: string[], subDirection: string): void {
     const total = sourceFiles.length;
     const { config, stats } = this;
     const { tsCheckFilesPassed } = this.stats.tsCache;
@@ -132,7 +133,7 @@ export class TsCheck {
     this.stats.totalFiles += total;
 
     console.log();
-    this.logger.info(bold(cyanBright('Checking')), subDir);
+    this.logger.info(bold(cyanBright('Checking')), subDirection);
     this.logger.info(' - Total Number Of Files:', total);
 
     /** 缓存命中数量 */
@@ -150,11 +151,9 @@ export class TsCheck {
 
       // 缓存过滤
       if (config.cache) {
-        if (tsCheckFilesPassed[shortpath]) {
-          if (tsCheckFilesPassed[shortpath].md5 === md5(name, true)) {
-            cacheHits++;
-            return false;
-          }
+        if (tsCheckFilesPassed[shortpath] && tsCheckFilesPassed[shortpath].md5 === md5(name, true)) {
+          cacheHits++;
+          return false;
         }
 
         // 新文件：先放到 tsCheckFilesPassed 中
@@ -167,106 +166,106 @@ export class TsCheck {
     if (cacheHits) this.logger.info(` - Cache hits:`, cacheHits);
     if (whiteListHits) this.logger.info(` - WhiteList hits:`, whiteListHits);
 
-    if (!sourceFiles.length) return;
+    if (sourceFiles.length === 0) return;
 
-    const subConfigFile = path.resolve(subDir, config.tsConfigFileName);
+    const subConfigFile = path.resolve(subDirection, config.tsConfigFileName);
     const hasSubConfig = fs.existsSync(subConfigFile);
 
     const options: ts.CompilerOptions = ts.readConfigFile(hasSubConfig ? subConfigFile : config.tsConfigFileName, ts.sys.readFile).config;
-    const cfg = ts.parseJsonConfigFileContent(options, ts.sys, hasSubConfig ? subDir : path.dirname(config.tsConfigFileName));
+    const cfg = ts.parseJsonConfigFileContent(options, ts.sys, hasSubConfig ? subDirection : path.dirname(config.tsConfigFileName));
 
     const host = ts.createCompilerHost(cfg.options);
     const program = ts.createProgram(sourceFiles, cfg.options, host);
 
-    const tmpDiagnostics = ts
-      .getPreEmitDiagnostics(program)
-      .concat(program.getSyntacticDiagnostics())
-      .filter(item => {
-        if (item.code) {
-          // code 忽略列表
-          if (config.tsCodeIgnore.length && config.tsCodeIgnore.includes(item.code)) return false;
-          // code 白名单
-          if (config.tsCodeCheck.length && !config.tsCodeCheck.includes(item.code)) return false;
+    const temporaryDiagnostics = [...ts.getPreEmitDiagnostics(program), ...program.getSyntacticDiagnostics()].filter(item => {
+      if (item.code) {
+        // code 忽略列表
+        if (config.tsCodeIgnore.length > 0 && config.tsCodeIgnore.includes(item.code)) return false;
+        // code 白名单
+        if (config.tsCodeCheck.length > 0 && !config.tsCodeCheck.includes(item.code)) return false;
+      }
+
+      if (item.file) {
+        const shortpath = fixToshortPath(path.normalize(item.file.fileName));
+        item.file.moduleName = shortpath;
+
+        // 过滤间接依赖进来的文件
+        if (shortpath.includes('node_modules') || shortpath.endsWith('.d.ts')) return false;
+        for (const p of config.exclude) {
+          if (minimatch(shortpath, p, { debug: config.debug })) return false;
         }
+      }
 
-        if (item.file) {
-          const shortpath = fixToshortPath(path.normalize(item.file.fileName));
-          item.file.moduleName = shortpath;
+      return true;
+    });
 
-          // 过滤间接依赖进来的文件
-          if (shortpath.includes('node_modules') || shortpath.endsWith('.d.ts')) return false;
-          for (const p of config.exclude) {
-            if (minimatch(shortpath, p, { debug: config.debug })) return false;
-          }
-        }
+    if (temporaryDiagnostics.length > 0) {
+      stats.totalDiagnostics += temporaryDiagnostics.length;
 
-        return true;
-      });
+      const errorDiagnostics: ts.Diagnostic[] = [];
 
-    if (tmpDiagnostics.length) {
-      stats.totalDiagnostics += tmpDiagnostics.length;
-
-      const errDiagnostics: ts.Diagnostic[] = [];
-
-      tmpDiagnostics.forEach(item => {
+      for (const item of temporaryDiagnostics) {
         if (!item.file) {
-          errDiagnostics.push(item);
-          return;
+          errorDiagnostics.push(item);
+          continue;
         }
 
         const shortpath = item.file.moduleName || fixToshortPath(path.normalize(item.file.fileName));
 
         if (!this.whiteList[shortpath]) {
           stats.allDiagnosticsFileMap[shortpath] = item;
-          errDiagnostics.push(item);
+          errorDiagnostics.push(item);
         }
 
-        if (config.toWhiteList) {
-          // Error 级别最高
-          if (this.whiteList[shortpath] !== 'Error') this.whiteList[shortpath] = ts.DiagnosticCategory[item.category] as never;
-        }
+        if (
+          config.toWhiteList && // Error 级别最高
+          this.whiteList[shortpath] !== 'Error'
+        )
+          this.whiteList[shortpath] = ts.DiagnosticCategory[item.category] as never;
 
         if (tsCheckFilesPassed[shortpath]) {
           // 移除缓存
           if (tsCheckFilesPassed[shortpath].updateTime === stats.startTime) stats.tsCheckFilesPassedChanged = true;
           delete tsCheckFilesPassed[shortpath];
         }
-      });
+      }
 
-      if (errDiagnostics.length) {
-        let fileList = errDiagnostics.filter(d => d.file).map(d => d.file.fileName);
+      if (errorDiagnostics.length > 0) {
+        let fileList = errorDiagnostics.filter(d => d.file).map(d => d.file.fileName);
         // 去重
-        fileList = Array.from(new Set(fileList));
+        fileList = [...new Set(fileList)];
 
         this.logger.info(
           bold(redBright(`Diagnostics of need repair(not in whitelist)[${fileList.length} files]:\n`)),
-          config.printDetail ? ts.formatDiagnosticsWithColorAndContext(errDiagnostics, host) : `\n - ` + fileList.join('\n - ') + '\n'
+          config.printDetail ? ts.formatDiagnosticsWithColorAndContext(errorDiagnostics, host) : `\n - ` + fileList.join('\n - ') + '\n'
         );
       } else {
-        const fileList = tmpDiagnostics.filter(d => d.file).map(d => d.file.fileName);
+        const fileList = temporaryDiagnostics.filter(d => d.file).map(d => d.file.fileName);
 
-        if (fileList.length) {
+        if (fileList.length > 0) {
           this.logger.info(
             bold(yellowBright(`Diagnostics in whitelist[${redBright(fileList.length)}`)),
             bold(yellowBright(`files]:\n`)),
-            config.printDetail ? ts.formatDiagnosticsWithColorAndContext(tmpDiagnostics, host) : `\n - ` + fileList.join('\n - ') + '\n'
+            config.printDetail
+              ? ts.formatDiagnosticsWithColorAndContext(temporaryDiagnostics, host)
+              : `\n - ` + fileList.join('\n - ') + '\n'
           );
         }
       }
     }
   }
   /** 返回指定子目录中匹配到的 ts 文件列表 */
-  private getTsFiles(subDir: string) {
-    if (!fs.existsSync(subDir)) return null;
+  private getTsFiles(subDirection: string) {
+    if (!fs.existsSync(subDirection)) return;
 
     const tsFiles = glob.sync('**/*.{ts,tsx}', {
-      cwd: subDir,
+      cwd: subDirection,
       ignore: this.config.exclude,
       realpath: true,
     });
 
     // checkUnUse(tsFiles);
-    return { tsFiles, subDir };
+    return { tsFiles, subDirection };
   }
   /** 执行 ts check */
   public check(tsFiles = this.config.tsFiles) {
@@ -277,7 +276,7 @@ export class TsCheck {
     const { tsCache } = stats;
     /** 在白名单列表中但本次检测无异常的文件列表（将从白名单列表中移除） */
     const removeFromWhiteList = [];
-    const dirMap = {
+    const directionMap = {
       // 没有 tsconfig.json 独立配置文件的子目录文件，也将全部放到这里一起编译
       [config.rootDir]: tsFiles || [],
     };
@@ -285,33 +284,31 @@ export class TsCheck {
     this.logger.debug('config:', config);
 
     // 没有指定 tsFiles 文件列表，才按 src 指定规则匹配
-    if (!dirMap[config.rootDir].length) {
-      const dirs = this.getCheckProjectDirs(config.src);
-      if (!dirs) {
+    if (directionMap[config.rootDir].length === 0) {
+      const directories = this.getCheckProjectDirs(config.src);
+      if (!directories) {
         this.logger.info('No files or directories to process\n');
         return { isPassed: true } as TsCheckResult;
       }
 
-      this.logger.debug('本次检测的子目录包括：', dirs);
-      dirs
-        .map(d => this.getTsFiles(d))
-        .forEach(info => {
-          if (!info || !info.tsFiles.length) return;
+      this.logger.debug('本次检测的子目录包括：', directories);
+      for (const info of directories.map(d => this.getTsFiles(d))) {
+        if (!info || info.tsFiles.length === 0) continue;
 
-          if (fs.existsSync(path.resolve(info.subDir, config.tsConfigFileName))) {
-            dirMap[info.subDir] = info.tsFiles;
-          } else {
-            dirMap[config.rootDir].push(...info.tsFiles);
-          }
-        });
+        if (fs.existsSync(path.resolve(info.subDirection, config.tsConfigFileName))) {
+          directionMap[info.subDirection] = info.tsFiles;
+        } else {
+          directionMap[config.rootDir].push(...info.tsFiles);
+        }
+      }
     }
 
-    Object.keys(dirMap).forEach(subDir => this.compile(dirMap[subDir], subDir));
+    for (const d of Object.keys(directionMap)) this.compile(directionMap[d], d);
 
     if (config.cache || config.removeCache) {
       const passedFileList = Object.keys(tsCache.tsCheckFilesPassed);
 
-      passedFileList.forEach(shortpath => {
+      for (const shortpath of passedFileList) {
         const item = tsCache.tsCheckFilesPassed[shortpath];
         if (!item.md5) {
           item.md5 = md5(path.resolve(config.rootDir, shortpath), true);
@@ -323,44 +320,44 @@ export class TsCheck {
           removeFromWhiteList.push(shortpath);
         }
         // if (item.updateTime === stats.startTime) stats.tsCheckFilesPassedChanged = true;
-      });
+      }
 
       if (stats.tsCheckFilesPassedChanged) {
-        fs.writeFileSync(this.cacheFilePath, JSON.stringify(tsCache, null, 2));
+        fs.writeFileSync(this.cacheFilePath, JSON.stringify(tsCache, void 0, 2));
         this.logger.info('Write to cache:', cyanBright(fixToshortPath(this.cacheFilePath, config.rootDir)));
       }
     }
 
     if (config.toWhiteList) {
       if (!fs.existsSync(path.dirname(config.whiteListFilePath))) fs.mkdirSync(path.dirname(config.whiteListFilePath), { recursive: true });
-      fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, null, 2));
+      fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, void 0, 2));
       this.logger.info('[ADD]write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
-      execSync(`git add ${config.whiteListFilePath}`, null, config.rootDir, !config.silent);
+      execSync(`git add ${config.whiteListFilePath}`, void 0, config.rootDir, !config.silent);
     } else {
-      if (removeFromWhiteList.length) {
+      if (removeFromWhiteList.length > 0) {
         this.logger.info(' [REMOVE]write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
-        fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, null, 2));
+        fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, void 0, 2));
         this.logger.info(' remove from whilelist:\n' + removeFromWhiteList.join('\n'));
-        execSync(`git add ${config.whiteListFilePath}`, null, config.rootDir, !config.silent);
+        execSync(`git add ${config.whiteListFilePath}`, void 0, config.rootDir, !config.silent);
       }
     }
 
-    const errFileList = Object.keys(stats.allDiagnosticsFileMap);
+    const errorFileList = Object.keys(stats.allDiagnosticsFileMap);
     const result: TsCheckResult = {
-      isPassed: !errFileList.length,
+      isPassed: errorFileList.length === 0,
       /** 匹配到的文件总数 */
       total: stats.totalFiles,
       /** 检测通过的文件数 */
-      passed: stats.totalFiles - errFileList.length,
+      passed: stats.totalFiles - errorFileList.length,
       /** 失败的文件数 */
-      failed: errFileList.length,
+      failed: errorFileList.length,
       diagnosticCategory: stats.allDiagnosticsCategory,
     };
 
     this.stats.success = result.failed !== 0;
 
     if (result.failed && config.printDetail) {
-      this.logger.info('Failed Files:', '\n - ' + errFileList.join('\n - '), '\n');
+      this.logger.info('Failed Files:', '\n - ' + errorFileList.join('\n - '), '\n');
     }
 
     this.logger.info('Total :\t', result.total);
@@ -369,14 +366,14 @@ export class TsCheck {
 
     // 异常类型统计
     if (result.failed) {
-      errFileList.forEach(filepath => {
+      for (const filepath of errorFileList) {
         const d = stats.allDiagnosticsFileMap[filepath];
-        const cateStr = ts.DiagnosticCategory[d.category];
-        stats.allDiagnosticsCategory[cateStr] = (stats.allDiagnosticsCategory[cateStr] || 0) + 1;
-      });
-      Object.keys(stats.allDiagnosticsCategory).forEach(keyStr => {
-        this.logger.info(bold(cyan(` -- ${keyStr} Count：`)), bold(yellowBright(result.diagnosticCategory[keyStr])));
-      });
+        const cateString = ts.DiagnosticCategory[d.category];
+        stats.allDiagnosticsCategory[cateString] = (stats.allDiagnosticsCategory[cateString] || 0) + 1;
+      }
+      for (const keyString of Object.keys(stats.allDiagnosticsCategory)) {
+        this.logger.info(bold(cyan(` -- ${keyString} Count：`)), bold(yellowBright(result.diagnosticCategory[keyString])));
+      }
     }
 
     if (!result.failed) {
@@ -400,9 +397,9 @@ export class TsCheck {
       type: 'tscheck',
       debug: this.config.debug,
       tsCheckConfig: this.config,
-    }).catch(code => {
-      this.logger.error('checkInChildProc error, code:', code);
-      return { isPassed: false, failed: code } as TsCheckResult;
+    }).catch(error => {
+      this.logger.error('checkInChildProc error, code:', error);
+      return { isPassed: false, failed: error } as TsCheckResult;
     });
   }
   /**
@@ -416,9 +413,9 @@ export class TsCheck {
         type: 'tscheck',
         debug: this.config.debug,
         tsCheckConfig: this.config,
-      }).catch(code => {
-        this.logger.error('checkInWorkThreads error, code:', code);
-        return { isPassed: false, failed: code } as TsCheckResult;
+      }).catch(error => {
+        this.logger.error('checkInWorkThreads error, code:', error);
+        return { isPassed: false, failed: error } as TsCheckResult;
       });
     });
   }
@@ -427,7 +424,7 @@ export class TsCheck {
     if (tsFiles && tsFiles !== this.config.tsFiles) this.config.tsFiles = tsFiles;
     this.init();
 
-    if (!this.config.tsFiles.length && (tsFiles || !this.config.src.length)) {
+    if (this.config.tsFiles.length === 0 && (tsFiles || this.config.src.length === 0)) {
       this.logger.info('No files to process\n');
       return { isPassed: true } as TsCheckResult;
     }

@@ -8,23 +8,7 @@ describe('utils/common', () => {
   it('logTimeCost', () => {
     comm.logTimeCost(Date.now());
     comm.log(Date.now());
-  });
-
-  it('exit', () => {
-    const exit = process.exit;
-    let val = 0;
-    process.exit = (v: number): never => {
-      val = v;
-      return null as never;
-    };
-
-    comm.exit();
-    expect(val).toEqual(0);
-
-    comm.exit(1, Date.now());
-    expect(val).toEqual(1);
-
-    process.exit = exit;
+    expect(1).toBeTruthy();
   });
 
   it('md5', () => {
@@ -42,11 +26,11 @@ describe('utils/common', () => {
     expect(comm.assign(a, [], b).b).toEqual(2);
     expect(Array.isArray(comm.assign(a, b)['c'])).toBeTruthy();
 
-    expect(comm.assign(null, b) === null).toBeTruthy();
-    expect(comm.assign(a, null)).toEqual(a);
+    expect(comm.assign(void 0, b) == void 0).toBeTruthy();
+    expect(comm.assign(a, void 0)).toEqual(a);
 
     // 第一个参数是数组，则原样返回
-    const arr = [b];
-    expect(comm.assign(arr, b)).toEqual(arr);
+    const array = [b];
+    expect(comm.assign(array, b)).toEqual(array);
   });
 });

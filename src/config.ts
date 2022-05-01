@@ -144,7 +144,7 @@ export interface CommitLintOptions extends CommConfig {
   /** 是否使用 Angular commit 风格验证。当自定义了 verify 时允许设置为 false */
   useAngularStyle?: boolean;
   /** 自定义验证规则 */
-  verify?: ((msg: string) => boolean | string) | string;
+  verify?: ((message: string) => boolean | string) | string;
 }
 
 export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {
@@ -229,15 +229,15 @@ let isInited = false;
 /** 将公共参数值合并进 LintTypes 内部 */
 export function mergeCommConfig(options: FlhConfig, useDefault = true) {
   // 公共通用配置
-  Object.keys(commConfig).forEach(key => {
-    LintTypes.forEach(type => {
-      if (null == options[type][key]) {
-        if (null == options[key]) {
+  for (const key of Object.keys(commConfig)) {
+    for (const type of LintTypes) {
+      if (undefined == options[type][key]) {
+        if (undefined == options[key]) {
           if (useDefault) options[type][key] = commConfig[key];
         } else options[type][key] = options[key];
       }
-    });
-  });
+    }
+  }
   return options;
 }
 

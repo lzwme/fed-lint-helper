@@ -3,10 +3,28 @@ import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
 import { color } from 'console-log-colors';
+import * as readline from 'readline';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type PlainObject = Record<string, any>;
 export type ValueOf<T> = T[keyof T];
+
+/** 等待并获取用户输入内容 */
+export function readSyncByRl(tips: string) {
+  tips = tips || '> ';
+
+  return new Promise(resolve => {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+
+    rl.question(tips, answer => {
+      resolve(answer.trim());
+      rl.close();
+    });
+  });
+}
 
 /**
  * 将给定的文件路径规整为 a/b/c.js 格式
@@ -30,16 +48,6 @@ export function logTimeCost(startTime: number, prefix = '') {
 /** 打印待时间戳前缀的日志信息 */
 export function log(prefix, ...args: string[]) {
   console.log(`[${color.cyanBright(new Date().toTimeString().slice(0, 8))}]${prefix}`, ...args);
-}
-
-/**
- * 退出当前 process 进程
- * @param {number} code 退出码
- * @param {number} startTime 开始时间，存在则打印执行时间成本
- */
-export function exit(code = 0, startTime = 0, prefix = '') {
-  if (startTime) logTimeCost(startTime, prefix);
-  process.exit(code || 0);
 }
 
 /**

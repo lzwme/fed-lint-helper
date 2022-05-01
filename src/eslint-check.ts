@@ -10,8 +10,9 @@ import { color } from 'console-log-colors';
 import { ESLint } from 'eslint';
 import fs from 'fs';
 import path from 'path';
-import { fixToshortPath, exit, createForkThread, assign, Logger, execSync } from './utils';
+import { fixToshortPath, createForkThread, assign, getLogger, execSync } from './utils';
 import { ESLintCheckConfig, getConfig } from './config';
+import { exit } from './exit';
 
 const { bold, red, redBright, yellowBright, greenBright, cyanBright } = color;
 
@@ -48,12 +49,12 @@ export class ESLintCheck {
   private whiteList = {} as { [filepath: string]: 'e' | 'w' }; // ts.DiagnosticCategory
   /** 缓存文件路径（eslintOptions.cacheLocation）。默认为 <config.rootDir>/node_modules/.cache/flh/eslintcache.json */
   private cacheFilePath = 'node_modules/.cache/flh/eslintcache.json';
-  private logger: Logger;
+  private logger: ReturnType<typeof getLogger>;
 
   constructor(private config: ESLintCheckConfig = {}) {
     config = this.parseConfig(config);
     const level = config.silent ? 'silent' : config.debug ? 'debug' : 'log';
-    this.logger = Logger.getLogger(`[ESLint]`, level);
+    this.logger = getLogger(`[ESLint]`, level);
     this.logger.debug('config', this.config);
     if (config.checkOnInit) this.start();
   }
@@ -94,7 +95,7 @@ export class ESLintCheck {
     // 读取白名单列表
     if (fs.existsSync(config.whiteListFilePath)) {
       // && !config.toWhiteList
-      this.whiteList = JSON.parse(fs.readFileSync(config.whiteListFilePath, { encoding: 'utf-8' }));
+      this.whiteList = JSON.parse(fs.readFileSync(config.whiteListFilePath, { encoding: 'utf8' }));
     }
   }
   /**
@@ -161,7 +162,7 @@ export class ESLintCheck {
     let fixableErrorCount = 0;
     let fixableWarningCount = 0;
 
-    results.forEach(result => {
+    for (const result of results) {
       const filePath = fixToshortPath(result.filePath, config.rootDir);
 
       if (!result.warningCount && !result.errorCount) {
@@ -189,77 +190,73 @@ export class ESLintCheck {
 
       if (result.warningCount) {
         warningCount += result.warningCount;
-        if (result.messages.length) waringReults.push(result);
+        if (result.messages.length > 0) waringReults.push(result);
 
         if (config.toWhiteList) {
           this.whiteList[filePath] = 'w';
-        } else if (!this.whiteList[filePath]) {
-          if (result.messages.length) newWaringReults.push(result);
-        }
+        } else if (!this.whiteList[filePath] && result.messages.length > 0) newWaringReults.push(result);
       }
 
       if (result.errorCount) {
         errorCount += result.errorCount;
-        if (result.messages.length) errorReults.push(result);
+        if (result.messages.length > 0) errorReults.push(result);
 
         if (config.toWhiteList) {
           this.whiteList[filePath] = 'e';
-        } else if (!this.whiteList[filePath]) {
-          if (result.messages.length) newErrorReults.push(result);
-        }
+        } else if (!this.whiteList[filePath] && result.messages.length > 0) newErrorReults.push(result);
       }
-    });
+    }
 
     const formatter = await eslint.loadFormatter('stylish');
-    let isPassed = !newWaringReults.length && !newErrorReults.length;
+    let isPassed = newWaringReults.length === 0 && newErrorReults.length === 0;
 
     if (config.toWhiteList) {
-      if (!results.length) {
+      if (results.length === 0) {
         this.logger.debug('no new error file');
       } else {
         this.logger.info('[ADD]write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
-        fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, null, 2));
-        execSync(`git add ${config.whiteListFilePath}`, null, config.rootDir, !config.silent);
+        fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, void 0, 2));
+        execSync(`git add ${config.whiteListFilePath}`, void 0, config.rootDir, !config.silent);
         if (config.printDetail !== false) {
           const resultText = formatter.format(results);
           this.logger.info(`\n ${resultText}`);
         }
       }
     } else {
-      if (removeFromWhiteList.length) {
+      if (removeFromWhiteList.length > 0) {
         this.logger.info(' [REMOVE]write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
-        fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, null, 2));
+        fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, void 0, 2));
         this.logger.info(' remove from whilelist:\n' + removeFromWhiteList.join('\n'));
-        execSync(`git add ${config.whiteListFilePath}`, null, config.rootDir, !config.silent);
+        execSync(`git add ${config.whiteListFilePath}`, void 0, config.rootDir, !config.silent);
       }
 
       const tips = config.warningTip || '';
 
       // 存在 error 异常
-      if (errorCount && (!config.allowErrorToWhiteList || newErrorReults.length)) {
+      if (errorCount && (!config.allowErrorToWhiteList || newErrorReults.length > 0)) {
         isPassed = false;
 
-        const errResults = config.allowErrorToWhiteList ? newErrorReults : errorReults;
+        const errorResults = config.allowErrorToWhiteList ? newErrorReults : errorReults;
 
         if (config.printDetail !== false) {
-          const resultText = formatter.format(errResults);
+          const resultText = formatter.format(errorResults);
           this.logger.info(`\n ${resultText}`);
         }
-        this.logger.info(bold(redBright(`[Error]Verification failed![${errResults.length} files]`)), yellowBright(tips), `\n`);
+        this.logger.info(bold(redBright(`[Error]Verification failed![${errorResults.length} files]`)), yellowBright(tips), `\n`);
 
-        if (!config.fix && errorReults.length < 20 && errResults.some(d => d.fixableErrorCount || d.fixableWarningCount)) {
+        if (!config.fix && errorReults.length < 20 && errorResults.some(d => d.fixableErrorCount || d.fixableWarningCount)) {
           // 运行此方法可以自动修复语法问题
           this.logger.info('===================== ↓  ↓ Auto Fix Command ↓  ↓  ============================\n');
           this.logger.info(
-            `node --max_old_space_size=4096 "%~dp0/../node_modules/eslint/bin/eslint.js" --fix ${errResults
-              .map(d => d.filePath.replace(/[\\]/g, '\\\\'))
+            `node --max_old_space_size=4096 "%~dp0/../node_modules/eslint/bin/eslint.js" --fix ${errorResults
+              .map(d => d.filePath.replace(/\\/g, '\\\\'))
               .join(' ')}\n`
           );
           this.logger.info('===================== ↑  ↑ Auto Fix Command ↑  ↑ ============================\n');
         }
       } else {
         // 不在白名单中的 warning
-        if (newWaringReults.length) {
+        if (newWaringReults.length > 0) {
           this.logger.info(
             bold(red(`[Warning]Verification failed![${newWaringReults.length} files]`)),
             yellowBright(tips),
@@ -332,9 +329,9 @@ export class ESLintCheck {
       type: 'eslint',
       debug: this.config.debug,
       eslintConfig: this.config,
-    }).catch(code => {
-      this.logger.error('checkInChildProc error, code:', code);
-      return { isPassed: false, errorCount: code } as ESLintCheckResult;
+    }).catch(error => {
+      this.logger.error('checkInChildProc error, code:', error);
+      return { isPassed: false, errorCount: error } as ESLintCheckResult;
     });
   }
   /**
@@ -348,9 +345,9 @@ export class ESLintCheck {
         type: 'eslint',
         debug: this.config.debug,
         eslintConfig: this.config,
-      }).catch(code => {
-        this.logger.error('checkInWorkThreads error, code:', code);
-        return { isPassed: false, errorCount: code } as ESLintCheckResult;
+      }).catch(error => {
+        this.logger.error('checkInWorkThreads error, code:', error);
+        return { isPassed: false, errorCount: error } as ESLintCheckResult;
       });
     });
   }
@@ -365,7 +362,7 @@ export class ESLintCheck {
     } else lintList = this.config.src;
     this.init();
 
-    if (!this.config.src.length) {
+    if (this.config.src.length === 0) {
       this.logger.info('No files to process\n');
       return false;
     }
@@ -377,7 +374,7 @@ export class ESLintCheck {
 
     this.stats.success = !!result.isPassed;
     this.logger.debug('result', result);
-    if (!result.isPassed && this.config.exitOnError) exit(result.errorCount || -1);
+    if (!result.isPassed && this.config.exitOnError) exit(result.errorCount || -1, 0, 'ESLintCheck');
 
     return result;
   }

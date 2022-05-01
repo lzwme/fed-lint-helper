@@ -6,12 +6,12 @@
  * @Description: fork 子进程的具体调用逻辑实现
  */
 
-import type { CreateThreadOptions, WorkerMsgBody } from './fork';
+import type { CreateThreadOptions, WorkerMessageBody } from './fork';
 
 process.on('message', (config: CreateThreadOptions) => {
   if (config.debug) console.log('ForkWorker received:', config);
   const done = (data: unknown) => {
-    process.send({ type: config.type, data, end: true } as WorkerMsgBody);
+    process.send({ type: config.type, data, end: true } as WorkerMessageBody);
     process.exit(0);
   };
   const resetConfig = {

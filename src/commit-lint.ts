@@ -3,35 +3,35 @@
 import { readFileSync } from 'fs';
 import { color } from 'console-log-colors';
 import { config, CommitLintOptions } from './config';
-import { Logger } from './utils/Logger';
+import { getLogger } from './utils/get-logger';
 
-export function commitMsgVerify(options?: CommitLintOptions) {
+export function commitMessageVerify(options?: CommitLintOptions) {
   let isPass = true;
   const commitRE = /^(revert: )?(feat|fix|docs|style|refactor|perf|test|workflow|build|ci|chore|types|wip|release|dep)(\(.+\))?: .{1,50}/;
 
   options = Object.assign({ exitOnError: true, useAngularStyle: true } as CommitLintOptions, config.commitlint, options);
 
   if (!options.msgPath) options.msgPath = process.env.GIT_PARAMS || process.env.COMMIT_EDITMSG || './.git/COMMIT_EDITMSG';
-  const msg = readFileSync(options.msgPath, 'utf-8').trim();
-  const logger = Logger.getLogger('[commitlint]', config.debug ? 'debug' : 'log');
+  const message = readFileSync(options.msgPath, 'utf8').trim();
+  const logger = getLogger('[commitlint]', config.debug ? 'debug' : 'log');
 
-  if (!config.silent) logger.info('[msg] =>', msg);
+  if (!config.silent) logger.info('[msg] =>', message);
   logger.debug('options =>', options);
 
   if (options.verify) {
     if (typeof options.verify === 'function') {
-      const result = options.verify(msg);
+      const result = options.verify(message);
       isPass = result === true;
       if (!isPass) logger.error(`Failed by options.verify.`, result);
     } else if (typeof options.verify === 'string') {
-      isPass = new RegExp(options.verify).test(msg);
+      isPass = new RegExp(options.verify).test(message);
       if (!isPass) logger.error(`Failed by options.verify:`, color.magentaBright(options.verify));
     }
   } else {
     options.useAngularStyle = true;
   }
 
-  if (isPass && options.useAngularStyle && !commitRE.test(msg)) {
+  if (isPass && options.useAngularStyle && !commitRE.test(message)) {
     isPass = false;
     // console.log();
     logger.error(
@@ -51,4 +51,4 @@ export function commitMsgVerify(options?: CommitLintOptions) {
   return isPass;
 }
 
-if (require.main === module) commitMsgVerify({ msgPath: process.argv.slice(2)[0] });
+if (require.main === module) commitMessageVerify({ msgPath: process.argv.slice(2)[0] });

@@ -11,15 +11,15 @@ import fs from 'fs';
 import { execSync } from './common';
 
 /** 获取当前的本地分支名 */
-export function getHeadBranch(baseDir = process.cwd()) {
+export function getHeadBranch(baseDirectory = process.cwd()) {
   // 支持在 Jenkins CI 中从环境变量直接获取
   let branch = process.env.CI_COMMIT_REF_NAME;
 
   if (!branch) {
-    const headPath = path.resolve(baseDir, './.git/HEAD');
+    const headPath = path.resolve(baseDirectory, './.git/HEAD');
 
     if (fs.existsSync(headPath)) {
-      const head = fs.readFileSync(headPath, { encoding: 'utf-8' });
+      const head = fs.readFileSync(headPath, { encoding: 'utf8' });
       branch = head.split('refs/heads/')[1];
     }
   }

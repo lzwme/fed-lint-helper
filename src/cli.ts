@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 /*
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
@@ -6,15 +8,16 @@
  * @Description: cli 工具
  */
 import { Option, program } from 'commander';
-import { color } from 'console-log-colors';
+import { color, log } from 'console-log-colors';
 import path from 'path';
 import fs from 'fs';
-import { getHeadDiffFileList } from './utils';
+import { wxWorkNotify } from './lib/WXWork';
+import { getHeadDiffFileList, rmdir } from './utils';
 import { getConfig, config, mergeCommConfig } from './config';
 import type { FlhConfig, TsCheckConfig, JiraCheckConfig, CommitLintOptions } from './config';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const pkg = require('../../package.json');
+const package_ = require('../../package.json');
 
 interface POptions
   extends Pick<TsCheckConfig, 'toWhiteList'>,
@@ -39,8 +42,8 @@ interface POptions
 
 program
   // .aliases(['flh'])
-  .version(pkg.version, '-v, --version')
-  .description(color.cyanBright(pkg.description))
+  .version(package_.version, '-v, --version')
+  .description(color.cyanBright(package_.description))
   .option('-c, --config-path <filepath>', `配置文件 ${color.yellow('.flh.config.js')} 的路径`)
   .option('--silent', `开启静默模式。`, false)
   .option('--debug', `开启调试模式。`, false)
@@ -61,87 +64,87 @@ program
   .option('--commit-edit', `指定 git commit msg 的文件路径。默认为 ${color.yellowBright('./.git/COMMIT_EDITMSG')}`)
   .addOption(new Option('--jira-type <type>', `执行 jira 检查的类型。可选值：`).choices(['commit', 'pipeline']))
   .option('--jest', `执行 jest 单元测试`)
-  .action((opts: POptions) => {
-    const options: FlhConfig = {
-      exitOnError: opts.exitOnError !== false,
-      cache: !!opts.cache,
-      removeCache: opts.removeCache,
+  .action((options: POptions) => {
+    const config: FlhConfig = {
+      exitOnError: options.exitOnError !== false,
+      cache: !!options.cache,
+      removeCache: options.removeCache,
       checkOnInit: false,
-      silent: !opts.debug && opts.silent,
-      debug: opts.debug,
-      printDetail: opts.printDetail !== false,
-      mode: opts.mode || 'proc',
+      silent: !options.debug && options.silent,
+      debug: options.debug,
+      printDetail: options.printDetail !== false,
+      mode: options.mode || 'proc',
       tscheck: {
-        toWhiteList: opts.toWhiteList,
-        mode: opts.mode || 'proc',
+        toWhiteList: options.toWhiteList,
+        mode: options.mode || 'proc',
       },
       eslint: {
         // tsConfigFileName: 'tsconfig.eslint.json',
-        toWhiteList: opts.toWhiteList,
+        toWhiteList: options.toWhiteList,
       },
       jest: {
-        mode: opts.mode || 'proc',
+        mode: options.mode || 'proc',
       },
       jira: {
-        type: opts.jiraType === 'pipeline' ? 'pipeline' : 'commit',
-        mode: opts.mode || 'current',
+        type: options.jiraType === 'pipeline' ? 'pipeline' : 'commit',
+        mode: options.mode || 'current',
       },
     };
 
-    if (opts.src) options.src = Array.isArray(opts.src) ? opts.src : [opts.src];
-    if (opts.jiraHome) options.jira.jiraHome = opts.jiraHome;
-    if (opts.projectName) options.jira.projectName = opts.projectName;
-    if (opts.commitEdit) options.jira.COMMIT_EDITMSG = opts.commitEdit;
+    if (options.src) config.src = Array.isArray(options.src) ? options.src : [options.src];
+    if (options.jiraHome) config.jira.jiraHome = options.jiraHome;
+    if (options.projectName) config.jira.projectName = options.projectName;
+    if (options.commitEdit) config.jira.COMMIT_EDITMSG = options.commitEdit;
 
-    let changeFiles: string[] = null;
-    if (opts.onlyChanges) {
+    let changeFiles: string[];
+    if (options.onlyChanges) {
       changeFiles = getHeadDiffFileList();
-      if (opts.debug) console.log('changeFiles:', changeFiles);
+      if (options.debug) console.log('changeFiles:', changeFiles);
     }
 
-    const baseConfig = getConfig(mergeCommConfig(options, false));
+    const baseConfig = getConfig(mergeCommConfig(config, false));
     let hasAction = false;
 
-    if (opts.debug) console.log(opts, baseConfig);
+    if (options.debug) console.log(options, baseConfig);
 
-    if (opts.tscheck) {
+    if (options.tscheck) {
       hasAction = true;
       import('./ts-check').then(({ TsCheck }) => {
         const tsCheck = new TsCheck(baseConfig.tscheck);
-        tsCheck.start(changeFiles).then(res => opts.debug && console.log('tscheck done!', res));
+        tsCheck.start(changeFiles).then(result => options.debug && console.log('tscheck done!', result));
       });
     }
 
-    if (opts.eslint) {
+    if (options.eslint) {
       hasAction = true;
       import('./eslint-check').then(({ ESLintCheck }) => {
         const eslintCheck = new ESLintCheck(baseConfig.eslint);
-        eslintCheck.start(changeFiles).then(res => opts.debug && console.log('eslint done!', res));
+        eslintCheck.start(changeFiles).then(result => options.debug && console.log('eslint done!', result));
       });
     }
 
-    if (opts.jest) {
+    if (options.jest) {
       hasAction = true;
       import('./jest-check').then(({ JestCheck }) => {
         const jestCheck = new JestCheck(baseConfig.jest);
-        jestCheck.start(changeFiles).then(res => opts.debug && console.log('jestCheck done!', res));
+        jestCheck.start(changeFiles).then(result => options.debug && console.log('jestCheck done!', result));
       });
     }
 
-    if (opts.jira) {
+    if (options.jira) {
       hasAction = true;
       import('./jira-check').then(({ JiraCheck }) => {
         const jestCheck = new JiraCheck(baseConfig.jira);
-        jestCheck.start().then(res => opts.debug && console.log('jestCheck done!', res));
+        jestCheck.start().then(result => options.debug && console.log('jestCheck done!', result));
       });
     }
 
-    if (opts.commitlint) {
+    if (options.commitlint) {
       hasAction = true;
-      import('./commit-lint').then(({ commitMsgVerify }) => {
-        const cmvOpts: CommitLintOptions = { msgPath: opts.commitEdit, exitOnError: opts.exitOnError };
-        if (typeof opts.commitlint === 'string') cmvOpts.verify = opts.commitlint;
-        commitMsgVerify(cmvOpts);
+      import('./commit-lint').then(({ commitMessageVerify }) => {
+        const cmvOptions: CommitLintOptions = { msgPath: options.commitEdit, exitOnError: options.exitOnError };
+        if (typeof options.commitlint === 'string') cmvOptions.verify = options.commitlint;
+        commitMessageVerify(cmvOptions);
       });
     }
 
@@ -153,19 +156,54 @@ program
   .description('执行初始化操作')
   .option('--config', '在当前目录下生成默认的配置文件')
   .option('--force', '是否强制执行(配置文件已存在，则覆盖生成)')
-  .action((opts, destination) => {
-    if (!opts.config) return destination.help();
+  .action((options, destination) => {
+    if (!options.config) return destination.help();
 
-    if (opts.config) {
-      if (fs.existsSync(config.configPath) && !opts.force) {
+    if (options.config) {
+      if (fs.existsSync(config.configPath) && !options.force) {
         return console.log(color.yellowBright(`当前目录下已存在配置文件：`), color.cyan(config.configPath));
       }
 
       const tpl = path.resolve(__dirname, '../../.flh.config.sample.js');
-      const cfgInfo = fs.readFileSync(tpl, 'utf8').replace(`import('./')`, `import('${pkg.name}')`);
+      const cfgInfo = fs.readFileSync(tpl, 'utf8').replace(`import('./')`, `import('${package_.name}')`);
       fs.writeFileSync(config.configPath, cfgInfo, 'utf8');
       console.log(`已在当前目录下生成配置文件：`, color.cyan(config.configPath));
     }
+  });
+
+program
+  .command('util')
+  .description('执行辅助工具集操作')
+  .option('--rm <dirpath...>', '删除指定的目录')
+  .option('-f, --force', '是否强制执行')
+  .option('--wx-notify <message, keys...>', '执行企业微信消息通知')
+  .action((options, destination) => {
+    const programOptions = program.opts();
+    let hasAction = false;
+    if (programOptions.debug) console.log('options:', options, programOptions);
+
+    if (options.rm) {
+      hasAction = true;
+      rmdir(options.rm as string[], false, options.force);
+    }
+
+    if (options.wxNotify) {
+      hasAction = true;
+      const [message, ...keys] = options.wxNotify as string[];
+      if (keys.length === 0) {
+        const baseConfig = getConfig();
+        if (baseConfig.wxWorkNotify) {
+          if (typeof baseConfig.wxWorkNotify === 'string') keys.push(baseConfig.wxWorkNotify);
+          else {
+            keys.push(...baseConfig.wxWorkNotify);
+          }
+        }
+      }
+      if (keys.length === 0) log.redBright('[wxNotify]缺少企业微信 key 信息');
+      else wxWorkNotify(message, keys, programOptions.debug);
+    }
+
+    if (!hasAction) destination.help();
   });
 
 program.parse(process.argv);

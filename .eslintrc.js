@@ -10,7 +10,8 @@ module.exports = {
         'plugin:@typescript-eslint/recommended',
         // 'plugin:@typescript-eslint/recommended-requiring-type-checking',
         'plugin:prettier/recommended',
-        'plugin:ava/recommended',
+        'plugin:jest/recommended',
+        'plugin:unicorn/recommended',
     ],
     env: {
         browser: true,
@@ -49,5 +50,11 @@ module.exports = {
         '@typescript-eslint/explicit-module-boundary-types': 'off',
         '@typescript-eslint/no-unused-vars': ['warn', { varsIgnorePattern: '^_', argsIgnorePattern: '^_', ignoreRestSiblings: true }],
         '@typescript-eslint/ban-ts-comment': 'off',
+        'unicorn/prefer-module': 'off',
+        'unicorn/prefer-node-protocol': 'off',
+        'unicorn/no-nested-ternary': 'off',
+        'unicorn/no-process-exit': 'off',
+        'unicorn/consistent-destructuring': 'off',
+        'jest/no-export': 'off',
     },
 };

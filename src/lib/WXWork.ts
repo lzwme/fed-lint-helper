@@ -7,9 +7,8 @@
  * @Description: 企业微信机器人通知
  */
 
-import { config } from '../config';
 import { Request } from './request';
-import { Logger } from './Logger';
+import { getLogger } from '../utils/get-logger';
 
 const api = new Request();
 
@@ -21,9 +20,9 @@ interface WxWorkResult {
 }
 
 /** 企业微信机器人消息通知 */
-export async function wxWorkNotify(params: string | Record<string, any>, webhookUrl?: string[]): Promise<WxWorkResult[]>;
-export async function wxWorkNotify(params: string | Record<string, any>, webhookUrl?: string): Promise<WxWorkResult>;
-export async function wxWorkNotify(params: string | Record<string, any>, webhookUrl?: string | string[]) {
+export async function wxWorkNotify(params: string | Record<string, any>, webhookUrl: string[], debug?: boolean): Promise<WxWorkResult[]>;
+export async function wxWorkNotify(params: string | Record<string, any>, webhookUrl: string, debug?: boolean): Promise<WxWorkResult>;
+export async function wxWorkNotify(params: string | Record<string, any>, webhookUrl: string | string[], debug = false) {
   if (!webhookUrl) return Promise.resolve({ errcode: -1, errmsg: '[wxWorkNotify]没有传入 webhook key' });
 
   if (Array.isArray(webhookUrl)) {
@@ -42,7 +41,7 @@ export async function wxWorkNotify(params: string | Record<string, any>, webhook
     };
   }
 
-  if (config.debug) Logger.getLogger().debug('[wxWorkNotify]', webhookUrl, params);
+  if (debug) getLogger(null, 'debug').debug('[wxWorkNotify]', webhookUrl, params);
 
   return api
     .post<WxWorkResult>(webhookUrl, params, {
@@ -50,7 +49,7 @@ export async function wxWorkNotify(params: string | Record<string, any>, webhook
       type: 'payload',
     })
     .then(d => {
-      Logger.getLogger().log('[wxWorkNotify]', JSON.stringify(d.data));
+      getLogger().log('[wxWorkNotify]', debug ? JSON.stringify(d.data) : d.data.errmsg);
       return d.data;
     });
 }

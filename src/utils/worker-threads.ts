@@ -11,6 +11,7 @@
 
 import { Worker, isMainThread, parentPort, workerData } from 'worker_threads';
 import type { TsCheckConfig, ESLintCheckConfig, JestCheckConfig, JiraCheckConfig, ILintTypes } from '../config';
+import { getLogger } from './get-logger';
 interface CreateThreadOptions {
   debug?: boolean;
   /** 创建线程的类型。eslint 尽量使用该模式，使用 fork 进程方式 */
@@ -21,13 +22,13 @@ interface CreateThreadOptions {
   jiraConfig?: JiraCheckConfig;
 }
 
-interface WorkerMsgBody<T = unknown> {
+interface WorkerMessageBody<T = unknown> {
   type: ILintTypes;
   data: T;
   end: boolean;
 }
 
-export function createWorkerThreads<T>(options: CreateThreadOptions, onMessage?: (d: WorkerMsgBody<T>) => void): Promise<T> {
+export function createWorkerThreads<T>(options: CreateThreadOptions, onMessage?: (d: WorkerMessageBody<T>) => void): Promise<T> {
   return new Promise((resolve, reject) => {
     if (!isMainThread) return reject(-2);
 
@@ -37,8 +38,8 @@ export function createWorkerThreads<T>(options: CreateThreadOptions, onMessage?:
       // stdout: true,
     });
 
-    worker.on('message', (info: WorkerMsgBody<T>) => {
-      if (options.debug) console.log(`received from worker thread:`, info);
+    worker.on('message', (info: WorkerMessageBody<T>) => {
+      getLogger().debug(`[${options.type}] received from worker thread:`, info);
       if (onMessage) onMessage(info);
 
       if (info.end) {
@@ -48,7 +49,7 @@ export function createWorkerThreads<T>(options: CreateThreadOptions, onMessage?:
     });
 
     worker.on('exit', code => {
-      if (options.debug) console.log(`[${options.type}] exit worker with code:`, code);
+      getLogger().debug(`[${options.type}] exit worker with code:`, code);
       if (code !== 0) reject(code);
     });
   });
@@ -60,7 +61,7 @@ if (!isMainThread) {
   const done = (data: unknown) => {
     if (config.debug) console.log('emit msg from worker thread:', { type: config.type, data, end: true });
     setTimeout(() => {
-      parentPort.postMessage({ type: config.type, data, end: true } as WorkerMsgBody);
+      parentPort.postMessage({ type: config.type, data, end: true } as WorkerMessageBody);
     }, 300);
   };
   const resetConfig = { checkOnInit: false, exitOnError: false, mode: 'current' };
