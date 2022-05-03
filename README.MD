@@ -2,12 +2,14 @@
 
 # @lzwme/fed-lint-helper
 
+[![build status](https://github.com/lzwme/fed-lint-helper/actions/workflows/node-ci.yml/badge.svg)](https://github.com/lzwme/fed-lint-helper/actions/workflows/node-ci.yml)
 [![NPM version][npm-badge]][npm-url]
 [![node version][node-badge]][node-url]
 [![npm download][download-badge]][download-url]
 [![GitHub issues][issues-badge]][issues-url]
 [![GitHub forks][forks-badge]][forks-url]
 [![GitHub stars][stars-badge]][stars-url]
+![license MIT](https://img.shields.io/github/license/lzwme/asmd-calc)
 
 前端项目编码质量 `Lint` 检测辅助工具。用于辅助大型长期研发的前端项目渐进式的迁移与改进编码规范约束。
 

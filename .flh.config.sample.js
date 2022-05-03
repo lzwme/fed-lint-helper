@@ -8,22 +8,22 @@ module.exports = {
   printDetail: true,
   exitOnError: true,
   cache: true,
-  removeCache: process.argv.slice(2).includes('--removeCache'),
+  removeCache: false,
   tscheck: {
-    src: ['src'],
-    whiteListFilePath: 'tsCheckWhiteList.json',
-    toWhiteList: process.argv.slice(2).includes('--toWhiteList'),
-    // tsFiles: glob.sync('src/**/**.{ts,tsx}'),
+    whiteListFilePath: 'config/tsCheckWhiteList.json',
   },
   eslint: {
-    src: ['src'],
     fix: process.argv.slice(2).includes('--fix'),
-    whiteListFilePath: 'eslintWhitelist.json',
-    toWhiteList: process.argv.slice(2).includes('--toWhiteList'),
+    whiteListFilePath: 'config/eslintWhitelist.json',
   },
   jest: {
     src: ['src'],
     // silent: true,
     // fileList: glob.sync('src/**/**.spec.ts'),
   },
+  // commitlint: {
+  //   verify: (message) => {
+  //     return /#\d+/.test(message);
+  //   }
+  // }
 };

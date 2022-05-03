@@ -8,7 +8,7 @@
  * @Description: cli 工具
  */
 import { Option, program } from 'commander';
-import { color, log } from 'console-log-colors';
+import { color } from 'console-log-colors';
 import path from 'path';
 import fs from 'fs';
 import { wxWorkNotify } from './lib/WXWork';
@@ -17,7 +17,7 @@ import { getConfig, config, mergeCommConfig } from './config';
 import type { FlhConfig, TsCheckConfig, JiraCheckConfig, CommitLintOptions } from './config';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const package_ = require('../../package.json');
+const packageInfo = require('../../package.json');
 
 interface POptions
   extends Pick<TsCheckConfig, 'toWhiteList'>,
@@ -42,8 +42,8 @@ interface POptions
 
 program
   // .aliases(['flh'])
-  .version(package_.version, '-v, --version')
-  .description(color.cyanBright(package_.description))
+  .version(packageInfo.version, '-v, --version')
+  .description(color.cyanBright(packageInfo.description))
   .option('-c, --config-path <filepath>', `配置文件 ${color.yellow('.flh.config.js')} 的路径`)
   .option('--silent', `开启静默模式。`, false)
   .option('--debug', `开启调试模式。`, false)
@@ -165,45 +165,33 @@ program
       }
 
       const tpl = path.resolve(__dirname, '../../.flh.config.sample.js');
-      const cfgInfo = fs.readFileSync(tpl, 'utf8').replace(`import('./')`, `import('${package_.name}')`);
+      const cfgInfo = fs.readFileSync(tpl, 'utf8').replace(`import('./')`, `import('${packageInfo.name}')`);
       fs.writeFileSync(config.configPath, cfgInfo, 'utf8');
       console.log(`已在当前目录下生成配置文件：`, color.cyan(config.configPath));
     }
   });
 
 program
-  .command('util')
-  .description('执行辅助工具集操作')
-  .option('--rm <dirpath...>', '删除指定的目录')
-  .option('-f, --force', '是否强制执行')
-  .option('--wx-notify <message, keys...>', '执行企业微信消息通知')
-  .action((options, destination) => {
+  .command('rm <dirname...>')
+  .description('[utils]删除指定的目录')
+  .option('-s, --silent', '是否静默执行', false)
+  .option('-f, --force', '是否强制执行', false)
+  .action((list: string[], options) => {
+    rmdir(list, options.silent, options.force);
+  });
+
+program
+  .command('notify <message>')
+  .description('[utils]发送消息通知（当前仅支持企业微信机器人通知）')
+  .option('--wx-work <key...>', '发送至企业微信机器人，需指定 webhook key 的值，可指定多个机器人')
+  .action((message: string, options) => {
     const programOptions = program.opts();
-    let hasAction = false;
-    if (programOptions.debug) console.log('options:', options, programOptions);
-
-    if (options.rm) {
-      hasAction = true;
-      rmdir(options.rm as string[], false, options.force);
+    // console.log(message, options, programOptions);
+    if (options.wxWork) {
+      wxWorkNotify(message, options.wxWork, programOptions.debug).then(list => {
+        if (list.some(d => d.errcode !== 200)) process.exit(-1);
+      });
     }
-
-    if (options.wxNotify) {
-      hasAction = true;
-      const [message, ...keys] = options.wxNotify as string[];
-      if (keys.length === 0) {
-        const baseConfig = getConfig();
-        if (baseConfig.wxWorkNotify) {
-          if (typeof baseConfig.wxWorkNotify === 'string') keys.push(baseConfig.wxWorkNotify);
-          else {
-            keys.push(...baseConfig.wxWorkNotify);
-          }
-        }
-      }
-      if (keys.length === 0) log.redBright('[wxNotify]缺少企业微信 key 信息');
-      else wxWorkNotify(message, keys, programOptions.debug);
-    }
-
-    if (!hasAction) destination.help();
   });
 
 program.parse(process.argv);

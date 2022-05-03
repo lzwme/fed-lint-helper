@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { color } from 'console-log-colors';
-import { logTimeCost, readSyncByRl } from './common';
+import { readSyncByRl } from './common';
 
 function rmdirCustom(dirname: string) {
   if (!fs.existsSync(dirname) || !fs.statSync(dirname).isDirectory()) return;
@@ -35,14 +35,13 @@ async function doRmdir(source: string, slient = false, force = false) {
     const force = await readSyncByRl(`是否删除该${sourceTip}(y/)？[${color.red(source)}] `);
     if ('y' !== String(force).trim().toLowerCase()) return;
   }
-  const startTime = Date.now();
   try {
     fs.rmSync(source, { recursive: true });
   } catch (error) {
     console.log('error:', error.message || error);
     rmdirCustom(source);
   }
-  if (!slient) console.log(`$[${logTimeCost(startTime)}] ${sourceTip}已删除：`, color.green(source));
+  if (!slient) console.log(`${sourceTip}已删除：`, color.green(source));
   return true;
 }
 
@@ -57,4 +56,4 @@ export async function rmdir(srcs: string[], slient = false, force = false) {
   return true;
 }
 
-if (module === require.main) rmdir(process.argv.slice(2));
+if (module === require.main) rmdir(process.argv.slice(2), false, true);

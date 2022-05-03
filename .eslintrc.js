@@ -56,5 +56,8 @@ module.exports = {
         'unicorn/no-process-exit': 'off',
         'unicorn/consistent-destructuring': 'off',
         'jest/no-export': 'off',
+        'unicorn/filename-case': 'off',
+        'unicorn/no-null': 'off',
+        'unicorn/prevent-abbreviations': 'off',
     },
 };

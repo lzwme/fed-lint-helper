@@ -20,9 +20,9 @@ interface WxWorkResult {
 }
 
 /** 企业微信机器人消息通知 */
-export async function wxWorkNotify(params: string | Record<string, any>, webhookUrl: string[], debug?: boolean): Promise<WxWorkResult[]>;
-export async function wxWorkNotify(params: string | Record<string, any>, webhookUrl: string, debug?: boolean): Promise<WxWorkResult>;
-export async function wxWorkNotify(params: string | Record<string, any>, webhookUrl: string | string[], debug = false) {
+export function wxWorkNotify(params: string | Record<string, any>, webhookUrl: string[], debug?: boolean): Promise<WxWorkResult[]>;
+export function wxWorkNotify(params: string | Record<string, any>, webhookUrl: string, debug?: boolean): Promise<WxWorkResult>;
+export function wxWorkNotify(params: string | Record<string, any>, webhookUrl: string | string[], debug = false) {
   if (!webhookUrl) return Promise.resolve({ errcode: -1, errmsg: '[wxWorkNotify]没有传入 webhook key' });
 
   if (Array.isArray(webhookUrl)) {
@@ -49,7 +49,7 @@ export async function wxWorkNotify(params: string | Record<string, any>, webhook
       type: 'payload',
     })
     .then(d => {
-      getLogger().log('[wxWorkNotify]', debug ? JSON.stringify(d.data) : d.data.errmsg);
+      getLogger().log(`[wxWorkNotify][${d.data.errcode}]`, debug ? JSON.stringify(d.data) : d.data.errmsg);
       return d.data;
     });
 }

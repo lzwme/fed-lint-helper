@@ -1,33 +1,26 @@
 {
-  "ts-node": {
-    "transpileOnly": true
-  },
   "compilerOptions": {
-    "alwaysStrict": true,
-    "baseUrl": ".",
-    "rootDir": "src",
-    "skipLibCheck": true,
-    "outDir": "build/main",
-    "sourceMap": false,
-    "noImplicitThis": true,
-    "noImplicitAny": false,
-    "module": "commonjs",
     "target": "ESNext",
+    "module": "commonjs",
+    "outDir": "build/module",
     "moduleResolution": "node",
+    "inlineSourceMap": false,
     "esModuleInterop": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "allowSyntheticDefaultImports": true,
-    "allowJs": false,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "declaration": true,
-    "resolveJsonModule": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+
+    /* Debugging Options */
+    "traceResolution": false,
+    "listEmittedFiles": false,
+    "listFiles": false,
     "pretty": true,
-    "lib": ["ESNext", "dom"],
-    "typeRoots": ["./typings", "./node_modules/@types"]
+
+    "lib": ["DOM", "esnext"],
+    "typeRoots": ["./node_modules/@types"]
   },
-  "exclude": ["dist", "build", "**/node_modules/*"],
-  "include": ["src"],
+  "exclude": ["node_modules/**"],
+  "include": ["**/*.ts"],
   "compileOnSave": false
 }

@@ -181,6 +181,7 @@ export class JiraCheck {
     if (isPrintTips) {
       this.logger.warn('请在项目根目录或当前用户主目录下添加 .jira.json 配置文件，以JSON格式配置 {username, pwd, proxy, cookie?}');
     }
+    return '';
   }
   /** 获取 issueType 列表 */
   private async getIssueType() {

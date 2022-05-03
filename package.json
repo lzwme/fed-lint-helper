@@ -3,18 +3,14 @@
   "description": "前端项目编码质量 lint 检测辅助工具。用于辅助大型长期研发的前端项目渐进式的迁移与改进编码规范约束。",
   "version": "1.5.1",
   "main": "build/main/index.js",
-  "typings": "build/main/index.d.ts",
   "module": "build/module/index.js",
+  "typings": "build/types/index.d.ts",
   "license": "MIT",
   "repository": "https://github.com/lzwme/fed-lint-helper.git",
   "author": {
     "name": "renxia",
     "email": "lzwy0820@qq.com",
     "url": "https://lzw.me"
-  },
-  "private": false,
-  "engines": {
-    "node": ">=8"
   },
   "keywords": [
     "fed",
@@ -27,10 +23,10 @@
     "flh": "build/main/cli.js"
   },
   "scripts": {
-    "dev": "tsc -w",
+    "dev": "npm run watch:build",
     "start": "npm run watch",
     "build": "run-s clean && run-p build:*",
-    "build:main": "tsc -p tsconfig.json",
+    "build:main": "tsc -p tsconfig.cjs.json",
     "build:module": "tsc -p tsconfig.module.json",
     "fix": "run-s fix:*",
     "fix:prettier": "prettier \"src/**/*.ts\" --write",
@@ -40,16 +36,24 @@
     "test:prettier": "prettier \"src/**/*.ts\" --list-different",
     "test:unit": "npm run cov",
     "watch": "run-s clean build:main && run-p \"build:main -- -w\" \"test:unit -- --watch\"",
-    "watch:build": "tsc -p tsconfig.json -w",
+    "watch:build": "tsc -p tsconfig.cjs.json -w",
     "watch:test": "jest --watch",
     "cov": "jest --coverage --silent",
     "cov:html": "jest --coverage --silent --reporter=html",
     "doc": "run-s doc:html",
-    "doc:html": "typedoc src/ --exclude **/*.spec.ts --out build/docs",
+    "doc:html": "typedoc src/ --exclude **/*.spec.ts --out build/docs --tsconfig tsconfig.module.json",
+    "doc:json": "typedoc src/ --exclude **/*.spec.ts --json build/docs/typedoc.json --tsconfig tsconfig.module.json",
     "version": "standard-version",
-    "prepare-release": "run-s clean build test doc:html version",
-    "release": "run-s clean build doc",
-    "clean": "node scripts/rmdir.mjs ./build"
+    "release": "run-s test build doc:html",
+    "release-version": "run-s dist version",
+    "clean": "ts-node src/utils/rmdir.ts ./build"
+  },
+  "engines": {
+    "node": ">=14"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
   },
   "dependencies": {
     "commander": "^9.0.0",
@@ -81,5 +85,6 @@
   },
   "optionalDependencies": {
     "@node-rs/deno-lint": ">=1.13.0"
-  }
+  },
+  "packageManager": "pnpm@7.0.0"
 }

@@ -10,9 +10,7 @@ export type PlainObject = Record<string, any>;
 export type ValueOf<T> = T[keyof T];
 
 /** 等待并获取用户输入内容 */
-export function readSyncByRl(tips: string) {
-  tips = tips || '> ';
-
+export function readSyncByRl(tips = '> ') {
   return new Promise(resolve => {
     const rl = readline.createInterface({
       input: process.stdin,
@@ -64,9 +62,9 @@ export function md5(str, isFile = false) {
     const md5 = crypto.createHash('md5').update(str).digest('hex');
     // log(`文件的MD5是：${md5}`, filename);
     return md5;
-  } catch (err) {
+  } catch (error) {
     /* eslint-disable no-console */
-    console.log(err);
+    console.log(error);
     return '';
   }
 }
@@ -83,7 +81,7 @@ export function assign<T = PlainObject>(a: T, b: PlainObject, c?: PlainObject): 
   for (const key in b) {
     // 如果是数组，则只简单的复制一份（不考虑数组内的类型）
     if (Array.isArray(b[key])) {
-      a[key] = b[key].concat();
+      a[key] = [...b[key]];
     } else if (null == b[key] || typeof b[key] !== 'object' || b[key] instanceof RegExp) {
       a[key] = b[key];
     } else {
@@ -102,8 +100,8 @@ export function execSync(cmd: string, stdio?: childProcess.StdioOptions, cwd = p
     if (!stdio) stdio = debug ? 'inherit' : 'pipe';
     const res = childProcess.execSync(cmd, { stdio, encoding: 'utf8', cwd });
     return res ? res.toString().trim() : '';
-  } catch (err) {
-    console.error(color.redBright(err.message));
+  } catch (error) {
+    console.error(color.redBright(error.message));
     return null;
   }
 }

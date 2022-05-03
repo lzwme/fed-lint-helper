@@ -125,6 +125,7 @@ export class ESLintCheck {
         option.overrideConfigFile = filepath;
         return true;
       }
+      return false;
     });
 
     if (cfg.debug) cfg.silent = false;
@@ -171,14 +172,14 @@ export class ESLintCheck {
           delete this.whiteList[filePath];
           removeFromWhiteList.push(filePath);
         }
-        return;
+        continue;
       }
 
       if (Array.isArray(result.messages)) {
         for (const d of result.messages) {
           // ignored  file
           if (!d.ruleId) {
-            if (/ignore pattern/.test(d.message)) return;
+            if (/ignore pattern/.test(d.message)) continue;
           } else {
             stats.rules[d.ruleId] = (stats.rules[d.ruleId] || 0) + 1;
           }

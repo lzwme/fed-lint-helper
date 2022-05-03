@@ -29,6 +29,7 @@ export interface LoggerOptions {
   /** 日志级别 */
   levelType?: LogLevelType;
   /** 通过外部注入 color 能力 */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   color?: Record<string, any>;
 }
 
@@ -94,16 +95,14 @@ export class Logger {
       this.logPath = logDir;
       this.logDir = path.dirname(logDir);
     } else {
-      const curTime = new Date().toTimeString().slice(0, 8).replace(/[^\d]/g, '');
-      this.logPath = path.resolve(logDir, `${this.tag.replace(/[^0-9a-zA-Z]/g, '')}_${curTime}.log`);
+      const curTime = new Date().toTimeString().slice(0, 8).replace(/\D/g, '');
+      this.logPath = path.resolve(logDir, `${this.tag.replace(/[^\dA-Za-z]/g, '')}_${curTime}.log`);
     }
 
     if (this.logFsStream) {
       this.logFsStream.destroy();
       this.logFsStream = null;
     }
-
-    return true;
   }
   /** 更新服务器时间，计算时间差并返回 */
   static setServerTime(serverTime: number) {
@@ -158,25 +157,26 @@ export class Logger {
     if (!this.logPath) return;
     if (!this.logFsStream || this.logFsStream.destroyed) {
       if (!fs.existsSync(this.logDir)) fs.mkdirSync(this.logDir, { recursive: true });
-      this.logFsStream = fs.createWriteStream(this.logPath, { encoding: 'utf-8', flags: 'a' });
+      this.logFsStream = fs.createWriteStream(this.logPath, { encoding: 'utf8', flags: 'a' });
     }
-    this.logFsStream.write(msg.replace(/\x1b\[\d+m/g, ''), 'utf-8');
+    // eslint-disable-next-line no-control-regex
+    this.logFsStream.write(msg.replace(/\u001B\[\d+m/g, ''), 'utf8');
   }
   public updateOptions(options: LoggerOptions) {
     if (!this.options.color && options.color) {
-      Object.keys(LogLevelHeadTip).forEach(key => {
+      for (const key of Object.keys(LogLevelHeadTip)) {
         const [v, colorType] = LogLevelHeadTip[key];
         if (options.color[colorType]) LogLevelHeadTip[key][0] = options.color[colorType](v);
-      });
+      }
     }
 
     this.options = Object.assign({}, defaultOptions, this.options);
-    Object.keys(defaultOptions).forEach(key => {
+    for (const key of Object.keys(defaultOptions)) {
       if (key in options) {
         this.options[key] = options[key];
         if (key === 'logDir') this.setLogDir(options.logDir);
       }
-    });
+    }
 
     options = this.options;
     if (process.env.FLH_LOG_LEVEL) options.levelType = process.env.ET_LOG_LEVEL as LogLevelType;

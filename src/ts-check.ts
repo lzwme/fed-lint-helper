@@ -256,7 +256,7 @@ export class TsCheck {
   }
   /** 返回指定子目录中匹配到的 ts 文件列表 */
   private getTsFiles(subDirection: string) {
-    if (!fs.existsSync(subDirection)) return;
+    if (!fs.existsSync(subDirection)) return void 0;
 
     const tsFiles = glob.sync('**/*.{ts,tsx}', {
       cwd: subDirection,
