@@ -44,8 +44,8 @@
     "doc:html": "typedoc src/ --exclude **/*.spec.ts --out build/docs --tsconfig tsconfig.module.json",
     "doc:json": "typedoc src/ --exclude **/*.spec.ts --json build/docs/typedoc.json --tsconfig tsconfig.module.json",
     "version": "standard-version",
-    "release": "run-s test build doc:html",
-    "release-version": "run-s dist version",
+    "dist": "run-s test build doc:html",
+    "release": "run-s dist version",
     "clean": "ts-node src/utils/rmdir.ts ./build"
   },
   "engines": {
@@ -56,20 +56,21 @@
     "registry": "https://registry.npmjs.org"
   },
   "dependencies": {
-    "commander": "^9.0.0",
+    "commander": "^9.2.0",
     "console-log-colors": "^0.2.3",
     "glob": "^8.0.1",
     "minimatch": "^5.0.1"
   },
   "devDependencies": {
-    "@jest/core": "^28.0.2",
-    "@types/eslint": "^8.4.1",
+    "@jest/core": "^27",
+    "@jest/types": "^27",
+    "@types/eslint": "^8.4.2",
     "@types/glob": "^7.2.0",
     "@types/jest": "^27.4.1",
     "@types/node": "^16.11.7",
-    "@typescript-eslint/eslint-plugin": "^5.14.0",
-    "@typescript-eslint/parser": "^5.14.0",
-    "eslint": "^8.10.0",
+    "@typescript-eslint/eslint-plugin": "^5.22.0",
+    "@typescript-eslint/parser": "^5.22.0",
+    "eslint": "^8.14.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-jest": "^26.1.5",
     "eslint-plugin-prettier": "^4.0.0",
@@ -77,11 +78,10 @@
     "husky": "^7.0.4",
     "jest": "^27.5.1",
     "npm-run-all": "^4.1.5",
-    "prettier": "^2.5.1",
+    "prettier": "^2.6.2",
     "standard-version": "^9.3.2",
-    "ts-jest": "^27.1.4",
-    "typedoc": "^0.22.13",
-    "typescript": "^4.5.4"
+    "typedoc": "^0.22.15",
+    "typescript": "^4.6.4"
   },
   "optionalDependencies": {
     "@node-rs/deno-lint": ">=1.13.0"

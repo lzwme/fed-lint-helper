@@ -1,19 +1,26 @@
-/** @type {import('ts-jest/dist/types').InitialOptionsTsJest} */
+// @ts-check
+
+/** @type {import('@jest/types').Config.InitialOptions } */
 module.exports = {
-  preset: 'ts-jest',
   testEnvironment: 'node',
-  collectCoverage: true,
   moduleFileExtensions: [
     "ts",
     "tsx",
     "js"
   ],
-  globals: {
-    'ts-jest': {
-      tsconfig: {
-        sourceMap: true,
+  transform: {
+    '^.+\\.(t|j)sx?$': [
+      '@swc/jest',
+      {
+        jsc: {
+          target: 'es2022',
+        },
       },
-    },
+    ],
   },
-  testRegex: "/src/.*\\.spec\\.(ts|tsx|js)$"
+  extensionsToTreatAsEsm: ['.ts'],
+  testMatch: ['<rootDir>/src/**/*.spec.ts'],
+  coveragePathIgnorePatterns: ['/node_modules/', 'src/cli.ts', 'src/index.ts'], // 'src/**/*.spec.ts'
+  // collectCoverageFrom: ['src/**/!(*.d).ts'],
+  maxWorkers: require('os').cpus().length,
 };
