@@ -1,7 +1,7 @@
 {
   "name": "@lzwme/fed-lint-helper",
   "description": "前端项目编码质量 lint 检测辅助工具。用于辅助大型长期研发的前端项目渐进式的迁移与改进编码规范约束。",
-  "version": "1.5.1",
+  "version": "1.6.0",
   "main": "build/main/index.js",
   "module": "build/module/index.js",
   "typings": "build/types/index.d.ts",
@@ -45,7 +45,8 @@
     "doc:json": "typedoc src/ --exclude **/*.spec.ts --json build/docs/typedoc.json --tsconfig tsconfig.module.json",
     "version": "standard-version",
     "dist": "run-s test build doc:html",
-    "release": "run-s dist version",
+    "release": "run-s dist",
+    "release-version": "run-s dist version",
     "clean": "ts-node src/utils/rmdir.ts ./build"
   },
   "engines": {
