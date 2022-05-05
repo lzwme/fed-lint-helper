@@ -3,7 +3,7 @@
  * @Author: lzw
  * @Date: 2021-12-24 13:01:39
  * @LastEditors: lzw
- * @LastEditTime: 2022-04-29 18:47:42
+ * @LastEditTime: 2022-05-05 17:14:04
  * @Description: 企业微信机器人通知
  */
 
@@ -23,10 +23,14 @@ interface WxWorkResult {
 export function wxWorkNotify(params: string | Record<string, any>, webhookUrl: string[], debug?: boolean): Promise<WxWorkResult[]>;
 export function wxWorkNotify(params: string | Record<string, any>, webhookUrl: string, debug?: boolean): Promise<WxWorkResult>;
 export function wxWorkNotify(params: string | Record<string, any>, webhookUrl: string | string[], debug = false) {
-  if (!webhookUrl) return Promise.resolve({ errcode: -1, errmsg: '[wxWorkNotify]没有传入 webhook key' });
+  if (!webhookUrl) return Promise.resolve({ errcode: -1, errmsg: '[wxWorkNotify][webhook] cannot be empty' });
 
   if (Array.isArray(webhookUrl)) {
     return Promise.all(webhookUrl.map(u => wxWorkNotify(params, u)));
+  }
+
+  if (!/[\da-z]{8}(-[\da-z]{4}){3}-[\da-z]{12}/i.test(webhookUrl)) {
+    return Promise.resolve({ errcode: -2, errmsg: '[wxWorkNotify][webhook]invalid format' });
   }
 
   if (!webhookUrl.startsWith('http')) webhookUrl = webhook + webhookUrl;

@@ -69,7 +69,7 @@ describe('utils/common', () => {
   it('sleep', async () => {
     const startTime = Date.now();
     await comm.sleep(10);
-    expect(Date.now() - startTime).toBeGreaterThanOrEqual(10);
+    expect(Date.now() - startTime).toBeGreaterThanOrEqual(8);
     await comm.sleep();
     expect(Date.now() - startTime).toBeGreaterThan(100);
   });

@@ -10,7 +10,7 @@ import { sleep } from './utils/common';
  */
 export async function exit(code = 0, startTime = 0, prefix = '') {
   if (startTime) logTimeCost(startTime, prefix);
-  if (code !== 0 && config.wxWorkKeys) {
+  if (code !== 0 && config.wxWorkKeys.length > 0) {
     // 企业微信通知
     await wxWorkNotify(`${prefix}任务执行失败，请检查`, config.wxWorkKeys, config.debug);
     await sleep(100);

@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-05-05 10:32:50
+ * @LastEditTime: 2022-05-05 18:49:02
  * @Description:
  */
 
@@ -273,6 +273,12 @@ export function getConfig(options?: FlhConfig, useCache = isInited) {
   if (!config.cacheLocation) config.cacheLocation = `node_modules/.cache/flh/`;
   if (!fs.existsSync(config.cacheLocation)) {
     fs.mkdirSync(config.cacheLocation, { recursive: true });
+  }
+
+  // 过滤有效的 wxWorkkeys
+  if (config.wxWorkKeys) {
+    if (!Array.isArray(config.wxWorkKeys)) config.wxWorkKeys = [config.wxWorkKeys];
+    config.wxWorkKeys.filter(d => /[\da-z]{8}(-[\da-z]{4}){3}-[\da-z]{12}/i.test(d));
   }
 
   isInited = true;
