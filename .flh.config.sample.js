@@ -10,6 +10,10 @@ module.exports = {
   cache: true,
   removeCache: false,
   wxWorkKeys: [],
+  wxWorkMessageFormat: (type) => {
+      const cn = require('child_process').execSync(`git log -1 --pretty="%cn"`, { encoding: 'utf8' }).trim();
+      return `[gitlab-ci]${type}任务执行失败，请检查 @${cn}`;
+  },
   fix: false,
   tscheck: {
     whiteListFilePath: 'config/tsCheckWhiteList.json',

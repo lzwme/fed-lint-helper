@@ -12,6 +12,9 @@ jest.mock('readline', () => ({
 }));
 
 describe('utils/common', () => {
+  console.log = jest.fn();
+  console.error = jest.fn();
+
   it('readSyncByRl', async () => {
     expect(await comm.readSyncByRl()).toBe('>');
     expect(await comm.readSyncByRl('ok')).toBe('ok');
@@ -72,5 +75,13 @@ describe('utils/common', () => {
     expect(Date.now() - startTime).toBeGreaterThanOrEqual(8);
     await comm.sleep();
     expect(Date.now() - startTime).toBeGreaterThan(100);
+  });
+
+  it('formatWxWorkKeys', () => {
+    expect(comm.formatWxWorkKeys(null).length).toBe(0);
+    expect(comm.formatWxWorkKeys('').length).toBe(0);
+    expect(comm.formatWxWorkKeys('abc').length).toBe(0);
+    expect(comm.formatWxWorkKeys('d5aeb3d88dd64ffcbbe289982ca00000')[0].length).toBe(36);
+    expect(comm.formatWxWorkKeys('d5aeb3d8-8dd6-4ffc-bbe2-89982ca00000')[0].length).toBe(36);
   });
 });

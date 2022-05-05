@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2022-05-05 21:12:12
+ * @LastEditTime: 2022-05-05 21:47:25
  * @Description: cli 工具
  */
 import { Option, program } from 'commander';
@@ -11,7 +11,7 @@ import path from 'path';
 import fs from 'fs';
 import { wxWorkNotify } from './lib/WXWork';
 import { getHeadDiffFileList, rmdir } from './utils';
-import { getConfig, config, mergeCommConfig } from './config';
+import { getConfig, config, mergeCommConfig, formatWxWorkKeys } from './config';
 import type { FlhConfig, TsCheckConfig, JiraCheckConfig, CommitLintOptions } from './config';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -191,9 +191,15 @@ program
     const programOptions = program.opts();
     // console.log(message, options, programOptions);
     if (options.wxWorkKeys) {
-      wxWorkNotify(message, options.wxWorkKeys, programOptions.debug).then(list => {
-        if (list.some(d => d.errcode !== 200)) process.exit(-1);
-      });
+      options.wxWorkKeys = formatWxWorkKeys(options.wxWorkKeys);
+      if (options.wxWorkKeys.length === 0) {
+        console.log('企业微信机器人 webhook 格式不正确');
+        process.exit(-1);
+      } else {
+        wxWorkNotify(message, options.wxWorkKeys, programOptions.debug).then(list => {
+          if (list.some(d => d.errcode !== 200)) process.exit(-1);
+        });
+      }
     }
   });
 

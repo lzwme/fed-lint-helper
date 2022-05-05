@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-05-05 18:49:02
+ * @LastEditTime: 2022-05-05 21:54:58
  * @Description:
  */
 
@@ -156,6 +156,8 @@ export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {
   debug?: boolean;
   /** 企业微信机器人 webhook key 配置，用于 ci 中发送通知。可配置多个 */
   wxWorkKeys?: string[];
+  /** 自定义微信通知的消息格式化 */
+  wxWorkMessageFormat?: (type: string) => string;
   /** 是否尝试修正可自动修正的异常 */
   fix?: boolean;
   tscheck?: TsCheckConfig;
@@ -243,6 +245,19 @@ export function mergeCommConfig(options: FlhConfig, useDefault = true) {
   return options;
 }
 
+export function formatWxWorkKeys(keys: string[]) {
+  if (!keys) return [];
+  if (!Array.isArray(keys)) keys = [keys];
+  return keys
+    .filter(d => /[\da-z]{8}(-?[\da-z]{4}){3}-?[\da-z]{12}/i.test(d))
+    .map(d => {
+      if (/^[\da-z]+$/.test(d) && d.length === 32) {
+        d = [...d].map((s, index) => ([7, 11, 15, 19].includes(index) ? `${s}-` : s)).join('');
+      }
+      return d;
+    });
+}
+
 /**
  * 获取配置信息
  */
@@ -275,12 +290,7 @@ export function getConfig(options?: FlhConfig, useCache = isInited) {
     fs.mkdirSync(config.cacheLocation, { recursive: true });
   }
 
-  // 过滤有效的 wxWorkkeys
-  if (config.wxWorkKeys) {
-    if (!Array.isArray(config.wxWorkKeys)) config.wxWorkKeys = [config.wxWorkKeys];
-    config.wxWorkKeys.filter(d => /[\da-z]{8}(-[\da-z]{4}){3}-[\da-z]{12}/i.test(d));
-  }
-
+  config.wxWorkKeys = formatWxWorkKeys(config.wxWorkKeys);
   isInited = true;
 
   return config;
