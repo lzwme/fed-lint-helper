@@ -1,5 +1,5 @@
 /**
- * @type {import('./').FlhConfig}
+ * @type {import('./src/config').FlhConfig}
  */
 module.exports = {
   src: ['src'],
@@ -9,11 +9,13 @@ module.exports = {
   exitOnError: true,
   cache: true,
   removeCache: false,
+  wxWorkKeys: [],
+  fix: false,
   tscheck: {
     whiteListFilePath: 'config/tsCheckWhiteList.json',
   },
   eslint: {
-    fix: process.argv.slice(2).includes('--fix'),
+    fix: false,
     whiteListFilePath: 'config/eslintWhitelist.json',
   },
   jest: {

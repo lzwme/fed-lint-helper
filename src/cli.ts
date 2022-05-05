@@ -4,7 +4,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2022-03-10 17:16:29
+ * @LastEditTime: 2022-05-05 13:12:05
  * @Description: cli 工具
  */
 import { Option, program } from 'commander';
@@ -22,7 +22,10 @@ const packageInfo = require('../../package.json');
 interface POptions
   extends Pick<TsCheckConfig, 'toWhiteList'>,
     Pick<JiraCheckConfig, 'jiraHome' | 'projectName'>,
-    Pick<FlhConfig, 'configPath' | 'debug' | 'silent' | 'printDetail' | 'cache' | 'removeCache' | 'exitOnError' | 'src' | 'mode'> {
+    Pick<
+      FlhConfig,
+      'configPath' | 'debug' | 'silent' | 'printDetail' | 'cache' | 'removeCache' | 'exitOnError' | 'src' | 'mode' | 'fix' | 'wxWorkKeys'
+    > {
   /** 是否仅检测 git 变化的文件 */
   onlyChanges?: boolean;
   /** 是否执行 tscheck */
@@ -45,24 +48,26 @@ program
   .version(packageInfo.version, '-v, --version')
   .description(color.cyanBright(packageInfo.description))
   .option('-c, --config-path <filepath>', `配置文件 ${color.yellow('.flh.config.js')} 的路径`)
-  .option('--silent', `开启静默模式。`, false)
-  .option('--debug', `开启调试模式。`, false)
+  .option('--silent', `开启静默模式。`)
+  .option('--debug', `开启调试模式。`)
   .addOption(new Option('--mode <mode>', `执行模式。`).choices(['current', 'proc', 'thread']))
   .option('--no-print-detail', `不打印异常详情。`)
   .option('--src <src...>', `指定要检测的源码目录。默认为 src`)
   .option('--only-changes', `只检测 git 仓库变更的文件`, false)
-  .option('--cache', `开启缓存模式。`, false)
+  .option('--cache', `开启缓存模式。`)
   .option('--remove-cache', `移除已存在的缓存。`)
   .option('--no-exit-on-error', `检测到异常时，不以非 0 值立即退出。`)
   .option('--toWhiteList', `是否将检测到异常的文件输出到白名单文件列表中。`, false)
+  .option('--fix', `是否修正可自动修正的异常。如 eslint --fix 等`)
+  .option('--wx-work-keys <key...>', '发送至企业微信机器人，需指定 webhook key 的值，可指定多个机器人')
   .option('--tscheck', `执行 TypeScript Diagnostics check`)
   .option('--eslint', `执行 eslint 检查`)
   .option('--commitlint [verifyReg]', `执行 commitlint 检查`)
+  .option('--commit-edit', `指定 git commit msg 的文件路径。默认为 ${color.yellowBright('./.git/COMMIT_EDITMSG')}`)
   .option('--jira', `执行 jira 检查`)
   .option('--jira-home', `指定 jira 首页 url 地址`)
-  .option('--projectName', `指定 git 仓库项目名`)
-  .option('--commit-edit', `指定 git commit msg 的文件路径。默认为 ${color.yellowBright('./.git/COMMIT_EDITMSG')}`)
   .addOption(new Option('--jira-type <type>', `执行 jira 检查的类型。可选值：`).choices(['commit', 'pipeline']))
+  .option('--projectName', `指定 git 仓库项目名（用于 jira check）`)
   .option('--jest', `执行 jest 单元测试`)
   .action((options: POptions) => {
     const config: FlhConfig = {
@@ -91,10 +96,13 @@ program
       },
     };
 
-    if (options.src) config.src = Array.isArray(options.src) ? options.src : [options.src];
     if (options.jiraHome) config.jira.jiraHome = options.jiraHome;
     if (options.projectName) config.jira.projectName = options.projectName;
     if (options.commitEdit) config.jira.COMMIT_EDITMSG = options.commitEdit;
+
+    for (const key of ['src', 'fix', 'wxWorkKeys', 'debug', 'cache', 'silent']) {
+      if (options[key] != null) config[key] = options[key];
+    }
 
     let changeFiles: string[];
     if (options.onlyChanges) {
@@ -165,7 +173,7 @@ program
       }
 
       const tpl = path.resolve(__dirname, '../../.flh.config.sample.js');
-      const cfgInfo = fs.readFileSync(tpl, 'utf8').replace(`import('./')`, `import('${packageInfo.name}')`);
+      const cfgInfo = fs.readFileSync(tpl, 'utf8').replace(`import('./src/config')`, `import('${packageInfo.name}')`);
       fs.writeFileSync(config.configPath, cfgInfo, 'utf8');
       console.log(`已在当前目录下生成配置文件：`, color.cyan(config.configPath));
     }
@@ -183,12 +191,12 @@ program
 program
   .command('notify <message>')
   .description('[utils]发送消息通知（当前仅支持企业微信机器人通知）')
-  .option('--wx-work <key...>', '发送至企业微信机器人，需指定 webhook key 的值，可指定多个机器人')
+  .option('--wx-work-keys <key...>', '发送至企业微信机器人，需指定 webhook key 的值，可指定多个机器人')
   .action((message: string, options) => {
     const programOptions = program.opts();
     // console.log(message, options, programOptions);
-    if (options.wxWork) {
-      wxWorkNotify(message, options.wxWork, programOptions.debug).then(list => {
+    if (options.wxWorkKeys) {
+      wxWorkNotify(message, options.wxWorkKeys, programOptions.debug).then(list => {
         if (list.some(d => d.errcode !== 200)) process.exit(-1);
       });
     }

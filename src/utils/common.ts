@@ -4,6 +4,7 @@ import fs from 'fs';
 import crypto from 'crypto';
 import { color } from 'console-log-colors';
 import * as readline from 'readline';
+import { Logger } from '../lib/Logger';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type PlainObject = Record<string, any>;
@@ -37,13 +38,15 @@ export function fixToshortPath(filepath = '', rootDir = process.cwd()) {
 /**
  * 打印时间消耗
  * @param {number} startTime 开始时间戳
- * @deprecated 请使用 Logger 对象
  */
 export function logTimeCost(startTime: number, prefix = '') {
-  log(color.cyan(prefix), `TimeCost: ${color.bold(color.greenBright(Date.now() - startTime))}ms`);
+  Logger.getLogger().log(color.cyan(prefix), `TimeCost: ${color.bold(color.greenBright(Date.now() - startTime))}ms`);
 }
 
-/** 打印待时间戳前缀的日志信息 */
+/**
+ * 打印待时间戳前缀的日志信息
+ * @deprecated 请使用 Logger 对象
+ */
 export function log(prefix, ...args: string[]) {
   console.log(`[${color.cyanBright(new Date().toTimeString().slice(0, 8))}]${prefix}`, ...args);
 }
@@ -105,3 +108,5 @@ export function execSync(cmd: string, stdio?: childProcess.StdioOptions, cwd = p
     return null;
   }
 }
+
+export const sleep = (delay = 100) => new Promise(rs => setTimeout(() => rs(true), delay));

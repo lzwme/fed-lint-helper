@@ -1,6 +1,21 @@
 // import test from 'ava';
 import * as comm from './common';
+jest.mock('readline', () => ({
+  createInterface() {
+    return {
+      question(tip: string, callback: (answer: string) => void) {
+        callback(tip);
+      },
+      close: jest.fn,
+    };
+  },
+}));
+
 describe('utils/common', () => {
+  it('readSyncByRl', async () => {
+    expect(await comm.readSyncByRl('ok')).toBe('ok');
+  });
+
   it('fixToshortPath', () => {
     expect(comm.fixToshortPath('./abc\\d.ts')).toBe('abc/d.ts');
   });
@@ -32,5 +47,11 @@ describe('utils/common', () => {
     // 第一个参数是数组，则原样返回
     const array = [b];
     expect(comm.assign(array, b)).toEqual(array);
+  });
+
+  it('sleep', async () => {
+    const startTime = Date.now();
+    await comm.sleep(100);
+    expect(Date.now() - startTime > 100).toBeTruthy();
   });
 });

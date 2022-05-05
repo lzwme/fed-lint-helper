@@ -1,6 +1,7 @@
 import { config } from './config';
 import { wxWorkNotify } from './lib/WXWork';
-import { logTimeCost } from './utils';
+import { logTimeCost } from './utils/common';
+import { sleep } from './utils/common';
 
 /**
  * 退出当前 process 进程
@@ -9,10 +10,10 @@ import { logTimeCost } from './utils';
  */
 export async function exit(code = 0, startTime = 0, prefix = '') {
   if (startTime) logTimeCost(startTime, prefix);
-  if (code !== 0 && config.wxWorkNotify) {
+  if (code !== 0 && config.wxWorkKeys) {
     // 企业微信通知
-    await wxWorkNotify(`${prefix}任务执行失败，请检查`, config.wxWorkNotify, config.debug);
-    await new Promise(rs => setTimeout(() => rs(true), 100));
+    await wxWorkNotify(`${prefix}任务执行失败，请检查`, config.wxWorkKeys, config.debug);
+    await sleep(100);
   }
   process.exit(code || 0);
 }

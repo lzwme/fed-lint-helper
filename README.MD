@@ -2,14 +2,15 @@
 
 # @lzwme/fed-lint-helper
 
-[![build status](https://github.com/lzwme/fed-lint-helper/actions/workflows/node-ci.yml/badge.svg)](https://github.com/lzwme/fed-lint-helper/actions/workflows/node-ci.yml)
 [![NPM version][npm-badge]][npm-url]
 [![node version][node-badge]][node-url]
+![license MIT](https://img.shields.io/github/license/lzwme/asmd-calc)
+
+[![build status](https://github.com/lzwme/fed-lint-helper/actions/workflows/node-ci.yml/badge.svg)](https://github.com/lzwme/fed-lint-helper/actions/workflows/node-ci.yml)
 [![npm download][download-badge]][download-url]
 [![GitHub issues][issues-badge]][issues-url]
 [![GitHub forks][forks-badge]][forks-url]
 [![GitHub stars][stars-badge]][stars-url]
-![license MIT](https://img.shields.io/github/license/lzwme/asmd-calc)
 
 前端项目编码质量 `Lint` 检测辅助工具。用于辅助大型长期研发的前端项目渐进式的迁移与改进编码规范约束。
 
@@ -40,12 +41,35 @@ yarn add @lzwme/fed-lint-helper
 
 ```bash
 flh --help
+
+# 在当前目录下生成默认的配置文件 .flh.config.js
+flh init --config
+
 # typescript check
-flh ts --help
+flh --tscheck
 # eslint check
-flh eslint --help
+flh --eslint
 # jest check
-flh jest --help
+flh --jest
+# git commit lint
+flh --commitlint
+
+# Multitask parallel execution
+flh --tscheck --eslint --jest
+```
+
+其他辅助工具命令：
+
+```bash
+# 目录删除
+flh rm --help
+# 示例：删除目录 a 和 dist
+flh rm ./a ./dist -f
+
+# 消息通知
+flh notify --help
+# 示例：企业微信机器人消息通知
+flh notify "任务执行失败！@all" --wx-work <web hook key1> <web hook key2>
 ```
 
 ### API 调用

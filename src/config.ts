@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-04-29 18:49:53
+ * @LastEditTime: 2022-05-05 10:32:50
  * @Description:
  */
 
@@ -154,8 +154,10 @@ export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {
   rootDir?: string;
   /** 是否开启调试模式(打印更多的细节) */
   debug?: boolean;
-  /** 企业微信 web hooks，用于 ci 中发送通知 */
-  wxWorkNotify?: string[];
+  /** 企业微信机器人 webhook key 配置，用于 ci 中发送通知。可配置多个 */
+  wxWorkKeys?: string[];
+  /** 是否尝试修正可自动修正的异常 */
+  fix?: boolean;
   tscheck?: TsCheckConfig;
   eslint?: ESLintCheckConfig;
   jest?: JestCheckConfig;
