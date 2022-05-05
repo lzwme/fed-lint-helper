@@ -13,10 +13,12 @@ jest.mock('readline', () => ({
 
 describe('utils/common', () => {
   it('readSyncByRl', async () => {
+    expect(await comm.readSyncByRl()).toBe('>');
     expect(await comm.readSyncByRl('ok')).toBe('ok');
   });
 
   it('fixToshortPath', () => {
+    expect(comm.fixToshortPath()).toBe('');
     expect(comm.fixToshortPath('./abc\\d.ts')).toBe('abc/d.ts');
   });
 
@@ -27,9 +29,13 @@ describe('utils/common', () => {
   });
 
   it('md5', () => {
-    expect(comm.md5('abc').length > 1).toEqual(true);
-    expect(comm.md5('abc', true).length === 0).toEqual(true);
-    expect(comm.md5(__filename, true).length > 1).toEqual(true);
+    expect(comm.md5('abc').length).toEqual(32);
+    expect(comm.md5('abc', true).length).toEqual(0);
+    expect(comm.md5(__filename, true).length).toEqual(32);
+
+    // catch error
+    expect(comm.md5(void 0)).toEqual('');
+    expect(comm.md5(null, true)).toEqual('');
   });
 
   it('assign', () => {
@@ -49,9 +55,22 @@ describe('utils/common', () => {
     expect(comm.assign(array, b)).toEqual(array);
   });
 
+  it('execSync', () => {
+    expect(comm.execSync('test')).toBeNull();
+    expect(comm.execSync('echo test')).toBe('test');
+    expect(comm.execSync('echo test', 'pipe', process.cwd(), true)).toBe('test');
+    expect(comm.execSync('echo test', 'inherit', process.cwd(), true)).toBe('');
+
+    // stdio = debug ? 'inherit' : 'pipe'
+    expect(comm.execSync('echo test', null, process.cwd(), true)).toBe('');
+    expect(comm.execSync('echo test', null, process.cwd(), false)).toBe('test');
+  });
+
   it('sleep', async () => {
     const startTime = Date.now();
-    await comm.sleep(100);
-    expect(Date.now() - startTime > 100).toBeTruthy();
+    await comm.sleep(10);
+    expect(Date.now() - startTime).toBeGreaterThanOrEqual(10);
+    await comm.sleep();
+    expect(Date.now() - startTime).toBeGreaterThan(100);
   });
 });

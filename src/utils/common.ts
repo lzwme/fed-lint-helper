@@ -29,10 +29,8 @@ export function readSyncByRl(tips = '> ') {
  * 将给定的文件路径规整为 a/b/c.js 格式
  */
 export function fixToshortPath(filepath = '', rootDir = process.cwd()) {
-  return path
-    .resolve(rootDir, filepath)
-    .replace(rootDir + path.sep, '')
-    .replace(/\\/g, '/');
+  const shortPath = path.resolve(rootDir, filepath).replace(rootDir, '').replace(/\\/g, '/');
+  return shortPath.startsWith('/') ? shortPath.slice(1) : shortPath;
 }
 
 /**
