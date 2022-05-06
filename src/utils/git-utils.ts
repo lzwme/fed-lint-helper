@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-04-23 10:44:32
  * @LastEditors: lzw
- * @LastEditTime: 2021-11-15 10:26:31
+ * @LastEditTime: 2022-05-06 09:20:12
  * @Description: gh u 相关的命令。主要为常用的快捷工具方法
  */
 
@@ -34,8 +34,7 @@ export function getHeadBranch(baseDirectory = process.cwd()) {
 
 /** 获取本地或远端最新的 commitId */
 export function getHeadCommitId(isRemote = false) {
-  const commitId = execSync(`git rev-parse ${isRemote ? '@{upstream}' : 'HEAD'}`, 'pipe');
-  return commitId;
+  return execSync(`git rev-parse ${isRemote ? '@{upstream}' : 'HEAD'}`, 'pipe');
 }
 
 /**
@@ -43,7 +42,7 @@ export function getHeadCommitId(isRemote = false) {
  * @param headIndex HEAD 顺序，默认为 0，即最新的本地未提交变更
  */
 export function getHeadDiffFileList(headIndex = 0, cwd?: string, debug = false) {
-  return execSync(`git diff HEAD~${headIndex} --name-only`, 'pipe', cwd, debug).trim().split('\n');
+  return execSync(`git diff HEAD~${headIndex} --name-only`, 'pipe', cwd, debug).trim().split('\n').filter(Boolean);
 }
 
 /** 获取 git user eamil 地址 */

@@ -23,6 +23,7 @@
     "flh": "bin/flh.js"
   },
   "scripts": {
+    "postinstall": "husky install",
     "dev": "npm run watch:build",
     "start": "npm run watch",
     "build": "run-s clean && run-p build:*",
