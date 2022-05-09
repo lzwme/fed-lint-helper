@@ -66,6 +66,7 @@
   "devDependencies": {
     "@jest/core": "^27",
     "@jest/types": "^27",
+    "@node-rs/deno-lint": "^1.13.0",
     "@swc/core": "^1.2.177",
     "@swc/jest": "^0.2.20",
     "@types/eslint": "^8.4.2",
