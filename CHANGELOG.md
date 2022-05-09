@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.3](https://github.com/lzwme/fed-lint-helper/compare/v1.6.2...v1.6.3) (2022-05-09)
+
+
+### Bug Fixes
+
+* 修复 only-changes 参数获取为空时返回文件列表包含空字符串的问题 ([9ad40e7](https://github.com/lzwme/fed-lint-helper/commit/9ad40e74bcdf5e7cb33cc2c65c1d3294947030f5))
+
 ### [1.6.2](https://github.com/lzwme/fed-lint-helper/compare/v1.6.1...v1.6.2) (2022-05-05)
 
 ### [1.6.1](https://github.com/lzwme/fed-lint-helper/compare/v1.6.0...v1.6.1) (2022-05-05)
