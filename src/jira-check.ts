@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-04-29 18:32:45
+ * @LastEditTime: 2022-05-09 10:55:01
  * @Description:  Jira check
  */
 
@@ -167,16 +167,17 @@ export class JiraCheck {
   }
   /** 返回本地的 .jira.json 配置文件路径 */
   private getJiraCfgPath(isPrintTips = false) {
-    const jiraFileName = '.jira.json';
-    let filePath = path.resolve(this.config.rootDir, jiraFileName);
-
-    if (!fs.existsSync(filePath)) {
-      // 支持用户主目录下全局配置查找
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      filePath = path.resolve(require('os').homedir(), jiraFileName);
-    }
-
-    if (fs.existsSync(filePath)) return filePath;
+    let filePath = '';
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const isFind = [this.config.rootDir, require('os').homedir()].some(dir => {
+      const fileNames = ['.jira.json', '.jira.js'];
+      for (const filename of fileNames) {
+        filePath = path.resolve(dir, filename);
+        if (fs.existsSync(filePath)) return true;
+      }
+      return false;
+    });
+    if (isFind) return filePath;
 
     if (isPrintTips) {
       this.logger.warn('请在项目根目录或当前用户主目录下添加 .jira.json 配置文件，以JSON格式配置 {username, pwd, proxy, cookie?}');
