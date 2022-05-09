@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.5](https://github.com/lzwme/fed-lint-helper/compare/v1.6.3...v1.6.5) (2022-05-09)
+
+
+### Bug Fixes
+
+* fix for husky install scripts ([bf0ab94](https://github.com/lzwme/fed-lint-helper/commit/bf0ab9495979defbbc4de3906d7ee77aacd698a7))
+
 ### [1.6.3](https://github.com/lzwme/fed-lint-helper/compare/v1.6.2...v1.6.3) (2022-05-09)
 
 
