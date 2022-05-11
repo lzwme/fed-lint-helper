@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-05-05 10:49:41
+ * @LastEditTime: 2022-05-11 09:51:17
  * @Description:  eslint check
  */
 
@@ -163,7 +163,8 @@ export class ESLintCheck {
     let fixableErrorCount = 0;
     let fixableWarningCount = 0;
 
-    for (const result of results) {
+    // eslint-disable-next-line unicorn/no-array-for-each
+    results.forEach(result => {
       const filePath = fixToshortPath(result.filePath, config.rootDir);
 
       if (!result.warningCount && !result.errorCount) {
@@ -172,14 +173,14 @@ export class ESLintCheck {
           delete this.whiteList[filePath];
           removeFromWhiteList.push(filePath);
         }
-        continue;
+        return;
       }
 
       if (Array.isArray(result.messages)) {
         for (const d of result.messages) {
           // ignored  file
           if (!d.ruleId) {
-            if (/ignore pattern/.test(d.message)) continue;
+            if (/ignore pattern/.test(d.message)) return;
           } else {
             stats.rules[d.ruleId] = (stats.rules[d.ruleId] || 0) + 1;
           }
@@ -206,7 +207,7 @@ export class ESLintCheck {
           this.whiteList[filePath] = 'e';
         } else if (!this.whiteList[filePath] && result.messages.length > 0) newErrorReults.push(result);
       }
-    }
+    });
 
     const formatter = await eslint.loadFormatter('stylish');
     let isPassed = newWaringReults.length === 0 && newErrorReults.length === 0;
