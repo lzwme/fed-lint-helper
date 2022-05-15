@@ -205,7 +205,7 @@ program
   });
 
 program
-  .command('pmcheck <packageManagerName>')
+  .command('pmcheck [packageManagerName]')
   .description(
     `[utils]用于包管理工具约束，可配置为 scripts.preinstall 命令。如限制只可使用 pnpm：\n ${color.green(
       `"preinstall": "flh pmcheck pnpm"`
@@ -213,6 +213,10 @@ program
   )
   .action((pmName: string) => {
     const programOptions = program.opts();
+    if (!pmName) {
+      const baseConfig = getConfig({}, false);
+      pmName = baseConfig.pmcheck;
+    }
     import('./pm-check').then(({ packageManagerCheck }) => packageManagerCheck(pmName, programOptions.debug));
   });
 

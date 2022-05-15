@@ -165,6 +165,8 @@ export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {
   jest?: JestCheckConfig;
   jira?: JiraCheckConfig;
   commitlint?: CommitLintOptions;
+  /** package manager check */
+  pmcheck?: 'npm' | 'yarn' | 'pnpm';
 }
 
 const commConfig: CommConfig = {
