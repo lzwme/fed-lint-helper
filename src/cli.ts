@@ -9,7 +9,6 @@ import { Option, program } from 'commander';
 import { color } from 'console-log-colors';
 import path from 'path';
 import fs from 'fs';
-import { wxWorkNotify } from './lib/WXWork';
 import { getHeadDiffFileList, rmdir } from './utils';
 import { getConfig, config, mergeCommConfig, formatWxWorkKeys } from './config';
 import type { FlhConfig, TsCheckConfig, JiraCheckConfig, CommitLintOptions } from './config';
@@ -196,11 +195,25 @@ program
         console.log('企业微信机器人 webhook 格式不正确');
         process.exit(-1);
       } else {
-        wxWorkNotify(message, options.wxWorkKeys, programOptions.debug).then(list => {
-          if (list.some(d => d.errcode !== 200)) process.exit(-1);
+        import('./lib/WXWork').then(({ wxWorkNotify }) => {
+          wxWorkNotify(message, options.wxWorkKeys, programOptions.debug).then(list => {
+            if (list.some(d => d.errcode !== 200)) process.exit(-1);
+          });
         });
       }
     }
+  });
+
+program
+  .command('pmcheck <packageManagerName>')
+  .description(
+    `[utils]用于包管理工具约束，可配置为 scripts.preinstall 命令。如限制只可使用 pnpm：\n ${color.green(
+      `"preinstall": "flh pmcheck pnpm"`
+    )}`
+  )
+  .action((pmName: string) => {
+    const programOptions = program.opts();
+    import('./pm-check').then(({ packageManagerCheck }) => packageManagerCheck(pmName, programOptions.debug));
   });
 
 program.parse(process.argv);
