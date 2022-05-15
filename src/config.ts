@@ -143,8 +143,8 @@ export interface CommitLintOptions extends CommConfig {
   msgPath?: string;
   /** 是否使用 Angular commit 风格验证。当自定义了 verify 时允许设置为 false */
   useAngularStyle?: boolean;
-  /** 自定义验证规则 */
-  verify?: ((message: string) => boolean | string) | string;
+  /** 自定义验证规则。为字符串时将使用 RegExp 转换为正则表达式匹配 */
+  verify?: ((message: string) => boolean | string) | string | RegExp;
 }
 
 export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {

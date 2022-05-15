@@ -5,9 +5,34 @@ import { color } from 'console-log-colors';
 import { config, CommitLintOptions } from './config';
 import { getLogger } from './utils/get-logger';
 
+const helpTips = {
+  build: '构建相关',
+  ci: '持续集成',
+  docs: '文档/注释修改',
+  feat: '增加新功能',
+  fix: '修复问题',
+  perf: '优化/性能提升',
+  refactor: '重构。即无bug修复，也无功能新增',
+  test: '测试相关',
+  // ---
+  chore: '依赖更新/脚手架配置修改等',
+  dep: '依赖更新',
+  example: '示例修改',
+  locale: '多语言国际化修改',
+  mod: '不确定分类的修改',
+  release: '版本发布',
+  revert: '撤销修改',
+  style: '代码风格相关，但影响运行结果',
+  types: '类型修改',
+  typos: '微小的错误修复，如错别字更正等',
+  wip: '开发中',
+  workflow: '工作流改进',
+};
+
 export function commitMessageVerify(options?: CommitLintOptions) {
   let isPass = true;
-  const commitRE = /^(revert: )?(feat|fix|docs|style|refactor|perf|test|workflow|build|ci|chore|types|wip|release|dep)(\(.+\))?: .{1,50}/;
+  const commitRE =
+    /^(((\uD83C[\uDF00-\uDFFF])|(\uD83D[\uDC00-\uDE4F\uDE80-\uDEFF])|[\u2600-\u2B55]) )?(revert: )?(feat|fix|docs|UI|refactor|perf|workflow|build|ci|typos|chore|test|types|wip|release|dep|locale｜example｜Merge)(\(.+\))?: .{1,100}/;
 
   options = Object.assign({ exitOnError: true, useAngularStyle: true } as CommitLintOptions, config.commitlint, options);
 
@@ -23,7 +48,7 @@ export function commitMessageVerify(options?: CommitLintOptions) {
       const result = options.verify(message);
       isPass = result === true;
       if (!isPass) logger.error(`Failed by options.verify.`, result);
-    } else if (typeof options.verify === 'string') {
+    } else {
       isPass = new RegExp(options.verify).test(message);
       if (!isPass) logger.error(`Failed by options.verify:`, color.magentaBright(options.verify));
     }
@@ -33,14 +58,17 @@ export function commitMessageVerify(options?: CommitLintOptions) {
 
   if (isPass && options.useAngularStyle && !commitRE.test(message)) {
     isPass = false;
-    // console.log();
     logger.error(
       [
-        ` ${color.red(`Invalid commit message format.`)}\n`,
-        color.red(`  Proper commit message format is required for automated changelog generation. Examples:\n`),
-        `    ${color.green(`feat(compiler): add 'comments' option`)}`,
-        `    ${color.green(`fix(v-model): handle events on blur (close #28)`)}\n`,
-        // color.red(`  See .github/commit-convention.md for more details.`),
+        // color.red(`Invalid commit message format.\n`),
+        // color.red(`  Proper commit message format is required for automated changelog generation. Examples:\n`),
+        color.red(`提交日志不符合规范。\n`),
+        color.red(`  合法的提交日志格式如下(emoji 和 scope 可选填)：\n`),
+        color.green(`  [(emoji)?] [revert: ?]<type>[(scope)?]: <message>\n`),
+        color.green(`    💥 feat(compiler): add 'comments' option`),
+        color.green(`    🐛 fix(v-model): handle events on blur (close #28)\n\n`),
+        color.cyanBright(`  [type] 详细参考：\n`),
+        ...Object.entries(helpTips).map(([key, val]) => `    ${color.green(`${key}: ${val}`)}`),
       ].join('\n')
     );
   }
