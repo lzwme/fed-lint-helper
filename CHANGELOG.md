@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.7.0](https://github.com/lzwme/fed-lint-helper/compare/v1.6.6...v1.7.0) (2022-05-17)
+
+
+### Features
+
+* 新增辅助工具 pmcheck 用于包管理工具检测与约束 ([76a1fdd](https://github.com/lzwme/fed-lint-helper/commit/76a1fddc9da10d550e823c79b35d423f9aa14302))
+
 ### [1.6.6](https://github.com/lzwme/fed-lint-helper/compare/v1.6.5...v1.6.6) (2022-05-12)
 
 
