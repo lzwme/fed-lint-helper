@@ -10,7 +10,7 @@ import path from 'path';
 import fs from 'fs';
 import type { IncomingHttpHeaders } from 'http';
 import { color } from 'console-log-colors';
-import { createForkThread, assign, getHeadBranch, PlainObject, getLogger } from './utils';
+import { createForkThread, assign, getHeadBranch, PlainObject, getLogger, formatTimeCost } from './utils';
 import { JiraCheckConfig, getConfig } from './config';
 import { Request } from './lib';
 import { exit } from './exit';
@@ -465,7 +465,7 @@ export class JiraCheck {
     }
 
     this.logger.info(bold(checkResult.isPassed ? greenBright('Verification passed!') : redBright('Verification failed!')));
-    this.logger.info(`TimeCost: ${bold(greenBright(Date.now() - stats.startTime))}ms`);
+    this.logger.info(formatTimeCost(stats.startTime));
 
     return checkResult;
   }

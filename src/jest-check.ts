@@ -13,7 +13,7 @@ import { color } from 'console-log-colors';
 import glob from 'glob';
 import { runCLI } from '@jest/core';
 import type { Config } from '@jest/types';
-import { fixToshortPath, md5, createForkThread, assign, getLogger } from './utils';
+import { fixToshortPath, md5, createForkThread, assign, getLogger, formatTimeCost } from './utils';
 import { JestCheckConfig, getConfig } from './config';
 import { exit } from './exit';
 
@@ -225,7 +225,7 @@ export class JestCheck {
     }
 
     logger.info(bold(stats.isPassed ? greenBright('Verification passed!') : redBright('Verification failed!')));
-    logger.info(`TimeCost: ${bold(greenBright(Date.now() - stats.startTime))}ms`);
+    this.logger.info(formatTimeCost(stats.startTime));
 
     return info;
   }

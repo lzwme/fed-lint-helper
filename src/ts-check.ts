@@ -11,7 +11,7 @@ import fs from 'fs';
 import path from 'path';
 import * as ts from 'typescript';
 import glob from 'glob';
-import { fixToshortPath, md5, createForkThread, assign, getLogger, execSync } from './utils';
+import { fixToshortPath, md5, createForkThread, assign, getLogger, execSync, formatTimeCost } from './utils';
 import { TsCheckConfig, getConfig } from './config';
 import minimatch from 'minimatch';
 import { exit } from './exit';
@@ -383,7 +383,7 @@ export class TsCheck {
       if (config.exitOnError) exit(result.failed, stats.startTime, '[TsCheck]');
     }
 
-    this.logger.info(`TimeCost: ${bold(greenBright(Date.now() - stats.startTime))}ms`);
+    this.logger.info(formatTimeCost(stats.startTime));
 
     return result;
   }

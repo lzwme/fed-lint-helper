@@ -2,5 +2,5 @@
 . "$(dirname "$0")/_/husky.sh"
 
 # npm run fix:lint
-node bin/flh.js --tscheck --eslint --only-changes --fix
+node bin/flh.js --tscheck --eslint --jest --only-changes --fix
 npm run fix:prettier

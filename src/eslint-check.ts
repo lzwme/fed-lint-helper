@@ -10,7 +10,7 @@ import { color } from 'console-log-colors';
 import { ESLint } from 'eslint';
 import fs from 'fs';
 import path from 'path';
-import { fixToshortPath, createForkThread, assign, getLogger, execSync } from './utils';
+import { fixToshortPath, createForkThread, assign, getLogger, execSync, formatTimeCost } from './utils';
 import { ESLintCheckConfig, getConfig } from './config';
 import { exit } from './exit';
 
@@ -290,7 +290,7 @@ export class ESLintCheck {
     }
 
     stats.success = isPassed;
-    this.logger.info(`TimeCost: ${bold(greenBright(Date.now() - stats.startTime))}ms`);
+    this.logger.info(formatTimeCost(stats.startTime));
 
     const info: ESLintCheckResult = {
       /** 是否检测通过 */

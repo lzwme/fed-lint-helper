@@ -33,13 +33,18 @@ export function fixToshortPath(filepath = '', rootDir = process.cwd()) {
   return shortPath.startsWith('/') ? shortPath.slice(1) : shortPath;
 }
 
+export function formatTimeCost(startTime: number, withTip = true) {
+  let timeCost = (Date.now() - startTime) / 1000 + 's';
+  if (withTip) timeCost = `TimeCost: ${color.greenBright(timeCost)}`;
+  return timeCost;
+}
+
 /**
  * 打印时间消耗
  * @param {number} startTime 开始时间戳
  */
 export function logTimeCost(startTime: number, prefix = '') {
-  const timeCost = (Date.now() - startTime) / 1000 + 's';
-  Logger.getLogger().log(color.cyan(prefix), `TimeCost: ${color.bold(color.greenBright(timeCost))}`);
+  Logger.getLogger().log(color.cyan(prefix), formatTimeCost(startTime));
 }
 
 /**
