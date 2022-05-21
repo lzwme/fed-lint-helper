@@ -70,30 +70,6 @@ export function md5(str, isFile = false) {
   }
 }
 
-/** 简易的对象深复制 */
-export function assign<T = PlainObject>(a: T, b: PlainObject, c?: PlainObject): T {
-  if (!a || typeof a !== 'object') return a;
-  // 入参不是对象格式，忽略
-  if (typeof b !== 'object' || b instanceof RegExp || Array.isArray(b)) {
-    if (c) return assign(a, c);
-    return a;
-  }
-
-  for (const key in b) {
-    // 如果是数组，则只简单的复制一份（不考虑数组内的类型）
-    if (Array.isArray(b[key])) {
-      a[key] = [...b[key]];
-    } else if (null == b[key] || typeof b[key] !== 'object' || b[key] instanceof RegExp) {
-      a[key] = b[key];
-    } else {
-      if (!a[key]) a[key] = {};
-      assign(a[key], b[key]);
-    }
-  }
-
-  return assign(a, c);
-}
-
 export function execSync(cmd: string, stdio?: childProcess.StdioOptions, cwd = process.cwd(), debug = false) {
   if (debug) console.log(color.cyanBright('exec cmd:'), color.yellowBright(cmd), color.cyan(cwd));
   try {

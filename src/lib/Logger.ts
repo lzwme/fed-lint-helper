@@ -20,9 +20,9 @@ export enum LogLevel {
 }
 
 export interface LoggerOptions {
-  /** 日志保存的目录位置 */
+  /** 日志保存的目录位置。默认为空，则不保存至文件 */
   logDir?: string;
-  /** 是否为静默模式。为 true 且设置了 logDir，则则不打印至控制台 */
+  /** 是否为静默模式。为 true 则不打印至控制台 */
   silent?: boolean;
   /** 是否为调试模式。为 true 控制台打印为对象格式的日志 */
   debug?: boolean;
@@ -34,6 +34,7 @@ export interface LoggerOptions {
 }
 
 export type LogLevelType = keyof typeof LogLevel;
+type LogFn = (...p) => void;
 
 const defaultOptions: LoggerOptions = {
   levelType: 'log',
@@ -54,13 +55,14 @@ const LogLevelHeadTip = {
 export class Logger {
   public static map: { [tag: string]: Logger } = {};
   /** 日志记录级别 */
-  private level: LogLevel;
+  private level: LogLevel = LogLevel.log;
 
-  public error: (...p) => void;
-  public warn: (...p) => void;
-  public info: (...p) => void;
-  public log: (...p) => void;
-  public debug: (...p) => void;
+  public silent: LogFn = this._log.bind(this, 'error');
+  public error: LogFn = this._log.bind(this, 'error');
+  public warn: LogFn = this._log.bind(this, 'warn');
+  public info: LogFn = this._log.bind(this, 'info');
+  public log: LogFn = this._log.bind(this, 'log');
+  public debug: LogFn = this._log.bind(this, 'debug');
 
   /** 日志路径 */
   private logPath: string;
@@ -77,14 +79,13 @@ export class Logger {
     if (!match) throw 'Logger tag expected';
     this.tag = tag;
 
+    if (!(options.levelType in LogLevel)) {
+      if (process.env.FLH_LOG_LEVEL) options.levelType = process.env.ET_LOG_LEVEL as LogLevelType;
+      if (options.levelType in LogLevel) this.level = LogLevel[options.levelType];
+    }
+
     options = this.updateOptions(options);
     this.setLogDir(options.logDir);
-
-    this.error = this._log.bind(this, 'error');
-    this.warn = this._log.bind(this, 'warn');
-    this.info = this._log.bind(this, 'info');
-    this.log = this._log.bind(this, 'log');
-    this.debug = this._log.bind(this, 'debug');
   }
   public setLogDir(logDir: string) {
     if (!logDir || !fs || !fs.createWriteStream) return;
@@ -178,9 +179,8 @@ export class Logger {
       }
     }
 
+    if (options.levelType in LogLevel) this.level = LogLevel[options.levelType];
     options = this.options;
-    if (process.env.FLH_LOG_LEVEL) options.levelType = process.env.ET_LOG_LEVEL as LogLevelType;
-    this.level = options.levelType in LogLevel ? LogLevel[options.levelType] : LogLevel.log;
 
     return options;
   }
