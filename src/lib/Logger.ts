@@ -185,9 +185,9 @@ export class Logger {
     return options;
   }
 
-  public static getLogger(tag = '', instanceId = 'flh', options: LoggerOptions = {}): Logger {
+  public static getLogger(tag?: string, instanceId?: string, options: LoggerOptions = {}): Logger {
     if (!tag) tag = '[flh]';
-    if (!instanceId) instanceId = 'flh';
+    if (!instanceId) instanceId = tag;
     if (!Logger.map[instanceId]) Logger.map[instanceId] = new Logger(tag, options);
     else Logger.map[instanceId].updateOptions(options);
     return Logger.map[instanceId];
