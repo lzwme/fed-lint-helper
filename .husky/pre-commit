@@ -1,5 +1,6 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-npm run fix:lint
+# npm run fix:lint
 npm run fix:prettier
+node bin/flh.js --tscheck --eslint --only-changes --fix
