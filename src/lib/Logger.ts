@@ -52,6 +52,8 @@ const LogLevelHeadTip = {
   debug: ['[DEBUG]', 'gray'],
 } as const;
 
+const fsStreamCache: { [logPath: string]: fs.WriteStream } = {};
+
 export class Logger {
   public static map: { [tag: string]: Logger } = {};
   /** 日志记录级别 */
@@ -67,14 +69,13 @@ export class Logger {
   /** 日志路径 */
   private logPath: string;
   private logDir: string;
-  private logFsStream: fs.WriteStream;
   /** 本机与服务器时间的差值 diff = Date.now() - serverTime */
   private static serverTimeDiff = 0;
 
   /** 记录日志的次数 */
   private times = 0;
 
-  constructor(private tag: string, private options: LoggerOptions) {
+  constructor(private tag: string, private options: LoggerOptions = {}) {
     const match = /(\w+)/.exec(tag);
     if (!match) throw 'Logger tag expected';
     this.tag = tag;
@@ -88,9 +89,15 @@ export class Logger {
     this.setLogDir(options.logDir);
   }
   public setLogDir(logDir: string) {
-    if (!logDir || !fs || !fs.createWriteStream) return;
-    if (logDir === this.logDir && this.logFsStream) return;
+    if (!logDir || !fs?.createWriteStream) return;
+    if (logDir === this.logDir) return;
     this.logDir = logDir;
+
+    const logFsStream = fsStreamCache[this.logPath];
+    if (logFsStream) {
+      logFsStream.destroy();
+      delete fsStreamCache[this.logPath];
+    }
 
     if (logDir.endsWith('.log')) {
       this.logPath = logDir;
@@ -98,11 +105,6 @@ export class Logger {
     } else {
       const curTime = new Date().toTimeString().slice(0, 8).replace(/\D/g, '');
       this.logPath = path.resolve(logDir, `${this.tag.replace(/[^\dA-Za-z]/g, '')}_${curTime}.log`);
-    }
-
-    if (this.logFsStream) {
-      this.logFsStream.destroy();
-      this.logFsStream = null;
     }
   }
   /** 更新服务器时间，计算时间差并返回 */
@@ -126,7 +128,6 @@ export class Logger {
       this.times++;
       const now = this.getSeverTime(true);
       const curTime = now.toTimeString().slice(0, 8) + '.' + now.getMilliseconds();
-
       const msg = args.map(s => (typeof s === 'string' ? s : JSON.stringify(s))).join(' ');
 
       this.writeToFile(`[${curTime}]${this.tag}[${type}] ${msg}\n`);
@@ -145,7 +146,7 @@ export class Logger {
           header = tip + header;
         }
 
-        if (!this.options.debug) console[type](header, msg);
+        if (!this.options.debug && type !== 'debug') console[type](header, msg);
         else console[type](header, ...args);
       }
     }
@@ -156,12 +157,14 @@ export class Logger {
    */
   private writeToFile(msg: string) {
     if (!this.logPath) return;
-    if (!this.logFsStream || this.logFsStream.destroyed) {
+    let logFsStream = fsStreamCache[this.logPath];
+    if (!logFsStream || logFsStream.destroyed) {
       if (!fs.existsSync(this.logDir)) fs.mkdirSync(this.logDir, { recursive: true });
-      this.logFsStream = fs.createWriteStream(this.logPath, { encoding: 'utf8', flags: 'a' });
+      logFsStream = fs.createWriteStream(this.logPath, { encoding: 'utf8', flags: 'a' });
+      fsStreamCache[this.logPath] = logFsStream;
     }
     // eslint-disable-next-line no-control-regex
-    this.logFsStream.write(msg.replace(/\u001B\[\d+m/g, ''), 'utf8');
+    logFsStream.write(msg.replace(/\u001B\[\d+m/g, ''), 'utf8');
   }
   public updateOptions(options: LoggerOptions) {
     if (!this.options.color && options.color) {
@@ -170,6 +173,8 @@ export class Logger {
         if (options.color[colorType]) LogLevelHeadTip[key][0] = options.color[colorType](v);
       }
     }
+
+    if (options.logDir) this.setLogDir(options.logDir);
 
     this.options = Object.assign({}, defaultOptions, this.options);
     for (const key of Object.keys(defaultOptions)) {
@@ -185,11 +190,10 @@ export class Logger {
     return options;
   }
 
-  public static getLogger(tag?: string, instanceId?: string, options: LoggerOptions = {}): Logger {
+  public static getLogger(tag?: string, options?: LoggerOptions): Logger {
     if (!tag) tag = '[flh]';
-    if (!instanceId) instanceId = tag;
-    if (!Logger.map[instanceId]) Logger.map[instanceId] = new Logger(tag, options);
-    else Logger.map[instanceId].updateOptions(options);
-    return Logger.map[instanceId];
+    if (!Logger.map[tag]) Logger.map[tag] = new Logger(tag, options);
+    else if (options) Logger.map[tag].updateOptions(options);
+    return Logger.map[tag];
   }
 }

@@ -28,4 +28,10 @@ describe('utils/assign', () => {
     const array = [b];
     expect(assign(array, b)).toEqual(array);
   });
+
+  it('assignMuti', () => {
+    const m = assign<Record<string, number | null>>({ a: 1 }, { a: 2 }, { a: null, b: 10 }, { a: 3, b: 3 });
+    expect(m.a).toBe(3);
+    expect(m.b).toBe(3);
+  });
 });

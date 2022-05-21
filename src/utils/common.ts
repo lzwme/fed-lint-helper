@@ -38,7 +38,8 @@ export function fixToshortPath(filepath = '', rootDir = process.cwd()) {
  * @param {number} startTime 开始时间戳
  */
 export function logTimeCost(startTime: number, prefix = '') {
-  Logger.getLogger().log(color.cyan(prefix), `TimeCost: ${color.bold(color.greenBright(Date.now() - startTime))}ms`);
+  const timeCost = (Date.now() - startTime) / 1000 + 's';
+  Logger.getLogger().log(color.cyan(prefix), `TimeCost: ${color.bold(color.greenBright(timeCost))}`);
 }
 
 /**

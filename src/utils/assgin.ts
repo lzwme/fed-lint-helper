@@ -24,14 +24,8 @@ export function simpleAssign<T = PlainObject>(a: T, b: PlainObject, isIgnoreNull
 
 /** 简易的对象深复制 */
 export function assign<T = PlainObject>(a: T, ...args: PlainObject[]): T {
-  if (!a || typeof a !== 'object') return a;
-
-  args = args.reverse();
-  const b: PlainObject = {};
-
-  for (const arg of args) {
-    simpleAssign(b, arg);
+  if (a && typeof a === 'object') {
+    for (const arg of args) simpleAssign(a, arg);
   }
-
-  return simpleAssign(a, b);
+  return a;
 }
