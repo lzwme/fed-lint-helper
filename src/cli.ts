@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2022-05-05 21:47:25
+ * @LastEditTime: 2022-05-23 09:06:29
  * @Description: cli 工具
  */
 import { Option, program } from 'commander';
@@ -174,8 +174,8 @@ program
   });
 
 program
-  .command('rm <dirname...>')
-  .description('[utils]删除指定的目录')
+  .command('rm <filepath...>')
+  .description('[utils]删除指定的文件或目录， 跨平台的 rm 命令简化版')
   .option('-s, --silent', '是否静默执行', false)
   .option('-f, --force', '是否强制执行', false)
   .action((list: string[], options) => {
@@ -207,9 +207,7 @@ program
 program
   .command('pmcheck [packageManagerName]')
   .description(
-    `[utils]用于包管理工具约束，可配置为 scripts.preinstall 命令。如限制只可使用 pnpm：\n ${color.green(
-      `"preinstall": "flh pmcheck pnpm"`
-    )}`
+    `[utils]用于包管理工具约束，可配置为 scripts.preinstall 命令。如限制只可使用 pnpm: ${color.green(`"preinstall": "flh pmcheck pnpm"`)}`
   )
   .action((pmName: string) => {
     const programOptions = program.opts();

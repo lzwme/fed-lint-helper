@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2022-04-08 10:30:02
  * @LastEditors: lzw
- * @LastEditTime: 2022-04-08 11:24:51
+ * @LastEditTime: 2022-05-17 20:41:06
  * @Description:
  */
 /* eslint no-console: 0 */
@@ -141,8 +141,7 @@ export class Logger {
 
         if (lvl === LogLevel.debug) header += `[${this.times}]`;
         if (LogLevelHeadTip[type]) {
-          let tip = LogLevelHeadTip[type][0];
-          if (this.options.color) tip = this.options.color[LogLevelHeadTip[type][1]](tip);
+          const tip = LogLevelHeadTip[type][0];
           header = tip + header;
         }
 
@@ -169,8 +168,8 @@ export class Logger {
   public updateOptions(options: LoggerOptions) {
     if (!this.options.color && options.color) {
       for (const key of Object.keys(LogLevelHeadTip)) {
-        const [v, colorType] = LogLevelHeadTip[key];
-        if (options.color[colorType]) LogLevelHeadTip[key][0] = options.color[colorType](v);
+        const [tag, colorType] = LogLevelHeadTip[key];
+        if (options.color[colorType]) LogLevelHeadTip[key][0] = options.color[colorType](tag);
       }
     }
 

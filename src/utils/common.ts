@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import { color } from 'console-log-colors';
 import * as readline from 'readline';
 import { Logger } from '../lib/Logger';
+import { getLogger } from './get-logger';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type PlainObject = Record<string, any>;
@@ -60,7 +61,7 @@ export function log(prefix, ...args: string[]) {
  * @param str {string} 指定的字符串，或者指定的文件路径
  * @param isFile {boolean} str 是否为一个文件路径
  */
-export function md5(str, isFile = false) {
+export function md5(str: string | Buffer, isFile = false) {
   try {
     if (isFile) {
       if (!fs.existsSync(str)) return '';
@@ -77,16 +78,27 @@ export function md5(str, isFile = false) {
 }
 
 export function execSync(cmd: string, stdio?: childProcess.StdioOptions, cwd = process.cwd(), debug = false) {
-  if (debug) console.log(color.cyanBright('exec cmd:'), color.yellowBright(cmd), color.cyan(cwd));
+  if (debug) getLogger().debug(color.cyanBright('exec cmd:'), color.yellowBright(cmd), color.cyan(cwd));
+
   try {
-    // 为 inherit 才会返回输出结果给 res；为 pipe 则打印至 stdout 中，res 为空
+    // 为 pipe 才会返回输出结果给 res；为 inherit 则打印至 stdout 中，res 为空
     if (!stdio) stdio = debug ? 'inherit' : 'pipe';
     const res = childProcess.execSync(cmd, { stdio, encoding: 'utf8', cwd });
     return res ? res.toString().trim() : '';
   } catch (error) {
-    console.error(color.redBright(error.message));
-    return null;
+    getLogger().error(color.redBright(error.message));
+    return '';
   }
+}
+
+export function execPromise(cmd: string, showErr = true) {
+  return new Promise((resolve, _reject) => {
+    childProcess.exec(cmd, { maxBuffer: 10 * 1024 * 1024 }, (err, data) => {
+      if (err && showErr) getLogger().log(`\n[execPromise]命令执行失败：${cmd}\n`, err);
+      // reject(err);
+      resolve({ err, data });
+    });
+  });
 }
 
 export const sleep = (delay = 100) => new Promise(rs => setTimeout(() => rs(true), delay));
@@ -102,4 +114,27 @@ export function formatWxWorkKeys(keys: string | string[]) {
       }
       return d;
     });
+}
+
+/** 清除指定模块的 require 缓存（内存清理或实现热更新） */
+export function clearRequireCache(filePath: string) {
+  filePath = require.resolve(filePath);
+
+  const cacheInfo = require.cache[filePath];
+  if (!cacheInfo) return;
+
+  const parent = cacheInfo.parent || require.main;
+
+  if (parent) {
+    let i = parent.children.length;
+    while (i--) {
+      if (parent.children[i].id === filePath) {
+        parent.children.splice(i, 1);
+      }
+    }
+  }
+
+  const children = cacheInfo.children.map(d => d.id);
+  delete require.cache[filePath];
+  for (const id of children) clearRequireCache(id);
 }
