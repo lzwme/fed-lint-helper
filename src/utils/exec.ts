@@ -11,7 +11,7 @@ export function execPromisfy(cmd: string, debug = process.env.DEBUG != null) {
 
     const proc = exec(cmd, (error, stdout, stderr) => {
       if (error) getLogger().error(`\n[exec]命令执行失败：${cmd}\n`, color.redBright(error.message), '\n', error);
-      resolve({ error, stdout, stderr });
+      resolve({ error, stdout: stdout.trim(), stderr });
     });
 
     proc.stderr.pipe(process.stderr);

@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-05-24 22:39:44
+ * @LastEditTime: 2022-05-24 22:51:48
  * @Description:  jest check
  */
 
@@ -230,6 +230,8 @@ export class JestCheck {
     logger.info(bold(stats.isPassed ? greenBright('Verification passed!') : redBright('Verification failed!')));
     this.logger.info(getTimeCost(stats.startTime));
 
+    if (!info.isPassed && config.exitOnError) exit(-1, 0, 'JestCheck');
+
     return info;
   }
   /**
@@ -267,6 +269,8 @@ export class JestCheck {
   /** 执行 jest 校验 */
   async start(fileList?: string[]) {
     if (fileList && fileList !== this.config.fileList) this.config.fileList = fileList;
+    // 全量检测默认使用 jest-cli
+    if (this.config.fileList.length === 0 && this.config.useJestCli == null) this.config.useJestCli = true;
     this.init();
 
     let result: JestCheckResult = { isPassed: true };

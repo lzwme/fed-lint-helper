@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-05-24 22:30:33
+ * @LastEditTime: 2022-05-24 22:52:15
  * @Description:
  */
 
@@ -106,7 +106,7 @@ export interface JestCheckConfig extends CommConfig {
   jestOptions?: Partial<Config.Argv> & Record<string, unknown>;
   /** 严格模式 */
   strict?: boolean;
-  /** 是否使用 spawn/exec 执行 jest cli 的方式执行（全量执行时更快） */
+  /** 是否使用 spawn/exec 执行 jest cli 的方式执行（全量执行时默认为 true，速度更快） */
   useJestCli?: boolean;
 }
 
