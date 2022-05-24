@@ -2,13 +2,13 @@
  * @Author: lzw
  * @Date: 2021-04-23 10:44:32
  * @LastEditors: lzw
- * @LastEditTime: 2022-05-06 09:20:12
+ * @LastEditTime: 2022-05-23 10:22:40
  * @Description: gh u 相关的命令。主要为常用的快捷工具方法
  */
 
 import path from 'path';
 import fs from 'fs';
-import { execSync } from './common';
+import { execSync } from './exec';
 
 /** 获取当前的本地分支名 */
 export function getHeadBranch(baseDirectory = process.cwd()) {

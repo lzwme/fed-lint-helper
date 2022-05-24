@@ -23,4 +23,5 @@ export function packageManagerCheck(wantedPM = '', isDebug = false) {
   }
   return true;
 }
+
 if (module === require.main) packageManagerCheck(process.argv.slice(2)[0]);

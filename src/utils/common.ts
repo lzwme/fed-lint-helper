@@ -1,11 +1,10 @@
-import childProcess from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
 import { color } from 'console-log-colors';
 import * as readline from 'readline';
 import { Logger } from '../lib/Logger';
-import { getLogger } from './get-logger';
+import { formatTimeCost } from './utils-date';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type PlainObject = Record<string, any>;
@@ -34,8 +33,8 @@ export function fixToshortPath(filepath = '', rootDir = process.cwd()) {
   return shortPath.startsWith('/') ? shortPath.slice(1) : shortPath;
 }
 
-export function formatTimeCost(startTime: number, withTip = true) {
-  let timeCost = (Date.now() - startTime) / 1000 + 's';
+export function getTimeCost(startTime: number, withTip = true) {
+  let timeCost = formatTimeCost(startTime); // (Date.now() - startTime) / 1000 + 's';
   if (withTip) timeCost = `TimeCost: ${color.greenBright(timeCost)}`;
   return timeCost;
 }
@@ -45,7 +44,7 @@ export function formatTimeCost(startTime: number, withTip = true) {
  * @param {number} startTime 开始时间戳
  */
 export function logTimeCost(startTime: number, prefix = '') {
-  Logger.getLogger().log(color.cyan(prefix), formatTimeCost(startTime));
+  Logger.getLogger().log(color.cyan(prefix), getTimeCost(startTime));
 }
 
 /**
@@ -75,30 +74,6 @@ export function md5(str: string | Buffer, isFile = false) {
     console.log(error);
     return '';
   }
-}
-
-export function execSync(cmd: string, stdio?: childProcess.StdioOptions, cwd = process.cwd(), debug = false) {
-  if (debug) getLogger().debug(color.cyanBright('exec cmd:'), color.yellowBright(cmd), color.cyan(cwd));
-
-  try {
-    // 为 pipe 才会返回输出结果给 res；为 inherit 则打印至 stdout 中，res 为空
-    if (!stdio) stdio = debug ? 'inherit' : 'pipe';
-    const res = childProcess.execSync(cmd, { stdio, encoding: 'utf8', cwd });
-    return res ? res.toString().trim() : '';
-  } catch (error) {
-    getLogger().error(color.redBright(error.message));
-    return '';
-  }
-}
-
-export function execPromise(cmd: string, showErr = true) {
-  return new Promise((resolve, _reject) => {
-    childProcess.exec(cmd, { maxBuffer: 10 * 1024 * 1024 }, (err, data) => {
-      if (err && showErr) getLogger().log(`\n[execPromise]命令执行失败：${cmd}\n`, err);
-      // reject(err);
-      resolve({ err, data });
-    });
-  });
 }
 
 export const sleep = (delay = 100) => new Promise(rs => setTimeout(() => rs(true), delay));

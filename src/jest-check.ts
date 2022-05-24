@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-03-29 11:21:46
+ * @LastEditTime: 2022-05-24 22:39:44
  * @Description:  jest check
  */
 
@@ -13,7 +13,8 @@ import { color } from 'console-log-colors';
 import glob from 'glob';
 import { runCLI } from '@jest/core';
 import type { Config } from '@jest/types';
-import { fixToshortPath, md5, createForkThread, assign, getLogger, formatTimeCost } from './utils';
+import { fixToshortPath, md5, assign, getLogger, getTimeCost } from './utils';
+import { createForkThread } from './utils/fork';
 import { JestCheckConfig, getConfig } from './config';
 import { exit } from './exit';
 
@@ -121,9 +122,11 @@ export class JestCheck {
         const p = path.resolve(config.rootDir, d);
         if (!fs.existsSync(p) && fs.statSync(p).isDirectory()) continue;
 
-        const files = glob.sync('**/*.spec.{ts,js,tsx,jsx}', { cwd: p, realpath: true });
+        const files = glob.sync('**/*.{spec,test}.{ts,js,tsx,jsx}', { cwd: p, realpath: true });
         specFileList.push(...files);
       }
+    } else {
+      specFileList = specFileList.filter(filepath => /\.(spec|test)\./.test(filepath));
     }
 
     const totalFiles = specFileList.length;
@@ -140,7 +143,7 @@ export class JestCheck {
         const item = jestPassedFiles[filepath];
         if (!item) return true;
 
-        const tsFilePath = filepath.replace('.spec.', '.');
+        const tsFilePath = filepath.replace(/\.(spec|test)\./, '.');
         // 同名业务文件 md5 发生改变
         if (fs.existsSync(tsFilePath) && item.md5 && md5(tsFilePath, true) !== item.md5) {
           return true;
@@ -182,7 +185,7 @@ export class JestCheck {
     logger.info(`Total Spec Files:`, specFileList.length);
     logger.debug(specFileList);
 
-    if (config.silent) {
+    if (config.silent || config.useJestCli) {
       stats.isPassed = await new Promise(resolve => {
         exec(
           `node --max_old_space_size=4096 ./node_modules/jest/bin/jest.js --unhandled-rejections=strict --forceExit ${specFileList
@@ -225,7 +228,7 @@ export class JestCheck {
     }
 
     logger.info(bold(stats.isPassed ? greenBright('Verification passed!') : redBright('Verification failed!')));
-    this.logger.info(formatTimeCost(stats.startTime));
+    this.logger.info(getTimeCost(stats.startTime));
 
     return info;
   }

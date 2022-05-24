@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-05-11 09:51:17
+ * @LastEditTime: 2022-05-23 10:28:26
  * @Description:  eslint check
  */
 
@@ -10,7 +10,8 @@ import { color } from 'console-log-colors';
 import { ESLint } from 'eslint';
 import fs from 'fs';
 import path from 'path';
-import { fixToshortPath, createForkThread, assign, getLogger, execSync, formatTimeCost } from './utils';
+import { fixToshortPath, assign, getLogger, execSync, getTimeCost } from './utils';
+import { createForkThread } from './utils/fork';
 import { ESLintCheckConfig, getConfig } from './config';
 import { exit } from './exit';
 
@@ -290,7 +291,7 @@ export class ESLintCheck {
     }
 
     stats.success = isPassed;
-    this.logger.info(formatTimeCost(stats.startTime));
+    this.logger.info(getTimeCost(stats.startTime));
 
     const info: ESLintCheckResult = {
       /** 是否检测通过 */

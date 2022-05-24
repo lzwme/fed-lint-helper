@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-05-09 10:55:01
+ * @LastEditTime: 2022-05-23 10:28:42
  * @Description:  Jira check
  */
 
@@ -10,7 +10,8 @@ import path from 'path';
 import fs from 'fs';
 import type { IncomingHttpHeaders } from 'http';
 import { color } from 'console-log-colors';
-import { createForkThread, assign, getHeadBranch, PlainObject, getLogger, formatTimeCost } from './utils';
+import { assign, getHeadBranch, PlainObject, getLogger, getTimeCost } from './utils';
+import { createForkThread } from './utils/fork';
 import { JiraCheckConfig, getConfig } from './config';
 import { Request } from './lib';
 import { exit } from './exit';
@@ -465,7 +466,7 @@ export class JiraCheck {
     }
 
     this.logger.info(bold(checkResult.isPassed ? greenBright('Verification passed!') : redBright('Verification failed!')));
-    this.logger.info(formatTimeCost(stats.startTime));
+    this.logger.info(getTimeCost(stats.startTime));
 
     return checkResult;
   }

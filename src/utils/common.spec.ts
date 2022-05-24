@@ -41,17 +41,6 @@ describe('utils/common', () => {
     expect(comm.md5(null, true)).toEqual('');
   });
 
-  it('execSync', () => {
-    expect(comm.execSync('test')).toBeNull();
-    expect(comm.execSync('echo test')).toBe('test');
-    expect(comm.execSync('echo test', 'pipe', process.cwd(), true)).toBe('test');
-    expect(comm.execSync('echo test', 'inherit', process.cwd(), true)).toBe('');
-
-    // stdio = debug ? 'inherit' : 'pipe'
-    expect(comm.execSync('echo test', null, process.cwd(), true)).toBe('');
-    expect(comm.execSync('echo test', null, process.cwd(), false)).toBe('test');
-  });
-
   it('sleep', async () => {
     const startTime = Date.now();
     await comm.sleep(10);

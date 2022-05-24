@@ -2,14 +2,14 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-05-05 21:54:58
+ * @LastEditTime: 2022-05-24 22:30:33
  * @Description:
  */
 
 import { color } from 'console-log-colors';
 import fs from 'fs';
 import path from 'path';
-import { assign, ValueOf } from './utils';
+import { assign, ValueOf, formatWxWorkKeys } from './utils';
 import type { ESLint } from 'eslint';
 import type { Config } from '@jest/types';
 import type { IncomingHttpHeaders } from 'http';
@@ -106,6 +106,8 @@ export interface JestCheckConfig extends CommConfig {
   jestOptions?: Partial<Config.Argv> & Record<string, unknown>;
   /** 严格模式 */
   strict?: boolean;
+  /** 是否使用 spawn/exec 执行 jest cli 的方式执行（全量执行时更快） */
+  useJestCli?: boolean;
 }
 
 export interface JiraCheckConfig extends CommConfig {
@@ -245,19 +247,6 @@ export function mergeCommConfig(options: FlhConfig, useDefault = true) {
     }
   }
   return options;
-}
-
-export function formatWxWorkKeys(keys: string[]) {
-  if (!keys) return [];
-  if (!Array.isArray(keys)) keys = [keys];
-  return keys
-    .filter(d => /[\da-z]{8}(-?[\da-z]{4}){3}-?[\da-z]{12}/i.test(d))
-    .map(d => {
-      if (/^[\da-z]+$/.test(d) && d.length === 32) {
-        d = [...d].map((s, index) => ([7, 11, 15, 19].includes(index) ? `${s}-` : s)).join('');
-      }
-      return d;
-    });
 }
 
 /**

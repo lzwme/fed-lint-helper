@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2021-12-27 14:18:39
+ * @LastEditTime: 2022-05-23 10:28:18
  * @Description: typescript Diagnostics report
  */
 
@@ -11,9 +11,10 @@ import fs from 'fs';
 import path from 'path';
 import * as ts from 'typescript';
 import glob from 'glob';
-import { fixToshortPath, md5, createForkThread, assign, getLogger, execSync, formatTimeCost } from './utils';
-import { TsCheckConfig, getConfig } from './config';
 import minimatch from 'minimatch';
+import { fixToshortPath, md5, assign, getLogger, execSync, getTimeCost } from './utils';
+import { createForkThread } from './utils/fork';
+import { TsCheckConfig, getConfig } from './config';
 import { exit } from './exit';
 
 const { bold, redBright, yellowBright, cyanBright, red, greenBright, cyan } = color;
@@ -383,7 +384,7 @@ export class TsCheck {
       if (config.exitOnError) exit(result.failed, stats.startTime, '[TsCheck]');
     }
 
-    this.logger.info(formatTimeCost(stats.startTime));
+    this.logger.info(getTimeCost(stats.startTime));
 
     return result;
   }
