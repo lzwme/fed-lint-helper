@@ -16,6 +16,18 @@ function toLowcaseKeyObject(info: Record<string, unknown> = {}) {
   return info;
 }
 
+export function urlFormat(url: string, params: PlainObject, isRepalce = false) {
+  if (!url || !params) return url;
+
+  const u = new URL(url);
+  for (const [key, value] of Object.entries(params)) {
+    if (isRepalce) u.searchParams.set(key, value);
+    else u.searchParams.append(key, value);
+  }
+
+  return u.toString();
+}
+
 export class Request {
   private cookies: string[] = [];
   private headers: http.IncomingHttpHeaders = {
@@ -106,8 +118,8 @@ export class Request {
       request.end();
     }) as Promise<{ data: T; headers: http.IncomingHttpHeaders }>;
   }
-  get<T = PlainObject>(url: string, headers?: http.IncomingHttpHeaders) {
-    return this.request<T>('GET', url, void 0, headers);
+  get<T = PlainObject>(url: string, parameters?: PlainObject, headers?: http.IncomingHttpHeaders) {
+    return this.request<T>('GET', urlFormat(url, parameters), void 0, headers);
   }
   post<T = PlainObject>(url: string, parameters: PlainObject, headers?: http.IncomingHttpHeaders) {
     return this.request<T>('POST', url, parameters, headers);

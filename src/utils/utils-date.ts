@@ -34,6 +34,10 @@ export function dateFormat(fmt: string, date: Date | string = new Date()): strin
 
   if (Number.isNaN(date.getDate())) return String(rawDate || '');
 
+  if (!fmt) {
+    return '' + date.getTime();
+  }
+
   const o = {
     'M+': date.getMonth() + 1, // 月份
     'd+': date.getDate(), // 日
@@ -43,10 +47,6 @@ export function dateFormat(fmt: string, date: Date | string = new Date()): strin
     'q+': Math.floor((date.getMonth() + 3) / 3), // 季度
     S: String(date.getMilliseconds()).padStart(3, '0'), // 毫秒
   };
-
-  if (!fmt) {
-    return '' + date.getTime();
-  }
 
   if (/(y+)/.test(fmt)) {
     fmt = fmt.replace(RegExp.$1, (date.getFullYear() + '').slice(4 - RegExp.$1.length));

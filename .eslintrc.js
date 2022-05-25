@@ -59,5 +59,12 @@ module.exports = {
         'unicorn/filename-case': 'off',
         'unicorn/no-null': 'off',
         'unicorn/prevent-abbreviations': 'off',
+        'unicorn/import-style': ['error', {
+          styles: {
+            path: {
+              named: true,
+            }
+          }
+        }]
     },
 };

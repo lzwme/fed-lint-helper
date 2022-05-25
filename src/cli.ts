@@ -2,16 +2,17 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2022-05-23 10:25:09
+ * @LastEditTime: 2022-05-25 10:55:26
  * @Description: cli 工具
  */
 import { Option, program } from 'commander';
 import { color } from 'console-log-colors';
 import path from 'path';
 import fs from 'fs';
-import { getHeadDiffFileList, rmdir, formatWxWorkKeys } from './utils';
-import { getConfig, config, mergeCommConfig } from './config';
 import type { FlhConfig, TsCheckConfig, JiraCheckConfig, CommitLintOptions } from './config';
+import { getHeadDiffFileList, formatWxWorkKeys } from './utils';
+import { getConfig, config, mergeCommConfig } from './config';
+import { rmdir } from './rmdir';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const packageInfo = require('../../package.json');
