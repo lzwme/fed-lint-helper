@@ -1,4 +1,3 @@
-import qs from 'querystring';
 import { URL } from 'url';
 import zlib from 'zlib';
 import http from 'http';
@@ -45,15 +44,13 @@ export class Request {
     if (headers) this.headers = Object.assign(this.headers, toLowcaseKeyObject(headers));
   }
   private getHeaders(urlObject, headers?: http.IncomingHttpHeaders) {
-    headers = Object.assign(
-      {},
-      this.headers,
-      {
-        host: urlObject.host,
-        origin: urlObject.origin || `${urlObject.protocol}://${urlObject.hostname}`,
-      },
-      toLowcaseKeyObject(headers)
-    );
+    headers = {
+      ...this.headers,
+      host: urlObject.host,
+      origin: urlObject.origin || `${urlObject.protocol}://${urlObject.hostname}`,
+      ...toLowcaseKeyObject(headers)
+    };
+
     if (!headers.cookie && this.cookies.length > 0) headers.cookie = this.getCookie() as string;
 
     return headers;
@@ -81,7 +78,7 @@ export class Request {
     if (parameters) {
       postBody = String(options.headers['content-type']).includes('application/json')
         ? JSON.stringify(parameters)
-        : qs.stringify(parameters);
+        : new URLSearchParams(parameters).toString();
       options.headers['content-length'] = Buffer.byteLength(postBody).toString();
     }
 
