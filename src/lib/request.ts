@@ -48,7 +48,7 @@ export class Request {
       ...this.headers,
       host: urlObject.host,
       origin: urlObject.origin || `${urlObject.protocol}://${urlObject.hostname}`,
-      ...toLowcaseKeyObject(headers)
+      ...toLowcaseKeyObject(headers),
     };
 
     if (!headers.cookie && this.cookies.length > 0) headers.cookie = this.getCookie() as string;
