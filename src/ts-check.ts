@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-05-23 10:28:18
+ * @LastEditTime: 2022-06-09 20:36:34
  * @Description: typescript Diagnostics report
  */
 
@@ -135,7 +135,7 @@ export class TsCheck {
 
     console.log();
     this.logger.info(bold(cyanBright('Checking')), subDirection);
-    this.logger.info(' - Total Number Of Files:', total);
+    this.logger.info(' - Total Files:', total);
 
     /** 缓存命中数量 */
     let cacheHits = 0;

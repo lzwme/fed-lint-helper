@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-05-23 10:28:26
+ * @LastEditTime: 2022-06-09 20:45:50
  * @Description:  eslint check
  */
 
@@ -217,13 +217,13 @@ export class ESLintCheck {
       if (results.length === 0) {
         this.logger.debug('no new error file');
       } else {
-        this.logger.info('[ADD]write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
-        fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, void 0, 2));
-        execSync(`git add ${config.whiteListFilePath}`, void 0, config.rootDir, !config.silent);
         if (config.printDetail !== false) {
           const resultText = formatter.format(results);
           this.logger.info(`\n ${resultText}`);
         }
+        this.logger.info('[ADD]write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
+        fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, void 0, 2));
+        execSync(`git add ${config.whiteListFilePath}`, void 0, config.rootDir, !config.silent);
       }
     } else {
       if (removeFromWhiteList.length > 0) {
@@ -260,29 +260,30 @@ export class ESLintCheck {
       } else {
         // 不在白名单中的 warning
         if (newWaringReults.length > 0) {
+          if (config.printDetail !== false) {
+            const resultText = formatter.format(newWaringReults);
+            this.logger.info(`\n ${resultText}\n`);
+          }
           this.logger.info(
             bold(red(`[Warning]Verification failed![${newWaringReults.length} files]`)),
             yellowBright(tips),
             `\n` + newWaringReults.map(d => fixToshortPath(d.filePath, config.rootDir)).join('\n')
           );
-          if (config.printDetail !== false) {
-            const resultText = formatter.format(newWaringReults);
-            this.logger.info(`\n ${resultText}\n`);
-          }
         }
       }
 
       if (isPassed) {
         if (errorCount || warningCount) {
+          if (config.printDetail !== false) {
+            const resultText = formatter.format(waringReults);
+            this.logger.info(`\n ${resultText}\n`);
+          }
+
           this.logger.info(
             `[注意] 以下文件在白名单中，但存在异常信息[TOTAL: ${bold(yellowBright(waringReults.length))} files]${tips}：`,
             '\n' + waringReults.map(d => fixToshortPath(d.filePath, config.rootDir)).join('\n'),
             '\n'
           );
-          if (config.printDetail !== false) {
-            const resultText = formatter.format(waringReults);
-            this.logger.info(`\n ${resultText}\n`);
-          }
           // if (config.strict) exit(results.length, stats.startTime, '[ESLint]');
         }
 

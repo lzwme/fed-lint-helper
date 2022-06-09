@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-05-23 10:28:42
+ * @LastEditTime: 2022-06-09 20:30:06
  * @Description:  Jira check
  */
 
@@ -83,6 +83,18 @@ interface Author {
   timeZone: string;
 }
 
+/**
+ * @url 忽略规则参考地址: https://github.com/conventional-changelog/commitlint/blob/master/%40commitlint/is-ignored/src/defaults.ts
+ */
+const ignoredCommitList = [
+  /^((Merge pull request)|(Merge (.*?) into (.*?)|(Merge branch (.*?)))(?:\r?\n)*$)/m,
+  /^(R|r)evert (.*)/,
+  /^(fixup|squash)!/,
+  /^Merged (.*?)(in|into) (.*)/,
+  /^Merge remote-tracking branch (.*)/,
+  /^Automatic merge(.*)/,
+  /^Auto-merged (.*?) into (.*)/,
+];
 export class JiraCheck {
   /** 统计信息 */
   private stats = this.getInitStats();
@@ -118,8 +130,15 @@ export class JiraCheck {
     const baseConfig = getConfig();
 
     if (config !== this.config) config = assign<JiraCheckConfig>({}, this.config, config);
-    this.config = assign<JiraCheckConfig>({ commitMsgPrefix: '[ET]' }, baseConfig.jira, config);
-    if (!this.config.issuePrefix.endsWith('-')) this.config.issuePrefix += '-';
+    config = assign<JiraCheckConfig>({ commitMsgPrefix: '[ET]' }, baseConfig.jira, config);
+    if (!config.issuePrefix) config.issuePrefix = [];
+    if (!Array.isArray(config.issuePrefix)) config.issuePrefix = [config.issuePrefix];
+
+    for (const [index, value] of config.issuePrefix.entries()) {
+      if (!value.endsWith('-')) config.issuePrefix[index] = value + '-';
+    }
+
+    this.config = config;
     return this.config;
   }
   private init() {
@@ -216,7 +235,8 @@ export class JiraCheck {
   private async pipelineCheck(): Promise<boolean> {
     const { config, stats } = this;
     const sprintVersion = `${getHeadBranch()}`.split('_')[0];
-    const query = `project = ${config.issuePrefix.replace(/-$/, '')} AND fixVersion = "${sprintVersion}" AND comment ~ "必须修复"${
+    const projects = (config.issuePrefix as string[]).map(d => d.replace(/-$/, '')).join(',');
+    const query = `project IN (${projects}) AND fixVersion = "${sprintVersion}" AND comment ~ "必须修复"${
       config.projectName ? ` AND comment ~ "${config.projectName}"` : ''
     } AND status in ("新建(New)", "处理中(Inprocess)", "测试验收(Test Verification)", "调试与审查(Code Review)", "关闭(Closed)") ORDER BY due ASC, priority DESC, created ASC`;
     const url = `${config.jiraHome}/rest/api/2/search?`; // jql=${encodeURIComponent(query)}&maxResults=100&fields=comment,assignee`;
@@ -314,6 +334,13 @@ export class JiraCheck {
   /** git hooks commit-msg 检查 */
   private async commitMsgCheck(): Promise<boolean> {
     const { config, stats } = this;
+    const issuePrefixs = config.issuePrefix as string[];
+
+    if (issuePrefixs.length === 0) {
+      this.logger.error(`请在配置文件中指定 issuePrefix 参数`);
+      return false;
+    }
+
     /** 当前本地分支。分支命名格式：3.10.1<_dev><_fix-xxx> */
     const branch = getHeadBranch();
     /** 根据本地分支获取分支所属迭代版本) */
@@ -323,38 +350,11 @@ export class JiraCheck {
     // 自定义分支允许提交预研任务
     if (sprintVersion !== branch && !branch.includes('_dev')) allowedFixVersions.push('tech_ahead_v1');
 
-    /** 智能匹配正则表达式，commit覆盖, JIRA号后需要输入至少一个中文、【|[、英文或者空格进行隔开 例子: JGCPS-1234测试提交123 或 [JGCPS-1234] 测试提交123 => [ET][2.9.1][feature][JGCPS-1234]测试提交123 */
-    const smartRegWithMessage = new RegExp(`^\\[?${config.issuePrefix}\\d+\\]?([A-Za-z\\u4e00-\\u9fa5\\s【\\[]+.+)`);
-    /**  智能匹配正则表达式，单纯匹配jira 例子: JGCPS-1234 或 [JGCPS-1234] => [ET][2.9.1][feature][JGCPS-1234]JIRA本身的标题 */
-    const smartRegWithJIRA = new RegExp(`^\\[?${config.issuePrefix}(\\d+)\\]?`, 'g');
-    const issueTypeList = await this.getIssueType();
-    /** 禁止提交的类型 */
-    const noAllowIssueType: number[] = [];
-    // eslint-disable-next-line unicorn/no-array-reduce
-    const issueTypeToDesc = issueTypeList.reduce((object, item) => {
-      object[item.id] = item.name.replace(/[^A-Za-z]/g, '').toLowerCase();
-      if (object[item.id].includes('subtask')) object[item.id] = 'feature';
-      else if (object[item.id].includes('bug')) object[item.id] = 'bugfix';
-
-      // 非 bug 的主任务，不允许提交
-      if (!item.subtask && object[item.id].includes('bug')) noAllowIssueType.push(item.id);
-      return object;
-    }, {} as Record<number, string>);
-    /**
-     * @url 忽略规则参考地址: https://github.com/conventional-changelog/commitlint/blob/master/%40commitlint/is-ignored/src/defaults.ts
-     */
-    const ignoredCommitList = [
-      /^((Merge pull request)|(Merge (.*?) into (.*?)|(Merge branch (.*?)))(?:\r?\n)*$)/m,
-      /^(R|r)evert (.*)/,
-      /^(fixup|squash)!/,
-      /^Merged (.*?)(in|into) (.*)/,
-      /^Merge remote-tracking branch (.*)/,
-      /^Automatic merge(.*)/,
-      /^Auto-merged (.*?) into (.*)/,
-    ];
     const gitPath = path.join(config.rootDir, config.COMMIT_EDITMSG || './.git/COMMIT_EDITMSG');
     const commitMessage = fs.readFileSync(gitPath, 'utf8').trim();
-    const jiraIDReg = new RegExp(`${config.issuePrefix}(\\d+)`, 'g');
+
+    const issuePrefix = issuePrefixs.find(d => commitMessage.includes(d));
+    const jiraIDReg = new RegExp(`${issuePrefix}(\\d+)`, 'g');
     const jiraIDs = commitMessage.match(jiraIDReg);
 
     this.logger.info('===================================');
@@ -362,6 +362,23 @@ export class JiraCheck {
     this.logger.info('===================================');
 
     if (jiraIDs) {
+      /** 智能匹配正则表达式，commit覆盖, JIRA号后需要输入至少一个中文、【|[、英文或者空格进行隔开 例子: JGCPS-1234测试提交123 或 [JGCPS-1234] 测试提交123 => [ET][2.9.1][feature][JGCPS-1234]测试提交123 */
+      const smartRegWithMessage = new RegExp(`^\\[?${issuePrefix}\\d+\\]?([A-Za-z\\u4e00-\\u9fa5\\s【\\[]+.+)`);
+      /**  智能匹配正则表达式，单纯匹配jira 例子: JGCPS-1234 或 [JGCPS-1234] => [ET][2.9.1][feature][JGCPS-1234]JIRA本身的标题 */
+      const smartRegWithJIRA = new RegExp(`^\\[?${issuePrefix}(\\d+)\\]?`, 'g');
+      const issueTypeList = await this.getIssueType();
+      /** 禁止提交的类型 */
+      const noAllowIssueType: number[] = [];
+      // eslint-disable-next-line unicorn/no-array-reduce
+      const issueTypeToDesc = issueTypeList.reduce((object, item) => {
+        object[item.id] = item.name.replace(/[^A-Za-z]/g, '').toLowerCase();
+        if (object[item.id].includes('subtask')) object[item.id] = 'feature';
+        else if (object[item.id].includes('bug')) object[item.id] = 'bugfix';
+
+        // 非 bug 的主任务，不允许提交
+        if (!item.subtask && object[item.id].includes('bug')) noAllowIssueType.push(item.id);
+        return object;
+      }, {} as Record<number, string>);
       const jiraID = jiraIDs[0];
       const { data: info } = await this.reqeust.get<IssueItem & JiraError>(`${config.jiraHome}/rest/api/latest/issue/${jiraID}`);
       const summary = info.fields.summary;
@@ -444,8 +461,8 @@ export class JiraCheck {
         this.logger.error('同分支提交禁止执行 Merge 操作，请使用 git rebase 或 git pull -r 命令。若为跨分支合并，请增加 -n 参数\n');
         return false;
       } else if (!ignoredCommitList.some(reg => reg.test(commitMessage))) {
-        this.logger.error(`提交代码信息不符合规范，信息中应包含字符"${config.issuePrefix}XXXX".`);
-        this.logger.error('例如：', color.cyanBright(`${config.issuePrefix}9171 【两融篮子】多组合卖出，指令预览只显示一个组合。\n`));
+        this.logger.error(`提交代码信息不符合规范，信息中应包含字符"${issuePrefix}XXXX".`);
+        this.logger.error('例如：', color.cyanBright(`${issuePrefix}9171 【两融篮子】多组合卖出，指令预览只显示一个组合。\n`));
         return false;
       }
     }

@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-05-24 22:52:15
+ * @LastEditTime: 2022-06-09 20:25:43
  * @Description:
  */
 
@@ -132,7 +132,7 @@ export interface JiraCheckConfig extends CommConfig {
   /** 已封板后允许回复必须修复的人员列表 */
   sealedCommentAuthors?: string[];
   /** jira issue 编号前缀，如编号为 LZWME-4321，则设置为 LZWME- */
-  issuePrefix?: string;
+  issuePrefix?: string | string[];
   /** commit 提交固定前缀，如： [ET] */
   commitMsgPrefix?: string;
   /** 提取 commit-msg 信息的文件路径。默认为 ./.git/COMMIT_EDITMSG */
@@ -219,7 +219,7 @@ export const config: FlhConfig = {
     type: 'commit',
     sealedCommentAuthors: [],
     jiraHome: 'http://jira.com.cn',
-    issuePrefix: 'JGCPS-',
+    issuePrefix: [],
     projectName: 'fed-lint-helper',
     pipeline: {
       requestParams: { maxResults: 100, fields: ['comment', 'assignee'] },
