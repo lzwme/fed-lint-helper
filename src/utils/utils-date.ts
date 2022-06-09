@@ -146,39 +146,39 @@ export function yyyyMMddFormat(dateStr: string) {
     },
   };
 }
-/**
- * 按指定时区取得当前时间
- * @param timeZone 指定的时区，默认为 0（北京市+8，美国华盛顿 -5）
- * @param now 指定的时间对象，默认为当前浏览器获取的时间 new Date()
- */
-export function getDateTimeByTimeZone(timeZone = 0, now = new Date()) {
-  // const now = new Date();
-  // 当地时间偏移的毫秒数,这里可能是负数
-  const localOffset = now.getTimezoneOffset() * 60_000;
-  // utc即GMT时间
-  const utc = now.getTime() + localOffset;
-  /** 本地对应的毫秒数 */
-  const localTime = utc + 3_600_000 * (+timeZone || 0);
-  const date = new Date(localTime);
-  // console.log("根据本地时间得知"+timeZone+"时区的时间是 " + date.toLocaleString());
-  // console.log("系统默认展示时间方式是："+ date)
-  return date;
-}
-/**
- * 将指定时区的时间转换为当前浏览器的时间
- * @param date 传入的(可被格式化的)时间
- * @param timeZone 参数 date 所表示的时区，默认为北京时间东八区
- */
-export function toLocalTime(date: number | string | Date, timeZone = 8) {
-  if (!date) return null;
+// /**
+//  * 按指定时区取得当前时间
+//  * @param timeZone 指定的时区，默认为 0（北京市+8，美国华盛顿 -5）
+//  * @param now 指定的时间对象，默认为当前浏览器获取的时间 new Date()
+//  */
+// export function getDateTimeByTimeZone(timeZone = 0, now = new Date()) {
+//   // const now = new Date();
+//   // 当地时间偏移的毫秒数,这里可能是负数
+//   const localOffset = now.getTimezoneOffset() * 60_000;
+//   // utc即GMT时间
+//   const utc = now.getTime() + localOffset;
+//   /** 本地对应的毫秒数 */
+//   const localTime = utc + 3_600_000 * (+timeZone || 0);
+//   const date = new Date(localTime);
+//   // console.log("根据本地时间得知"+timeZone+"时区的时间是 " + date.toLocaleString());
+//   // console.log("系统默认展示时间方式是："+ date)
+//   return date;
+// }
+// /**
+//  * 将指定时区的时间转换为当前浏览器的时间
+//  * @param date 传入的(可被格式化的)时间
+//  * @param timeZone 参数 date 所表示的时区，默认为北京时间东八区
+//  */
+// export function toLocalTime(date: number | string | Date, timeZone = 8) {
+//   if (!date) return null;
 
-  const localTimeZone = new Date().getTimezoneOffset() / 60;
-  const localTime = typeof date === 'string' && /^\d+$/.test(date) ? yyyyMMddFormat(date).date : new Date(date);
+//   const localTimeZone = new Date().getTimezoneOffset() / 60;
+//   const localTime = typeof date === 'string' && /^\d+$/.test(date) ? yyyyMMddFormat(date).date : new Date(date);
 
-  localTime.setHours(localTime.getHours() + localTimeZone + timeZone);
+//   localTime.setHours(localTime.getHours() + localTimeZone + timeZone);
 
-  return localTime;
-}
+//   return localTime;
+// }
 /**
  * 计算相差时间
  * @param endTime 结束时间。格式：yyyyMMddhhmmss
