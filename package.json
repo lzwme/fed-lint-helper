@@ -55,7 +55,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "registry": "https://registry.npmjs.org"
+    "registry": "https://registry.npmjs.com"
   },
   "dependencies": {
     "commander": "^9.2.0",
