@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.8.0](https://github.com/lzwme/fed-lint-helper/compare/v1.7.0...v1.8.0) (2022-06-09)
+
+
+### Features
+
+* 增加 simpleAssgin 工具方法 ([2766027](https://github.com/lzwme/fed-lint-helper/commit/2766027db0310f78242b7fe49c1de883b9143391))
+
+
+### Bug Fixes
+
+* 更新 utils date 单元测试用例 ([5b3e74c](https://github.com/lzwme/fed-lint-helper/commit/5b3e74c897ffd6219f8933a6e560d8da12ee8fc5))
+* 更新日志写文件逻辑；修正 assgin 的逻辑错误 ([0c4fee4](https://github.com/lzwme/fed-lint-helper/commit/0c4fee4ed5ed75d3067e6ba9334f901c1a5e0839))
+* fix for ts error ([71b9405](https://github.com/lzwme/fed-lint-helper/commit/71b9405c865d8f783671159c51f6814e8dcd2681))
+* fix for ts error ([5f37bba](https://github.com/lzwme/fed-lint-helper/commit/5f37bba691bf2b8d91ebd940b8554244a7448a7f))
+* fix for ts error ([fc90e23](https://github.com/lzwme/fed-lint-helper/commit/fc90e23695461390fc824cdb57a89a8ffe536bff))
+
 ## [1.7.0](https://github.com/lzwme/fed-lint-helper/compare/v1.6.6...v1.7.0) (2022-05-17)
 
 
