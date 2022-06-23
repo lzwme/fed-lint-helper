@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-06-09 20:36:34
+ * @LastEditTime: 2022-06-23 22:33:44
  * @Description: typescript Diagnostics report
  */
 
@@ -10,7 +10,7 @@ import { color } from 'console-log-colors';
 import fs from 'fs';
 import path from 'path';
 import * as ts from 'typescript';
-import glob from 'glob';
+import glob from 'fast-glob';
 import minimatch from 'minimatch';
 import { fixToshortPath, md5, assign, getLogger, execSync, getTimeCost } from './utils';
 import { createForkThread } from './utils/fork';
@@ -261,8 +261,8 @@ export class TsCheck {
 
     const tsFiles = glob.sync('**/*.{ts,tsx}', {
       cwd: subDirection,
-      ignore: this.config.exclude,
-      realpath: true,
+      ignore: this.config.exclude as string[],
+      absolute: true,
     });
 
     // checkUnUse(tsFiles);

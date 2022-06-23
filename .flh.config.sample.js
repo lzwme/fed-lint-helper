@@ -25,7 +25,7 @@ module.exports = {
   jest: {
     src: ['src'],
     // silent: true,
-    // fileList: glob.sync('src/**/**.spec.ts'),
+    // fileList: require('fast-glob').sync('src/**/**.spec.ts'),
   },
   // commitlint: {
   //   verify: (message) => {

@@ -1,7 +1,7 @@
 import { statSync } from 'fs';
 import { color } from 'console-log-colors';
 import { readSyncByRl } from './utils/common';
-import { glob } from 'glob';
+import glob from 'fast-glob';
 import { getLogger } from './utils/get-logger';
 import { rmrfAsync } from './utils/rmrf';
 
@@ -30,7 +30,7 @@ export async function rmdir(srcs: string[], slient = false, force = false) {
 
   const list: Promise<boolean>[] = [];
   for (const source of srcs) {
-    const files = glob.sync(source, { cwd: process.cwd() });
+    const files = await glob(source, { cwd: process.cwd() });
     for (const filepath of files) {
       list.push(doRmdir(filepath, slient, force));
     }

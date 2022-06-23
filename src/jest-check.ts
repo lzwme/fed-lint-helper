@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-05-24 22:51:48
+ * @LastEditTime: 2022-06-23 22:32:47
  * @Description:  jest check
  */
 
@@ -10,7 +10,7 @@ import fs from 'fs';
 import path from 'path';
 import { exec } from 'child_process';
 import { color } from 'console-log-colors';
-import glob from 'glob';
+import glob from 'fast-glob';
 import { runCLI } from '@jest/core';
 import type { Config } from '@jest/types';
 import { fixToshortPath, md5, assign, getLogger, getTimeCost } from './utils';
@@ -111,7 +111,7 @@ export class JestCheck {
 
     return option;
   }
-  private getSpecFileList(specFileList = this.config.fileList) {
+  private async getSpecFileList(specFileList = this.config.fileList) {
     const config = this.config;
     const jestPassedFiles = this.stats.cacheInfo.passed;
 
@@ -122,7 +122,7 @@ export class JestCheck {
         const p = path.resolve(config.rootDir, d);
         if (!fs.existsSync(p) && fs.statSync(p).isDirectory()) continue;
 
-        const files = glob.sync('**/*.{spec,test}.{ts,js,tsx,jsx}', { cwd: p, realpath: true });
+        const files = await glob('**/*.{spec,test}.{ts,js,tsx,jsx}', { cwd: p, absolute: true });
         specFileList.push(...files);
       }
     } else {
@@ -178,7 +178,7 @@ export class JestCheck {
 
     stats.isPassed = true;
     logger.debug('[options]:', config, specFileList);
-    specFileList = this.getSpecFileList(specFileList);
+    specFileList = await this.getSpecFileList(specFileList);
 
     if (specFileList.length === 0) info;
 
