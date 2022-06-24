@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-06-23 22:33:44
+ * @LastEditTime: 2022-06-24 11:01:03
  * @Description: typescript Diagnostics report
  */
 
@@ -63,8 +63,8 @@ export class TsCheck {
         /** 已经检测且无异常的文件列表 */
         tsCheckFilesPassed: {} as { [filepath: string]: { md5: string; updateTime: number } },
       },
-      /** 检测通过的文件列表是否有变动，用于标记是否需要写回缓存 */
-      tsCheckFilesPassedChanged: false,
+      /** 检测通过的文件列表是否有变动(记录变动文件数)，用于标记是否需要写回缓存 */
+      tsCheckFilesPassedChanged: 0,
     };
     this.stats = stats;
     return stats;
@@ -83,13 +83,13 @@ export class TsCheck {
     return this.config;
   }
   private init() {
-    const { whiteListFilePath, removeCache, cache } = this.config;
+    const { whiteListFilePath, removeCache } = this.config;
 
     if (fs.existsSync(this.cacheFilePath)) {
       try {
         if (removeCache) {
           fs.unlinkSync(this.cacheFilePath);
-        } else if (cache) {
+        } else {
           const cacheInfo = JSON.parse(fs.readFileSync(this.cacheFilePath, { encoding: 'utf8' }));
           if (cacheInfo.tsCheckFilesPassed) this.stats.tsCache = cacheInfo;
         }
@@ -142,23 +142,23 @@ export class TsCheck {
     /** 白名单命中数量 */
     let whiteListHits = 0;
 
-    sourceFiles = sourceFiles.filter(name => {
-      const shortpath = fixToshortPath(name, config.rootDir);
+    sourceFiles = sourceFiles.filter(filepath => {
+      const shortpath = fixToshortPath(filepath, config.rootDir);
 
       if (this.whiteList[shortpath]) {
         whiteListHits++;
         return false;
       }
 
-      // 缓存过滤
-      if (config.cache) {
-        if (tsCheckFilesPassed[shortpath] && tsCheckFilesPassed[shortpath].md5 === md5(name, true)) {
-          cacheHits++;
-          return false;
-        }
+      const fileMd5 = md5(filepath, true);
 
+      if (!tsCheckFilesPassed[shortpath]) {
         // 新文件：先放到 tsCheckFilesPassed 中
-        tsCheckFilesPassed[shortpath] = { md5: '', updateTime: stats.startTime };
+        tsCheckFilesPassed[shortpath] = { md5: fileMd5, updateTime: null };
+      } else if (config.cache && tsCheckFilesPassed[shortpath].md5 === fileMd5) {
+        // 缓存过滤
+        cacheHits++;
+        return false;
       }
 
       return true;
@@ -225,8 +225,8 @@ export class TsCheck {
           this.whiteList[shortpath] = ts.DiagnosticCategory[item.category] as never;
 
         if (tsCheckFilesPassed[shortpath]) {
-          // 移除缓存
-          if (tsCheckFilesPassed[shortpath].updateTime === stats.startTime) stats.tsCheckFilesPassedChanged = true;
+          // 从已有中移除缓存，需标记缓存有变更
+          if (tsCheckFilesPassed[shortpath].updateTime != null) stats.tsCheckFilesPassedChanged++;
           delete tsCheckFilesPassed[shortpath];
         }
       }
@@ -268,15 +268,40 @@ export class TsCheck {
     // checkUnUse(tsFiles);
     return { tsFiles, subDirection };
   }
+  private updateCache() {
+    const { config, stats } = this;
+    const { tsCache } = stats;
+    const passedFileList = Object.keys(tsCache.tsCheckFilesPassed);
+    /** 在白名单列表中但本次检测无异常的文件列表（将从白名单列表中移除） */
+    const removeFromWhiteList: string[] = [];
+
+    for (const shortpath of passedFileList) {
+      const item = tsCache.tsCheckFilesPassed[shortpath];
+      if (!item.updateTime) {
+        item.updateTime = stats.startTime;
+        stats.tsCheckFilesPassedChanged++;
+      }
+      // if (item.updateTime === stats.startTime) stats.tsCheckFilesPassedChanged = true;
+
+      if (this.whiteList[shortpath]) {
+        delete this.whiteList[shortpath];
+        removeFromWhiteList.push(shortpath);
+      }
+    }
+
+    if (stats.tsCheckFilesPassedChanged) {
+      fs.writeFileSync(this.cacheFilePath, JSON.stringify(tsCache, void 0, 2));
+      this.logger.info(`update cache(${stats.tsCheckFilesPassedChanged}):`, cyanBright(fixToshortPath(this.cacheFilePath, config.rootDir)));
+    }
+
+    return { removeFromWhiteList };
+  }
   /** 执行 ts check */
   public check(tsFiles = this.config.tsFiles) {
     this.logger.info('start checking');
     this.init();
 
     const { config, stats } = this;
-    const { tsCache } = stats;
-    /** 在白名单列表中但本次检测无异常的文件列表（将从白名单列表中移除） */
-    const removeFromWhiteList = [];
     const directionMap = {
       // 没有 tsconfig.json 独立配置文件的子目录文件，也将全部放到这里一起编译
       [config.rootDir]: tsFiles || [],
@@ -306,28 +331,7 @@ export class TsCheck {
 
     for (const d of Object.keys(directionMap)) this.compile(directionMap[d], d);
 
-    if (config.cache || config.removeCache) {
-      const passedFileList = Object.keys(tsCache.tsCheckFilesPassed);
-
-      for (const shortpath of passedFileList) {
-        const item = tsCache.tsCheckFilesPassed[shortpath];
-        if (!item.md5) {
-          item.md5 = md5(path.resolve(config.rootDir, shortpath), true);
-          stats.tsCheckFilesPassedChanged = true;
-        }
-
-        if (this.whiteList[shortpath]) {
-          delete this.whiteList[shortpath];
-          removeFromWhiteList.push(shortpath);
-        }
-        // if (item.updateTime === stats.startTime) stats.tsCheckFilesPassedChanged = true;
-      }
-
-      if (stats.tsCheckFilesPassedChanged) {
-        fs.writeFileSync(this.cacheFilePath, JSON.stringify(tsCache, void 0, 2));
-        this.logger.info('Write to cache:', cyanBright(fixToshortPath(this.cacheFilePath, config.rootDir)));
-      }
-    }
+    const { removeFromWhiteList } = this.updateCache();
 
     if (config.toWhiteList) {
       if (!fs.existsSync(path.dirname(config.whiteListFilePath))) fs.mkdirSync(path.dirname(config.whiteListFilePath), { recursive: true });

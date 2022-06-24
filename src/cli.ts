@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2022-05-25 10:55:26
+ * @LastEditTime: 2022-06-24 11:08:21
  * @Description: cli 工具
  */
 import { Option, program } from 'commander';
@@ -53,6 +53,7 @@ program
   .option('--src <src...>', `指定要检测的源码目录。默认为 src`)
   .option('--only-changes', `只检测 git 仓库变更的文件`, false)
   .option('--cache', `开启缓存模式。`, false)
+  // .option('--no-cache', `禁用缓存模式。`)
   .option('--remove-cache', `移除已存在的缓存。`, false)
   .option('--no-exit-on-error', `检测到异常时，不以非 0 值立即退出。`)
   .option('--toWhiteList', `是否将检测到异常的文件输出到白名单文件列表中。`, false)
@@ -95,7 +96,7 @@ program
     if (options.projectName) config.jira.projectName = options.projectName;
     if (options.commitEdit) config.jira.COMMIT_EDITMSG = options.commitEdit;
 
-    for (const key of ['src', 'fix', 'wxWorkKeys', 'debug', 'cache', 'silent', 'removeCache']) {
+    for (const key of ['src', 'fix', 'wxWorkKeys', 'debug', 'cache', 'removeCache']) {
       if (options[key] != null) config[key] = options[key];
     }
 
@@ -208,7 +209,9 @@ program
 program
   .command('pmcheck [packageManagerName]')
   .description(
-    `[utils]用于包管理工具约束，可配置为 scripts.preinstall 命令。如限制只可使用 pnpm: ${color.green(`"preinstall": "flh pmcheck pnpm"`)}`
+    `[utils]用于包管理工具约束，可配置为 ${color.greenBright('scripts.preinstall')} 命令。\n\t 例如，限制只可使用 pnpm: ${color.green(
+      `"preinstall": "npx @lzwme/fed-lint-helper pmcheck pnpm"`
+    )}`
   )
   .action((pmName: string) => {
     const programOptions = program.opts();
