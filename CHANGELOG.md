@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.8.3](https://github.com/lzwme/fed-lint-helper/compare/v1.8.2...v1.8.3) (2022-06-28)
+
+
+### Bug Fixes
+
+* 修复 tscheck 白名单移除逻辑与本地缓存匹配异常的问题 ([1839488](https://github.com/lzwme/fed-lint-helper/commit/1839488ae5920a38fb2e24b39f2234bbda538b6b))
+
 ### [1.8.2](https://github.com/lzwme/fed-lint-helper/compare/v1.8.1...v1.8.2) (2022-06-24)
 
 ### [1.8.1](https://github.com/lzwme/fed-lint-helper/compare/v1.8.0...v1.8.1) (2022-06-23)
