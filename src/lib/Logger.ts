@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2022-04-08 10:30:02
  * @LastEditors: lzw
- * @LastEditTime: 2022-05-17 20:41:06
+ * @LastEditTime: 2022-06-28 22:01:57
  * @Description:
  */
 /* eslint no-console: 0 */
@@ -90,22 +90,26 @@ export class Logger {
   }
   public setLogDir(logDir: string) {
     if (!logDir || !fs?.createWriteStream) return;
-    if (logDir === this.logDir) return;
-    this.logDir = logDir;
+
+    let logPath = logDir;
+
+    if (logDir.endsWith('.log')) {
+      logDir = path.dirname(logDir);
+    } else {
+      const curTime = new Date().toISOString().slice(0, 10).replace(/\D/g, '');
+      logPath = path.resolve(logDir, `${this.tag.replace(/[^\dA-Za-z]/g, '')}_${curTime}.log`);
+    }
+
+    if (logPath === this.logPath) return;
 
     const logFsStream = fsStreamCache[this.logPath];
     if (logFsStream) {
-      logFsStream.destroy();
+      logFsStream.close();
       delete fsStreamCache[this.logPath];
     }
 
-    if (logDir.endsWith('.log')) {
-      this.logPath = logDir;
-      this.logDir = path.dirname(logDir);
-    } else {
-      const curTime = new Date().toTimeString().slice(0, 8).replace(/\D/g, '');
-      this.logPath = path.resolve(logDir, `${this.tag.replace(/[^\dA-Za-z]/g, '')}_${curTime}.log`);
-    }
+    this.logDir = logDir;
+    this.logPath = logPath;
   }
   /** 更新服务器时间，计算时间差并返回 */
   static setServerTime(serverTime: number) {

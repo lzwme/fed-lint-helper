@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-06-23 22:32:47
+ * @LastEditTime: 2022-06-28 17:54:35
  * @Description:  jest check
  */
 
@@ -83,11 +83,8 @@ export class JestCheck {
     if (fs.existsSync(this.cacheFilePath) && config.removeCache) fs.unlinkSync(this.cacheFilePath);
 
     // 文件列表过滤
-    config.fileList = config.fileList.filter(filepath => {
-      // 必须以 spec|test.ts|js 结尾
-      if (!/\.(spec|test)\.(ts|js)x?$/i.test(filepath)) return false;
-      return true;
-    });
+    // 必须以 spec|test.ts|js 结尾
+    config.fileList = config.fileList.filter(filepath => /\.(spec|test)\.(ts|js)x?$/i.test(filepath));
   }
   /**
    * 获取 Jest Options
@@ -134,7 +131,7 @@ export class JestCheck {
 
     this.logger.debug('total test files:', color.magentaBright(specFileList.length));
 
-    if (config.cache && fs.existsSync(this.cacheFilePath)) {
+    if (specFileList.length > 0 && config.cache && fs.existsSync(this.cacheFilePath)) {
       Object.assign(jestPassedFiles, JSON.parse(fs.readFileSync(this.cacheFilePath, 'utf8')));
 
       specFileList = specFileList.filter(filepath => {
@@ -170,33 +167,38 @@ export class JestCheck {
     this.init();
 
     const { logger, stats, config, cacheFilePath } = this;
+    const isCheckAll = config.fileList.length === 0;
     const info: JestCheckResult = {
       isPassed: true,
       /** 文件总数 */
       // total: results.length,
     };
 
+    // 全量检测默认使用 jest-cli
+    if (isCheckAll && config.useJestCli == null) this.config.useJestCli = true;
+
     stats.isPassed = true;
     logger.debug('[options]:', config, specFileList);
     specFileList = await this.getSpecFileList(specFileList);
 
-    if (specFileList.length === 0) info;
+    if (specFileList.length === 0) return info;
 
     logger.info(`Total Spec Files:`, specFileList.length);
     logger.debug(specFileList);
 
     if (config.silent || config.useJestCli) {
+      const files = isCheckAll ? config.src : specFileList;
+
       stats.isPassed = await new Promise(resolve => {
         exec(
-          `node --max_old_space_size=4096 ./node_modules/jest/bin/jest.js --unhandled-rejections=strict --forceExit ${specFileList
+          `node --max_old_space_size=4096 ./node_modules/jest/bin/jest.js --unhandled-rejections=strict --forceExit ${files
             .map(f => f.replace(/\\/g, '\\\\'))
             .join(' ')}`,
           (error, _stdout, _stderr) => {
             if (error) {
-              console.error(error);
+              this.logger.error(error);
               return resolve(false);
             }
-
             resolve(true);
           }
         );
@@ -268,25 +270,24 @@ export class JestCheck {
   }
   /** 执行 jest 校验 */
   async start(fileList?: string[]) {
-    if (fileList && fileList !== this.config.fileList) this.config.fileList = fileList;
-    // 全量检测默认使用 jest-cli
-    if (this.config.fileList.length === 0 && this.config.useJestCli == null) this.config.useJestCli = true;
+    const { config, logger, stats } = this;
+    if (fileList && fileList !== config.fileList) config.fileList = fileList;
     this.init();
 
     let result: JestCheckResult = { isPassed: true };
 
-    if (this.config.fileList.length === 0 && (fileList || this.config.src.length === 0)) {
-      this.logger.info('No files to process\n');
+    if (config.fileList.length === 0 && (fileList || config.src.length === 0)) {
+      logger.info('No files to process\n');
       return result;
     }
 
-    if (this.config.mode === 'proc') result = await this.checkInChildProc();
-    else if (this.config.mode === 'thread') result = await this.checkInWorkThreads();
+    if (config.mode === 'proc') result = await this.checkInChildProc();
+    else if (config.mode === 'thread') result = await this.checkInWorkThreads();
     else result = await this.check();
 
-    this.stats.isPassed = !!result.isPassed;
-    this.logger.debug('result', result);
-    if (!result.isPassed && this.config.exitOnError) exit(-1, 0, 'JestCheck');
+    stats.isPassed = !!result.isPassed;
+    logger.debug('result', result);
+    if (!result.isPassed && config.exitOnError) exit(-1, 0, 'JestCheck');
 
     return result;
   }

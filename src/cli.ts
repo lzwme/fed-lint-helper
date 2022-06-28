@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2022-06-24 11:08:21
+ * @LastEditTime: 2022-06-28 21:56:36
  * @Description: cli 工具
  */
 import { Option, program } from 'commander';
@@ -13,9 +13,11 @@ import type { FlhConfig, TsCheckConfig, JiraCheckConfig, CommitLintOptions } fro
 import { getHeadDiffFileList, formatWxWorkKeys } from './utils';
 import { getConfig, config, mergeCommConfig } from './config';
 import { rmdir } from './rmdir';
+import { getLogger } from './utils';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const packageInfo = require('../../package.json');
+const logger = getLogger();
 
 interface POptions
   extends Pick<TsCheckConfig, 'toWhiteList'>,
@@ -68,7 +70,8 @@ program
   .addOption(new Option('--jira-type <type>', `执行 jira 检查的类型。可选值：`).choices(['commit', 'pipeline']))
   .option('--projectName', `指定 git 仓库项目名（用于 jira check）`)
   .option('--jest', `执行 jest 单元测试`)
-  .action((options: POptions) => {
+  .action(() => {
+    const options = getProgramOptions();
     const config: FlhConfig = {
       exitOnError: options.exitOnError !== false,
       checkOnInit: false,
@@ -100,22 +103,18 @@ program
       if (options[key] != null) config[key] = options[key];
     }
 
-    let changeFiles: string[];
-    if (options.onlyChanges) {
-      changeFiles = getHeadDiffFileList();
-      if (options.debug) console.log('changeFiles:', changeFiles);
-    }
-
     const baseConfig = getConfig(mergeCommConfig(config, false));
     let hasAction = false;
+    const changeFiles: string[] = options.onlyChanges ? getHeadDiffFileList() : null;
 
-    if (options.debug) console.log(options, baseConfig);
+    logger.debug(options, baseConfig);
+    if (options.onlyChanges) logger.debug('changeFiles:', changeFiles);
 
     if (options.tscheck) {
       hasAction = true;
       import('./ts-check').then(({ TsCheck }) => {
         const tsCheck = new TsCheck(baseConfig.tscheck);
-        tsCheck.start(changeFiles).then(result => options.debug && console.log('tscheck done!', result));
+        tsCheck.start(changeFiles).then(result => logger.debug('tscheck done!', result));
       });
     }
 
@@ -123,7 +122,7 @@ program
       hasAction = true;
       import('./eslint-check').then(({ ESLintCheck }) => {
         const eslintCheck = new ESLintCheck(baseConfig.eslint);
-        eslintCheck.start(changeFiles).then(result => options.debug && console.log('eslint done!', result));
+        eslintCheck.start(changeFiles).then(result => logger.debug('eslint done!', result));
       });
     }
 
@@ -131,7 +130,7 @@ program
       hasAction = true;
       import('./jest-check').then(({ JestCheck }) => {
         const jestCheck = new JestCheck(baseConfig.jest);
-        jestCheck.start(changeFiles).then(result => options.debug && console.log('jestCheck done!', result));
+        jestCheck.start(changeFiles).then(result => logger.debug('jestCheck done!', result));
       });
     }
 
@@ -139,7 +138,7 @@ program
       hasAction = true;
       import('./jira-check').then(({ JiraCheck }) => {
         const jestCheck = new JiraCheck(baseConfig.jira);
-        jestCheck.start().then(result => options.debug && console.log('jestCheck done!', result));
+        jestCheck.start().then(result => logger.debug('jestCheck done!', result));
       });
     }
 
@@ -165,13 +164,13 @@ program
 
     if (options.config) {
       if (fs.existsSync(config.configPath) && !options.force) {
-        return console.log(color.yellowBright(`当前目录下已存在配置文件：`), color.cyan(config.configPath));
+        return logger.log(color.yellowBright(`当前目录下已存在配置文件：`), color.cyan(config.configPath));
       }
 
       const tpl = path.resolve(__dirname, '../../.flh.config.sample.js');
       const cfgInfo = fs.readFileSync(tpl, 'utf8').replace(`import('./src/config')`, `import('${packageInfo.name}')`);
       fs.writeFileSync(config.configPath, cfgInfo, 'utf8');
-      console.log(`已在当前目录下生成配置文件：`, color.cyan(config.configPath));
+      logger.log(`已在当前目录下生成配置文件：`, color.cyan(config.configPath));
     }
   });
 
@@ -189,12 +188,12 @@ program
   .description('[utils]发送消息通知（当前仅支持企业微信机器人通知）')
   .option('--wx-work-keys <key...>', '发送至企业微信机器人，需指定 webhook key 的值，可指定多个机器人')
   .action((message: string, options) => {
-    const programOptions = program.opts();
-    // console.log(message, options, programOptions);
+    const programOptions = getProgramOptions();
+    logger.debug(message, options, programOptions);
     if (options.wxWorkKeys) {
       options.wxWorkKeys = formatWxWorkKeys(options.wxWorkKeys);
       if (options.wxWorkKeys.length === 0) {
-        console.log('企业微信机器人 webhook 格式不正确');
+        logger.log('企业微信机器人 webhook 格式不正确');
         process.exit(-1);
       } else {
         import('./lib/WXWork').then(({ wxWorkNotify }) => {
@@ -214,7 +213,7 @@ program
     )}`
   )
   .action((pmName: string) => {
-    const programOptions = program.opts();
+    const programOptions = getProgramOptions();
     if (!pmName) {
       const baseConfig = getConfig({}, false);
       pmName = baseConfig.pmcheck;
@@ -223,3 +222,11 @@ program
   });
 
 program.parse(process.argv);
+
+function getProgramOptions() {
+  const options = program.opts<POptions>();
+
+  if (options.debug) logger.updateOptions({ levelType: 'debug' });
+
+  return options;
+}

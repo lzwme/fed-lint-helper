@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-06-09 20:25:43
+ * @LastEditTime: 2022-06-28 21:57:18
  * @Description:
  */
 
@@ -13,6 +13,7 @@ import { assign, ValueOf, formatWxWorkKeys } from './utils';
 import type { ESLint } from 'eslint';
 import type { Config } from '@jest/types';
 import type { IncomingHttpHeaders } from 'http';
+import { getLogger } from './utils/get-logger';
 
 interface CommConfig {
   /** 项目根目录，默认为当前工作目录 */
@@ -154,6 +155,8 @@ export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {
   configPath?: string;
   /** 根目录，默认为当前执行目录 */
   rootDir?: string;
+  /** 日志存放目录 */
+  logDir?: string;
   /** 是否开启调试模式(打印更多的细节) */
   debug?: boolean;
   /** 企业微信机器人 webhook key 配置，用于 ci 中发送通知。可配置多个 */
@@ -187,6 +190,7 @@ const commConfig: CommConfig = {
 export const config: FlhConfig = {
   configPath: '.flh.config.js',
   cacheLocation: `node_modules/.cache/flh/`,
+  logDir: `node_modules/.cache/flh/log`,
   tscheck: {
     tsFiles: [],
     exclude: ['**/*.test.{ts,tsx}', '**/*/*.mock.{ts,tsx}', '**/*/*.d.ts'],
@@ -254,6 +258,7 @@ export function mergeCommConfig(options: FlhConfig, useDefault = true) {
  */
 export function getConfig(options?: FlhConfig, useCache = isInited) {
   if (useCache && !options) return config;
+  const logger = getLogger();
 
   if (options && options.configPath) config.configPath = options.configPath;
 
@@ -265,13 +270,16 @@ export function getConfig(options?: FlhConfig, useCache = isInited) {
       const cfg: FlhConfig = require(configPath);
       assign(config, cfg);
     } else if (config.debug || (options && options.debug)) {
-      console.log(color.yellowBright(`配置文件不存在：${configPath}`));
+      logger.log(color.yellowBright(`配置文件不存在：${configPath}`));
     }
   }
 
   // 直接入参的优先级最高
   if (options) assign(config, options);
-  if (config.debug) config.silent = false;
+  if (config.debug) {
+    config.silent = false;
+    logger.updateOptions({ levelType: 'debug' });
+  }
 
   // 公共通用配置
   mergeCommConfig(config);
@@ -283,6 +291,7 @@ export function getConfig(options?: FlhConfig, useCache = isInited) {
 
   config.wxWorkKeys = formatWxWorkKeys(config.wxWorkKeys);
   isInited = true;
+  if (config.logDir) logger.setLogDir(config.logDir);
 
   return config;
 }
