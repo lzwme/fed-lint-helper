@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-06-09 20:45:50
+ * @LastEditTime: 2022-06-28 22:48:59
  * @Description:  eslint check
  */
 
@@ -48,14 +48,12 @@ export class ESLintCheck {
   private stats = this.getInitStats();
   /** 白名单列表 */
   private whiteList = {} as { [filepath: string]: 'e' | 'w' }; // ts.DiagnosticCategory
-  /** 缓存文件路径（eslintOptions.cacheLocation）。默认为 <config.rootDir>/node_modules/.cache/flh/eslintcache.json */
-  private cacheFilePath = 'node_modules/.cache/flh/eslintcache.json';
+  /** 缓存文件路径（eslintOptions.cacheLocation） */
+  private cacheFilePath = 'node_modules/.cache/flh/eslintCache.json';
   private logger: ReturnType<typeof getLogger>;
 
   constructor(private config: ESLintCheckConfig = {}) {
     config = this.parseConfig(config);
-    const level = config.silent ? 'silent' : config.debug ? 'debug' : 'log';
-    this.logger = getLogger(`[ESLint]`, level);
     this.logger.debug('config', this.config);
     if (config.checkOnInit) this.start();
   }
@@ -86,6 +84,9 @@ export class ESLintCheck {
     this.config = assign<ESLintCheckConfig>({ fix: baseConfig.fix }, baseConfig.eslint, config);
     this.cacheFilePath = path.resolve(this.config.rootDir, baseConfig.cacheLocation, 'eslintCache.json');
     this.config.whiteListFilePath = path.resolve(this.config.rootDir, this.config.whiteListFilePath);
+
+    const level = this.config.silent ? 'silent' : this.config.debug ? 'debug' : 'log';
+    this.logger = getLogger(`[ESLint]`, level, baseConfig.logDir);
     return this.config;
   }
   private init() {

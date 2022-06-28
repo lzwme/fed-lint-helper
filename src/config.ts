@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-06-28 21:57:18
+ * @LastEditTime: 2022-06-28 22:24:06
  * @Description:
  */
 
@@ -295,3 +295,6 @@ export function getConfig(options?: FlhConfig, useCache = isInited) {
 
   return config;
 }
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+export const VERSION: string = require('../../package.json').version;

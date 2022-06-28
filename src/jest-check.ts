@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-06-28 17:54:35
+ * @LastEditTime: 2022-06-28 22:49:30
  * @Description:  jest check
  */
 
@@ -39,8 +39,6 @@ export class JestCheck {
 
   constructor(private config: JestCheckConfig = {}) {
     config = this.parseConfig(config);
-    const level = config.silent ? 'silent' : config.debug ? 'debug' : 'log';
-    this.logger = getLogger(`[Jest]`, level);
     this.logger.debug('config', this.config);
     if (this.config.checkOnInit) this.start();
   }
@@ -75,6 +73,9 @@ export class JestCheck {
     if (config !== this.config) config = assign<JestCheckConfig>({}, this.config, config);
     this.config = assign<JestCheckConfig>({}, baseConfig.jest, config);
     this.cacheFilePath = path.resolve(this.config.rootDir, baseConfig.cacheLocation, 'jestcache.json');
+
+    const level = this.config.silent ? 'silent' : this.config.debug ? 'debug' : 'log';
+    this.logger = getLogger(`[Jest]`, level);
     return this.config;
   }
   private init() {

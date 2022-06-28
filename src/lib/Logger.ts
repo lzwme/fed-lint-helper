@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2022-04-08 10:30:02
  * @LastEditors: lzw
- * @LastEditTime: 2022-06-28 22:01:57
+ * @LastEditTime: 2022-06-28 22:43:54
  * @Description:
  */
 /* eslint no-console: 0 */
@@ -44,6 +44,7 @@ const defaultOptions: LoggerOptions = {
   color: null,
 };
 
+let headTipColored = false;
 const LogLevelHeadTip = {
   error: ['[ERROR]', 'redBright'],
   warn: ['[WARNING]', 'yellowBright'],
@@ -170,27 +171,30 @@ export class Logger {
     logFsStream.write(msg.replace(/\u001B\[\d+m/g, ''), 'utf8');
   }
   public updateOptions(options: LoggerOptions) {
-    if (!this.options.color && options.color) {
+    if (!headTipColored && options.color) {
       for (const key of Object.keys(LogLevelHeadTip)) {
         const [tag, colorType] = LogLevelHeadTip[key];
-        if (options.color[colorType]) LogLevelHeadTip[key][0] = options.color[colorType](tag);
+        if (options.color[colorType]) {
+          LogLevelHeadTip[key][0] = options.color[colorType](tag);
+          headTipColored = true;
+        }
       }
     }
-
-    if (options.logDir) this.setLogDir(options.logDir);
 
     this.options = Object.assign({}, defaultOptions, this.options);
     for (const key of Object.keys(defaultOptions)) {
       if (key in options) {
+        if (key === 'logDir') {
+          if (null == options.logDir) continue;
+          this.setLogDir(options.logDir);
+        }
         this.options[key] = options[key];
-        if (key === 'logDir') this.setLogDir(options.logDir);
       }
     }
 
     if (options.levelType in LogLevel) this.level = LogLevel[options.levelType];
-    options = this.options;
 
-    return options;
+    return this.options;
   }
 
   public static getLogger(tag?: string, options?: LoggerOptions): Logger {

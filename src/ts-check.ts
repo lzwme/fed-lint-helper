@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-06-24 11:01:03
+ * @LastEditTime: 2022-06-28 22:46:42
  * @Description: typescript Diagnostics report
  */
 
@@ -14,7 +14,7 @@ import glob from 'fast-glob';
 import minimatch from 'minimatch';
 import { fixToshortPath, md5, assign, getLogger, execSync, getTimeCost } from './utils';
 import { createForkThread } from './utils/fork';
-import { TsCheckConfig, getConfig } from './config';
+import { TsCheckConfig, getConfig, VERSION } from './config';
 import { exit } from './exit';
 
 const { bold, redBright, yellowBright, cyanBright, red, greenBright, cyan } = color;
@@ -39,8 +39,6 @@ export class TsCheck {
 
   constructor(private config: TsCheckConfig = {}) {
     config = this.parseConfig(config);
-    const level = config.silent ? 'silent' : config.debug ? 'debug' : 'log';
-    this.logger = getLogger(`[TSCheck]`, level);
     this.logger.debug('config', this.config);
     if (config.checkOnInit) this.start();
   }
@@ -62,6 +60,7 @@ export class TsCheck {
       tsCache: {
         /** 已经检测且无异常的文件列表 */
         tsCheckFilesPassed: {} as { [filepath: string]: { md5: string; updateTime: number } },
+        version: VERSION,
       },
       /** 检测通过的文件列表是否有变动(记录变动文件数)，用于标记是否需要写回缓存 */
       tsCheckFilesPassedChanged: 0,
@@ -80,6 +79,9 @@ export class TsCheck {
     this.config = assign<TsCheckConfig>({}, baseConfig.tscheck);
     this.cacheFilePath = path.resolve(this.config.rootDir, baseConfig.cacheLocation, 'tsCheckCache.json');
     this.config.whiteListFilePath = path.resolve(this.config.rootDir, this.config.whiteListFilePath);
+
+    const level = this.config.silent ? 'silent' : this.config.debug ? 'debug' : 'log';
+    this.logger = getLogger(`[TSCheck]`, level, baseConfig.logDir);
     return this.config;
   }
   private init() {
@@ -91,10 +93,11 @@ export class TsCheck {
           fs.unlinkSync(this.cacheFilePath);
         } else {
           const cacheInfo = JSON.parse(fs.readFileSync(this.cacheFilePath, { encoding: 'utf8' }));
-          if (cacheInfo.tsCheckFilesPassed) this.stats.tsCache = cacheInfo;
+          if (cacheInfo.version !== VERSION) fs.unlinkSync(this.cacheFilePath);
+          else if (cacheInfo.tsCheckFilesPassed) this.stats.tsCache = cacheInfo;
         }
       } catch (error) {
-        console.log(error.message || error.stack || error);
+        this.logger.error(error.message || error.stack || error);
       }
     }
 
@@ -103,7 +106,7 @@ export class TsCheck {
       try {
         this.whiteList = JSON.parse(fs.readFileSync(whiteListFilePath, { encoding: 'utf8' }));
       } catch (error) {
-        console.log(error.message || error.stack || error);
+        this.logger.error(error.message || error.stack || error);
       }
     }
 
@@ -336,13 +339,19 @@ export class TsCheck {
     if (config.toWhiteList) {
       if (!fs.existsSync(path.dirname(config.whiteListFilePath))) fs.mkdirSync(path.dirname(config.whiteListFilePath), { recursive: true });
       fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, void 0, 2));
-      this.logger.info('[ADD]write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
+      this.logger.info(
+        `[ADD]write to whitelist(${Object.keys(this.whiteList).length}):`,
+        cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir))
+      );
       execSync(`git add ${config.whiteListFilePath}`, void 0, config.rootDir, !config.silent);
     } else {
       if (removeFromWhiteList.length > 0) {
-        this.logger.info(' [REMOVE]write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
+        this.logger.info(
+          `[REMOVE]write to whitelist(${Object.keys(this.whiteList).length}):`,
+          cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir))
+        );
         fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, void 0, 2));
-        this.logger.info(' remove from whilelist:\n' + removeFromWhiteList.join('\n'));
+        this.logger.info(`remove from whilelist(${removeFromWhiteList.length}):\n` + removeFromWhiteList.join('\n'));
         execSync(`git add ${config.whiteListFilePath}`, void 0, config.rootDir, !config.silent);
       }
     }

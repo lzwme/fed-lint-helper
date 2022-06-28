@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-06-09 20:30:06
+ * @LastEditTime: 2022-06-28 22:50:02
  * @Description:  Jira check
  */
 
@@ -103,8 +103,6 @@ export class JiraCheck {
 
   constructor(private config: JiraCheckConfig = {}) {
     config = this.parseConfig(config);
-    const level = config.silent ? 'silent' : config.debug ? 'debug' : 'log';
-    this.logger = getLogger(`[JIRA][${config.type}]`, level);
     this.logger.debug('config', this.config);
     if (config.checkOnInit) this.start();
   }
@@ -138,7 +136,10 @@ export class JiraCheck {
       if (!value.endsWith('-')) config.issuePrefix[index] = value + '-';
     }
 
+    const level = config.silent ? 'silent' : config.debug ? 'debug' : 'log';
+    this.logger = getLogger(`[JIRA][${config.type}]`, level, baseConfig.logDir);
     this.config = config;
+
     return this.config;
   }
   private init() {
