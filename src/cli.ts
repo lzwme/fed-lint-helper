@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2022-06-28 21:56:36
+ * @LastEditTime: 2022-06-29 17:23:42
  * @Description: cli 工具
  */
 import { Option, program } from 'commander';
@@ -180,6 +180,7 @@ program
   .option('-s, --silent', '是否静默执行', false)
   .option('-f, --force', '是否强制执行', false)
   .action((list: string[], options) => {
+    getProgramOptions();
     rmdir(list, options.silent, options.force);
   });
 

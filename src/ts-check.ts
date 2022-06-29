@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-06-29 10:10:37
+ * @LastEditTime: 2022-06-29 16:57:50
  * @Description: typescript Diagnostics report
  */
 
@@ -258,10 +258,10 @@ export class TsCheck {
     }
   }
   /** 返回指定子目录中匹配到的 ts 文件列表 */
-  private getTsFiles(subDirection: string) {
+  private async getTsFiles(subDirection: string) {
     if (!fs.existsSync(subDirection)) return void 0;
 
-    const tsFiles = glob.sync('**/*.{ts,tsx}', {
+    const tsFiles = await glob('**/*.{ts,tsx}', {
       cwd: subDirection,
       ignore: this.config.exclude as string[],
       absolute: true,
@@ -301,7 +301,7 @@ export class TsCheck {
     return { removeFromWhiteList };
   }
   /** 执行 ts check */
-  public check(tsFiles = this.config.tsFiles) {
+  public async check(tsFiles = this.config.tsFiles) {
     this.logger.info('start checking');
     this.init();
 
@@ -322,7 +322,8 @@ export class TsCheck {
       }
 
       this.logger.debug('本次检测的子目录包括：', directories);
-      for (const info of directories.map(d => this.getTsFiles(d))) {
+      const allTsFiles = await Promise.all(directories.map(d => this.getTsFiles(d)));
+      for (const info of allTsFiles) {
         if (!info || info.tsFiles.length === 0) continue;
 
         if (fs.existsSync(path.resolve(info.subDirection, config.tsConfigFileName))) {

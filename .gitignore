@@ -4,6 +4,7 @@ npm-debug.log
 /release/
 /debug/
 /dist/
+tmp
 coverage
 package-lock.json
 yarn.lock

@@ -30,7 +30,8 @@ export async function rmdir(srcs: string[], slient = false, force = false) {
 
   const list: Promise<boolean>[] = [];
   for (const source of srcs) {
-    const files = await glob(source, { cwd: process.cwd() });
+    // const files = glob.isDynamicPattern(source) ? await glob(source, { cwd: process.cwd() }) : [source];
+    const files = source.includes('*') ? await glob(source, { cwd: process.cwd() }) : [source];
     for (const filepath of files) {
       list.push(doRmdir(filepath, slient, force));
     }
