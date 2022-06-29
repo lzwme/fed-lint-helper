@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-06-28 22:48:59
+ * @LastEditTime: 2022-06-29 10:06:02
  * @Description:  eslint check
  */
 
@@ -285,7 +285,6 @@ export class ESLintCheck {
             '\n' + waringReults.map(d => fixToshortPath(d.filePath, config.rootDir)).join('\n'),
             '\n'
           );
-          // if (config.strict) exit(results.length, stats.startTime, '[ESLint]');
         }
 
         this.logger.info(bold(greenBright('Verification passed!')));
@@ -379,7 +378,7 @@ export class ESLintCheck {
 
     this.stats.success = !!result.isPassed;
     this.logger.debug('result', result);
-    if (!result.isPassed && this.config.exitOnError) exit(result.errorCount || -1, 0, 'ESLintCheck');
+    if (!result.isPassed && this.config.exitOnError) exit(result.errorCount || -1, 'ESLintCheck');
 
     return result;
   }

@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-06-28 22:46:42
+ * @LastEditTime: 2022-06-29 10:10:37
  * @Description: typescript Diagnostics report
  */
 
@@ -221,11 +221,10 @@ export class TsCheck {
           errorDiagnostics.push(item);
         }
 
-        if (
-          config.toWhiteList && // Error 级别最高
-          this.whiteList[shortpath] !== 'Error'
-        )
+        // // Error 级别最高，不能被覆盖
+        if (config.toWhiteList && this.whiteList[shortpath] !== 'Error') {
           this.whiteList[shortpath] = ts.DiagnosticCategory[item.category] as never;
+        }
 
         if (tsCheckFilesPassed[shortpath]) {
           // 从已有中移除缓存，需标记缓存有变更
@@ -273,27 +272,29 @@ export class TsCheck {
   }
   private updateCache() {
     const { config, stats } = this;
-    const { tsCache } = stats;
-    const passedFileList = Object.keys(tsCache.tsCheckFilesPassed);
+    const passedFileList = Object.keys(stats.tsCache.tsCheckFilesPassed);
     /** 在白名单列表中但本次检测无异常的文件列表（将从白名单列表中移除） */
     const removeFromWhiteList: string[] = [];
 
     for (const shortpath of passedFileList) {
-      const item = tsCache.tsCheckFilesPassed[shortpath];
+      const item = stats.tsCache.tsCheckFilesPassed[shortpath];
       if (!item.updateTime) {
         item.updateTime = stats.startTime;
         stats.tsCheckFilesPassedChanged++;
-      }
-      // if (item.updateTime === stats.startTime) stats.tsCheckFilesPassedChanged = true;
 
-      if (this.whiteList[shortpath]) {
-        delete this.whiteList[shortpath];
-        removeFromWhiteList.push(shortpath);
+        if (this.whiteList[shortpath]) {
+          delete this.whiteList[shortpath];
+          removeFromWhiteList.push(shortpath);
+        }
+      } else if (this.whiteList[shortpath]) {
+        // 在白名单中的旧缓存，可能有规则更新，缓存已不适用
+        delete stats.tsCache.tsCheckFilesPassed[shortpath];
+        stats.tsCheckFilesPassedChanged++;
       }
     }
 
     if (stats.tsCheckFilesPassedChanged) {
-      fs.writeFileSync(this.cacheFilePath, JSON.stringify(tsCache, void 0, 2));
+      fs.writeFileSync(this.cacheFilePath, JSON.stringify(stats.tsCache, void 0, 2));
       this.logger.info(`update cache(${stats.tsCheckFilesPassedChanged}):`, cyanBright(fixToshortPath(this.cacheFilePath, config.rootDir)));
     }
 
@@ -371,12 +372,12 @@ export class TsCheck {
     this.stats.success = result.failed !== 0;
 
     if (result.failed && config.printDetail) {
-      this.logger.info('Failed Files:', '\n - ' + errorFileList.join('\n - '), '\n');
+      this.logger.info(red('Failed Files:'), `\n - ${errorFileList.join('\n - ')}\n`);
     }
 
-    this.logger.info('Total :\t', result.total);
-    this.logger.info('Passed:\t', bold(greenBright(result.passed)));
-    this.logger.info('Failed:\t', bold(red(result.failed)));
+    this.logger.info(cyan('Total :\t'), result.total);
+    this.logger.info(cyan('Passed:\t'), bold(greenBright(result.passed)));
+    this.logger.info(cyan('Failed:\t'), bold(red(result.failed)));
 
     // 异常类型统计
     if (result.failed) {
@@ -394,10 +395,7 @@ export class TsCheck {
       this.logger.info(bold(greenBright('Verification passed!')));
     } else {
       this.logger.info(bold(redBright('Verification failed!')));
-      if (config.exitOnError) exit(result.failed, stats.startTime, '[TsCheck]');
     }
-
-    this.logger.info(getTimeCost(stats.startTime));
 
     return result;
   }
@@ -450,7 +448,8 @@ export class TsCheck {
 
     this.stats.success = !!result.isPassed;
     this.logger.debug('result', result);
-    if (!result.isPassed && this.config.exitOnError) exit(result.failed || -1);
+    this.logger.info(getTimeCost(this.stats.startTime));
+    if (!result.isPassed && this.config.exitOnError) exit(result.failed || -1, '[TsCheck]');
 
     return result;
   }

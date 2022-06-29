@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-06-28 22:50:02
+ * @LastEditTime: 2022-06-29 10:15:36
  * @Description:  Jira check
  */
 
@@ -481,10 +481,10 @@ export class JiraCheck {
       checkResult.isPassed = stats.success;
     } catch (error) {
       this.logger.error(error.message, error.stack);
+      checkResult.isPassed = stats.success = false;
     }
 
     this.logger.info(bold(checkResult.isPassed ? greenBright('Verification passed!') : redBright('Verification failed!')));
-    this.logger.info(getTimeCost(stats.startTime));
 
     return checkResult;
   }
@@ -525,7 +525,8 @@ export class JiraCheck {
 
     this.stats.success = !!result.isPassed;
     this.logger.debug('result', result);
-    if (!result.isPassed && this.config.exitOnError) exit(this.stats.errCount || -1, 0, 'JiraCheck');
+    this.logger.info(getTimeCost(this.stats.startTime));
+    if (!result.isPassed && this.config.exitOnError) exit(this.stats.errCount || -1, 'JiraCheck');
 
     return result;
   }

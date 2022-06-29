@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-06-28 22:24:06
+ * @LastEditTime: 2022-06-29 10:21:55
  * @Description:
  */
 
@@ -163,6 +163,8 @@ export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {
   wxWorkKeys?: string[];
   /** 自定义微信通知的消息格式化 */
   wxWorkMessageFormat?: (type: string) => string;
+  /** 自定义出错退出前执行的回调方法 */
+  beforeExitOnError?: (code: number, msg?: string) => void;
   /** 是否尝试修正可自动修正的异常 */
   fix?: boolean;
   tscheck?: TsCheckConfig;

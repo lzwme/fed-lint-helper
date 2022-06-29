@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-06-28 22:49:30
+ * @LastEditTime: 2022-06-29 10:19:47
  * @Description:  jest check
  */
 
@@ -22,8 +22,10 @@ const { bold, redBright, greenBright } = color;
 export interface JestCheckResult {
   /** 是否检测通过 */
   isPassed: boolean;
-  // total: number;
-  // errorCount: number;
+  /** 执行处理的单测文件总数 */
+  total?: number;
+  /** 失败文件数 */
+  errorCount: number;
   // fileList: string[];
   // errorFiles: string[];
 }
@@ -171,8 +173,8 @@ export class JestCheck {
     const isCheckAll = config.fileList.length === 0;
     const info: JestCheckResult = {
       isPassed: true,
-      /** 文件总数 */
-      // total: results.length,
+      total: specFileList.length,
+      errorCount: 0,
     };
 
     // 全量检测默认使用 jest-cli
@@ -214,6 +216,7 @@ export class JestCheck {
         // console.log(testFilePath, d.testFilePath);
         if (d.numFailingTests) {
           if (jestPassedFiles[testFilePath]) delete jestPassedFiles[testFilePath];
+          info.errorCount++;
         } else {
           const tsFilePath = d.testFilePath.replace('.spec.', '.');
           jestPassedFiles[testFilePath] = {
@@ -231,9 +234,6 @@ export class JestCheck {
     }
 
     logger.info(bold(stats.isPassed ? greenBright('Verification passed!') : redBright('Verification failed!')));
-    this.logger.info(getTimeCost(stats.startTime));
-
-    if (!info.isPassed && config.exitOnError) exit(-1, 0, 'JestCheck');
 
     return info;
   }
@@ -242,7 +242,6 @@ export class JestCheck {
    */
   private checkInChildProc() {
     this.logger.info('start fork child progress');
-
     return createForkThread<JestCheckResult>({
       type: 'jest',
       debug: this.config.debug,
@@ -257,7 +256,6 @@ export class JestCheck {
    */
   private checkInWorkThreads() {
     this.logger.info('start create work threads');
-
     return import('./utils/worker-threads').then(({ createWorkerThreads }) => {
       return createWorkerThreads<JestCheckResult>({
         type: 'jest',
@@ -275,7 +273,7 @@ export class JestCheck {
     if (fileList && fileList !== config.fileList) config.fileList = fileList;
     this.init();
 
-    let result: JestCheckResult = { isPassed: true };
+    let result: JestCheckResult = { isPassed: true, errorCount: 0, total: 0 };
 
     if (config.fileList.length === 0 && (fileList || config.src.length === 0)) {
       logger.info('No files to process\n');
@@ -288,7 +286,8 @@ export class JestCheck {
 
     stats.isPassed = !!result.isPassed;
     logger.debug('result', result);
-    if (!result.isPassed && config.exitOnError) exit(-1, 0, 'JestCheck');
+    logger.info(getTimeCost(stats.startTime));
+    if (!result.isPassed && config.exitOnError) exit(result.errorCount || -1, 'JestCheck');
 
     return result;
   }

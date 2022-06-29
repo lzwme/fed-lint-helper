@@ -8,16 +8,24 @@ import { sleep } from './utils/common';
  * @param {number} code 退出码
  * @param {number} startTime 开始时间，存在则打印执行时间成本
  */
-export async function exit(code = 0, startTime = 0, prefix = '') {
+export async function exit(code = 0, prefix = '', startTime = 0) {
   if (startTime) logTimeCost(startTime, prefix);
-  if (code !== 0 && config.wxWorkKeys.length > 0) {
-    // 企业微信通知
-    let message = '';
-    if (typeof config.wxWorkMessageFormat === 'function') {
-      message = config.wxWorkMessageFormat(prefix);
+  if (code !== 0) {
+    if (config.wxWorkKeys.length > 0 && prefix !== 'wx') {
+      // 企业微信通知
+      let message = '';
+      if (typeof config.wxWorkMessageFormat === 'function') {
+        message = config.wxWorkMessageFormat(prefix);
+      }
+      await wxWorkNotify(message || `${prefix}任务执行失败，请检查`, config.wxWorkKeys, config.debug);
+      await sleep(100);
     }
-    await wxWorkNotify(message || `${prefix}任务执行失败，请检查`, config.wxWorkKeys, config.debug);
-    await sleep(100);
+
+    if (typeof config.beforeExitOnError === 'function') {
+      await config.beforeExitOnError(code, prefix);
+      await sleep(100);
+    }
   }
+
   process.exit(code || 0);
 }
