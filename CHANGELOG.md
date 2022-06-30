@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.9.0](https://github.com/lzwme/fed-lint-helper/compare/v1.8.3...v1.9.0) (2022-06-30)
+
+
+### Features
+
+* 新增 beforeExitOnError 参数，用于自定义异常退出前执行的方法 ([27ca89f](https://github.com/lzwme/fed-lint-helper/commit/27ca89f35ed46a76ebd824a05ab10d31739944d3))
+
+
+### Bug Fixes
+
+* 修复使用 fast-glob 后 rm 命令删除失效问题 ([cea0496](https://github.com/lzwme/fed-lint-helper/commit/cea0496c5fa990f4bec39bf99fef16a8fce5a26d))
+
 ### [1.8.3](https://github.com/lzwme/fed-lint-helper/compare/v1.8.2...v1.8.3) (2022-06-28)
 
 
