@@ -3,7 +3,7 @@
  * @Author: lzw
  * @Date: 2021-12-24 13:01:39
  * @LastEditors: lzw
- * @LastEditTime: 2022-05-05 17:14:04
+ * @LastEditTime: 2022-06-30 22:11:05
  * @Description: 企业微信机器人通知
  */
 
@@ -47,15 +47,14 @@ export function wxWorkNotify(params: string | Record<string, any>, webhookUrl: s
 
   if (debug) getLogger(null, 'debug').debug('[wxWorkNotify]', webhookUrl, params);
 
-  return api
-    .post<WxWorkResult>(webhookUrl, params, {
-      'content-type': 'application/json',
-      type: 'payload',
-    })
-    .then(d => {
-      getLogger().log(`[wxWorkNotify][${d.data.errcode}]`, debug ? JSON.stringify(d.data) : d.data.errmsg);
-      return d.data;
-    });
+  return api.post<WxWorkResult>(webhookUrl, params, { 'content-type': 'application/json' }).then(d => {
+    getLogger().log(`[wxWorkNotify][${d.data.errcode}]`, debug ? JSON.stringify(d.data) : d.data.errmsg);
+    return d.data;
+  });
 }
 
 // wxWorkNotify('hello!');
+if (module === require.main) {
+  const argv = process.argv.slice(2);
+  if (argv.length >= 2) wxWorkNotify(argv[0], argv[1], argv[2] != null);
+}

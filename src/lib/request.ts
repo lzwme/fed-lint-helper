@@ -64,12 +64,12 @@ export class Request {
   getCookie(isString = true) {
     return isString ? this.cookies.join('; ') : this.cookies;
   }
-  request<T = PlainObject>(method: string, url: string, parameters: PlainObject, headers?: http.IncomingHttpHeaders) {
-    const urlObject = new URL(url);
+  request<T = PlainObject>(method: string, url: string | URL, parameters: PlainObject, headers?: http.IncomingHttpHeaders) {
+    const urlObject = typeof url === 'string' ? new URL(url) : url;
     const options: https.RequestOptions = {
-      hostname: urlObject.host,
+      hostname: urlObject.host.split(':')[0],
       port: urlObject.port,
-      path: urlObject.href,
+      path: urlObject.href.split(urlObject.host)[1],
       method: method,
       headers: this.getHeaders(urlObject, headers),
     };
