@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.9.1](https://github.com/lzwme/fed-lint-helper/compare/v1.9.0...v1.9.1) (2022-07-01)
+
+
+### Bug Fixes
+
+* 修复 request 方法 url 包含端口号时请求异常问题 ([33a0696](https://github.com/lzwme/fed-lint-helper/commit/33a0696788bdc48e89dfa5ded0a423bfdda3fc27))
+
 ## [1.9.0](https://github.com/lzwme/fed-lint-helper/compare/v1.8.3...v1.9.0) (2022-06-30)
 
 
