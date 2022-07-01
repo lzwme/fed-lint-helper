@@ -13,11 +13,9 @@ export async function exit(code = 0, prefix = '', startTime = 0) {
   if (code !== 0) {
     if (config.wxWorkKeys.length > 0 && prefix !== 'wx') {
       // 企业微信通知
-      let message = '';
-      if (typeof config.wxWorkMessageFormat === 'function') {
-        message = config.wxWorkMessageFormat(prefix);
-      }
-      await wxWorkNotify(message || `${prefix}任务执行失败，请检查`, config.wxWorkKeys, config.debug);
+      const message =
+        typeof config.wxWorkMessageFormat === 'function' ? config.wxWorkMessageFormat(prefix) : `${prefix}任务执行失败，请检查`;
+      await wxWorkNotify(message, config.wxWorkKeys, config.debug);
       await sleep(100);
     }
 

@@ -78,17 +78,18 @@ export function md5(str: string | Buffer, isFile = false) {
 
 export const sleep = (delay = 100) => new Promise(rs => setTimeout(() => rs(true), delay));
 
+/** 将32位字符串转换为 uuid 标准格式 */
+export function toUuidFormat(uuid: string) {
+  if (/^[\da-z]{32}$/i.test(uuid)) {
+    uuid = [...uuid].map((s, index) => ([7, 11, 15, 19].includes(index) ? `${s}-` : s)).join('');
+  }
+  return uuid;
+}
+
 export function formatWxWorkKeys(keys: string | string[]) {
   if (!keys) return [];
   if (!Array.isArray(keys)) keys = [keys];
-  return keys
-    .filter(d => /[\da-z]{8}(-?[\da-z]{4}){3}-?[\da-z]{12}/i.test(d))
-    .map(d => {
-      if (/^[\da-z]{32}$/i.test(d)) {
-        d = [...d].map((s, index) => ([7, 11, 15, 19].includes(index) ? `${s}-` : s)).join('');
-      }
-      return d;
-    });
+  return keys.filter(d => /[\da-z]{8}(-?[\da-z]{4}){3}-?[\da-z]{12}/i.test(d)).map(d => toUuidFormat(d));
 }
 
 /** 清除指定模块的 require 缓存（内存清理或实现热更新） */

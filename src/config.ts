@@ -2,18 +2,18 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-06-29 10:21:55
+ * @LastEditTime: 2022-07-01 10:21:37
  * @Description:
  */
 
 import { color } from 'console-log-colors';
 import fs from 'fs';
 import path from 'path';
-import { assign, ValueOf, formatWxWorkKeys } from './utils';
 import type { ESLint } from 'eslint';
 import type { Config } from '@jest/types';
 import type { IncomingHttpHeaders } from 'http';
-import { getLogger } from './utils/get-logger';
+import { type WxWorkReqParams } from './lib/WXWork';
+import { assign, ValueOf, formatWxWorkKeys, getLogger } from './utils';
 
 interface CommConfig {
   /** 项目根目录，默认为当前工作目录 */
@@ -162,7 +162,7 @@ export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {
   /** 企业微信机器人 webhook key 配置，用于 ci 中发送通知。可配置多个 */
   wxWorkKeys?: string[];
   /** 自定义微信通知的消息格式化 */
-  wxWorkMessageFormat?: (type: string) => string;
+  wxWorkMessageFormat?: (type: string) => string | WxWorkReqParams;
   /** 自定义出错退出前执行的回调方法 */
   beforeExitOnError?: (code: number, msg?: string) => void;
   /** 是否尝试修正可自动修正的异常 */
