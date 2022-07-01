@@ -62,7 +62,7 @@ export interface WxWorkReqParams {
       desc: string;
     };
     /** 图片样式 */
-    card_image?:  {
+    card_image?: {
       url: string;
       aspect_ratio?: number;
     };

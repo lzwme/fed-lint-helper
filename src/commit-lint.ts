@@ -32,7 +32,7 @@ const helpTips = {
 export function commitMessageVerify(options?: CommitLintOptions) {
   let isPass = true;
   const commitRE =
-    /^(((\uD83C[\uDF00-\uDFFF])|(\uD83D[\uDC00-\uDE4F\uDE80-\uDEFF])|[\u2600-\u2B55]) )?(revert: )?(feat|fix|docs|UI|refactor|perf|workflow|build|ci|typos|chore|test|types|wip|release|dep|locale｜example｜Merge)(\(.+\))?: .{1,100}/;
+    /^(((\uD83C[\uDF00-\uDFFF])|(\uD83D[\uDC00-\uDE4F\uDE80-\uDEFF])|[\u2600-\u2B55]) )?(revert: )?(feat|fix|docs|UI|refactor|perf|workflow|build|ci|typos|chore|test|types|wip|release|dep|locale｜example｜Merge|style)(\(.+\))?: .{1,100}/;
 
   options = Object.assign({ exitOnError: true, useAngularStyle: true } as CommitLintOptions, config.commitlint, options);
 
