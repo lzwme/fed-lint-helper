@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.9.2](https://github.com/lzwme/fed-lint-helper/compare/v1.9.1...v1.9.2) (2022-07-05)
+
+
+### Bug Fixes
+
+* rmdir 命令删除不存在的文件时不应抛异常 ([8c5f002](https://github.com/lzwme/fed-lint-helper/commit/8c5f002265973b13f241b1504e18c568e13e84ec))
+
 ### [1.9.1](https://github.com/lzwme/fed-lint-helper/compare/v1.9.0...v1.9.1) (2022-07-01)
 
 
