@@ -7,3 +7,4 @@ export * from './jira-check';
 export * from './jest-check';
 export * from './commit-lint';
 export * from './pm-check';
+export * from './rmdir';

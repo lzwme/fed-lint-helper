@@ -1,4 +1,4 @@
-import { statSync } from 'fs';
+import { statSync, existsSync } from 'fs';
 import { color } from 'console-log-colors';
 import { readSyncByRl } from './utils/common';
 import glob from 'fast-glob';
@@ -6,6 +6,8 @@ import { getLogger } from './utils/get-logger';
 import { rmrfAsync } from './utils/rmrf';
 
 async function doRmdir(source: string, slient = false, force = false) {
+  if (!existsSync(source)) return false;
+
   const logger = getLogger();
   const sourceTip = statSync(source).isFile() ? '文件' : '目录';
 
