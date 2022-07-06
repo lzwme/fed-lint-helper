@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-06-29 16:57:50
+ * @LastEditTime: 2022-07-06 11:36:05
  * @Description: typescript Diagnostics report
  */
 
@@ -448,8 +448,10 @@ export class TsCheck {
     else result = await this.check(this.config.tsFiles);
 
     this.stats.success = !!result.isPassed;
-    this.logger.debug('result', result);
-    this.logger.info(getTimeCost(this.stats.startTime));
+    if (!globalThis.isChildProc) {
+      this.logger.debug('result', result);
+      this.logger.info(getTimeCost(this.stats.startTime));
+    }
     if (!result.isPassed && this.config.exitOnError) exit(result.failed || -1, '[TsCheck]');
 
     return result;

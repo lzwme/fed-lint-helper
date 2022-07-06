@@ -2,12 +2,13 @@
  * @Author: lzw
  * @Date: 2021-08-25 13:31:22
  * @LastEditors: lzw
- * @LastEditTime: 2021-11-18 22:07:19
+ * @LastEditTime: 2022-07-06 11:35:45
  * @Description: fork 子进程的具体调用逻辑实现
  */
 
 import type { CreateThreadOptions, WorkerMessageBody } from './fork';
 
+globalThis.isChildProc = true;
 process.on('message', (config: CreateThreadOptions) => {
   if (config.debug) console.log('ForkWorker received:', config);
   const done = (data: unknown) => {

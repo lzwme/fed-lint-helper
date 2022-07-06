@@ -2,13 +2,13 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-01 15:00:53
+ * @LastEditTime: 2022-07-06 14:25:25
  * @Description: cli 工具
  */
 import { Option, program } from 'commander';
 import { color } from 'console-log-colors';
-import path from 'path';
-import fs from 'fs';
+import { resolve } from 'path';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 import type { FlhConfig, TsCheckConfig, JiraCheckConfig, CommitLintOptions } from './config';
 import { getHeadDiffFileList, formatWxWorkKeys } from './utils';
 import { getConfig, config, mergeCommConfig } from './config';
@@ -50,7 +50,8 @@ program
   .option('-c, --config-path <filepath>', `配置文件 ${color.yellow('.flh.config.js')} 的路径`)
   .option('--silent', `开启静默模式。`)
   .option('--debug', `开启调试模式。`)
-  .addOption(new Option('--mode <mode>', `执行模式。`).choices(['current', 'proc', 'thread']))
+  .option('--ci', `Whether to run task in continuous integration (CI) mode.`)
+  .addOption(new Option('-m, --mode <mode>', `执行模式。`).choices(['current', 'proc', 'thread']))
   .option('--no-print-detail', `不打印异常详情。`)
   .option('--src <src...>', `指定要检测的源码目录。默认为 src`)
   .option('--only-changes', `只检测 git 仓库变更的文件`, false)
@@ -163,13 +164,13 @@ program
     if (!options.config) return destination.help();
 
     if (options.config) {
-      if (fs.existsSync(config.configPath) && !options.force) {
+      if (existsSync(config.configPath) && !options.force) {
         return logger.log(color.yellowBright(`当前目录下已存在配置文件：`), color.cyan(config.configPath));
       }
 
-      const tpl = path.resolve(__dirname, '../../.flh.config.sample.js');
-      const cfgInfo = fs.readFileSync(tpl, 'utf8').replace(`import('./src/config')`, `import('${packageInfo.name}')`);
-      fs.writeFileSync(config.configPath, cfgInfo, 'utf8');
+      const tpl = resolve(__dirname, '../../.flh.config.sample.js');
+      const cfgInfo = readFileSync(tpl, 'utf8').replace(`import('./src/config')`, `import('${packageInfo.name}')`);
+      writeFileSync(config.configPath, cfgInfo, 'utf8');
       logger.log(`已在当前目录下生成配置文件：`, color.cyan(config.configPath));
     }
   });

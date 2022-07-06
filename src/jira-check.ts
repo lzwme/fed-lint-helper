@@ -2,12 +2,12 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-06-29 10:15:36
+ * @LastEditTime: 2022-07-06 14:22:11
  * @Description:  Jira check
  */
 
-import path from 'path';
-import fs from 'fs';
+import { resolve, dirname, join } from 'path';
+import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'fs';
 import type { IncomingHttpHeaders } from 'http';
 import { color } from 'console-log-colors';
 import { assign, getHeadBranch, PlainObject, getLogger, getTimeCost } from './utils';
@@ -193,8 +193,8 @@ export class JiraCheck {
     const isFind = [this.config.rootDir, require('os').homedir()].some(dir => {
       const fileNames = ['.jira.json', '.jira.js'];
       for (const filename of fileNames) {
-        filePath = path.resolve(dir, filename);
-        if (fs.existsSync(filePath)) return true;
+        filePath = resolve(dir, filename);
+        if (existsSync(filePath)) return true;
       }
       return false;
     });
@@ -207,11 +207,11 @@ export class JiraCheck {
   }
   /** 获取 issueType 列表 */
   private async getIssueType() {
-    const issueTypeCachePath = path.resolve(this.config.rootDir, 'node_modules/.cache/.jiraIssueType.json');
+    const issueTypeCachePath = resolve(this.config.rootDir, 'node_modules/.cache/.jiraIssueType.json');
     let issueTypeList: { id: number; subtask: boolean; name: string }[] = [];
 
-    if (fs.existsSync(issueTypeCachePath)) {
-      issueTypeList = JSON.parse(fs.readFileSync(issueTypeCachePath, 'utf8'));
+    if (existsSync(issueTypeCachePath)) {
+      issueTypeList = JSON.parse(readFileSync(issueTypeCachePath, 'utf8'));
     }
 
     if (issueTypeList.length === 0) {
@@ -226,8 +226,8 @@ export class JiraCheck {
       this.logger.debug('[getIssueType]', result.data);
 
       // 写入缓存文件中
-      if (!fs.existsSync(path.dirname(issueTypeCachePath))) fs.mkdirSync(path.dirname(issueTypeCachePath), { recursive: true });
-      fs.writeFileSync(issueTypeCachePath, JSON.stringify(issueTypeList), 'utf8');
+      if (!existsSync(dirname(issueTypeCachePath))) mkdirSync(dirname(issueTypeCachePath), { recursive: true });
+      writeFileSync(issueTypeCachePath, JSON.stringify(issueTypeList), 'utf8');
     }
 
     return issueTypeList;
@@ -351,8 +351,8 @@ export class JiraCheck {
     // 自定义分支允许提交预研任务
     if (sprintVersion !== branch && !branch.includes('_dev')) allowedFixVersions.push('tech_ahead_v1');
 
-    const gitPath = path.join(config.rootDir, config.COMMIT_EDITMSG || './.git/COMMIT_EDITMSG');
-    const commitMessage = fs.readFileSync(gitPath, 'utf8').trim();
+    const gitPath = join(config.rootDir, config.COMMIT_EDITMSG || './.git/COMMIT_EDITMSG');
+    const commitMessage = readFileSync(gitPath, 'utf8').trim();
 
     const issuePrefix = issuePrefixs.find(d => commitMessage.includes(d));
     const jiraIDReg = new RegExp(`${issuePrefix}(\\d+)`, 'g');
@@ -428,12 +428,12 @@ export class JiraCheck {
         // 如果用户需要手动填入commit信息
         const message = commitMessage.match(smartRegWithMessage)[1].trim();
         const smartCommit = `${config.commitMsgPrefix}[${versionName}][${issueText}][${jiraID}] ${message}`;
-        fs.writeFileSync(gitPath, smartCommit, { encoding: 'utf8' });
+        writeFileSync(gitPath, smartCommit, { encoding: 'utf8' });
         this.logger.info(`[智能修改commit]: ${color.greenBright(smartCommit)} \n`);
       } else if (smartRegWithJIRA.test(commitMessage)) {
         // 如果只匹配到JIRA号
         const smartCommit = `${config.commitMsgPrefix}[${versionName}][${issueText}][${jiraID}] ${summary}`;
-        fs.writeFileSync(gitPath, smartCommit, { encoding: 'utf8' });
+        writeFileSync(gitPath, smartCommit, { encoding: 'utf8' });
         this.logger.info(`[智能修改commit]: ${color.greenBright(smartCommit)} \n`);
       } else if (!reg.test(commitMessage)) {
         // 如果都是自己填的
@@ -524,8 +524,10 @@ export class JiraCheck {
     else result = await this.check();
 
     this.stats.success = !!result.isPassed;
-    this.logger.debug('result', result);
-    this.logger.info(getTimeCost(this.stats.startTime));
+    if (!globalThis.isChildProc) {
+      this.logger.debug('result', result);
+      this.logger.info(getTimeCost(this.stats.startTime));
+    }
     if (!result.isPassed && this.config.exitOnError) exit(this.stats.errCount || -1, 'JiraCheck');
 
     return result;

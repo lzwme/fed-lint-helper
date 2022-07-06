@@ -7,14 +7,14 @@ describe('utils/exec', () => {
   });
 
   it('execSync', () => {
-    expect(execSync('test')).toBe('');
-    expect(execSync('echo test')).toBe('test');
-    expect(execSync('echo test', 'pipe', process.cwd(), true)).toBe('test');
-    expect(execSync('echo test', 'inherit', process.cwd(), true)).toBe('');
+    expect(execSync('test').stdout).toBe('');
+    expect(execSync('echo test').stdout).toBe('test');
+    expect(execSync('echo test', 'pipe', process.cwd(), true).stdout).toBe('test');
+    expect(execSync('echo test', 'inherit', process.cwd(), true).stdout).toBe('');
 
     // stdio = debug ? 'inherit' : 'pipe'
-    expect(execSync('echo test', null, process.cwd(), true)).toBe('');
-    expect(execSync('echo test', null, process.cwd(), false)).toBe('test');
+    expect(execSync('echo test', null, process.cwd(), true).stdout).toBe('');
+    expect(execSync('echo test', null, process.cwd(), false).stdout).toBe('test');
   });
 
   it('execPromisfy', async () => {

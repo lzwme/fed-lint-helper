@@ -1,8 +1,8 @@
-import path from 'path';
-import fs from 'fs';
-import crypto from 'crypto';
+import { resolve } from 'path';
+import { existsSync, readFileSync } from 'fs';
+import { createHash } from 'crypto';
 import { color } from 'console-log-colors';
-import * as readline from 'readline';
+import {} from 'readline';
 import { Logger } from '../lib/Logger';
 import { formatTimeCost } from './utils-date';
 
@@ -12,15 +12,17 @@ export type ValueOf<T> = T[keyof T];
 
 /** 等待并获取用户输入内容 */
 export function readSyncByRl(tips = '> ') {
-  return new Promise(resolve => {
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    });
+  return import('readline').then(({ createInterface }) => {
+    return new Promise(resolve => {
+      const rl = createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      });
 
-    rl.question(tips, answer => {
-      resolve(answer.trim());
-      rl.close();
+      rl.question(tips, answer => {
+        resolve(answer.trim());
+        rl.close();
+      });
     });
   });
 }
@@ -29,7 +31,7 @@ export function readSyncByRl(tips = '> ') {
  * 将给定的文件路径规整为 a/b/c.js 格式
  */
 export function fixToshortPath(filepath = '', rootDir = process.cwd()) {
-  const shortPath = path.resolve(rootDir, filepath).replace(rootDir, '').replace(/\\/g, '/');
+  const shortPath = resolve(rootDir, filepath).replace(rootDir, '').replace(/\\/g, '/');
   return shortPath.startsWith('/') ? shortPath.slice(1) : shortPath;
 }
 
@@ -63,10 +65,10 @@ export function log(prefix, ...args: string[]) {
 export function md5(str: string | Buffer, isFile = false) {
   try {
     if (isFile) {
-      if (!fs.existsSync(str)) return '';
-      str = fs.readFileSync(str);
+      if (!existsSync(str)) return '';
+      str = readFileSync(str);
     }
-    const md5 = crypto.createHash('md5').update(str).digest('hex');
+    const md5 = createHash('md5').update(str).digest('hex');
     // log(`文件的MD5是：${md5}`, filename);
     return md5;
   } catch (error) {

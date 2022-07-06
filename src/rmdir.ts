@@ -1,7 +1,7 @@
 import { statSync, existsSync } from 'fs';
 import { color } from 'console-log-colors';
-import { readSyncByRl } from './utils/common';
 import glob from 'fast-glob';
+import { readSyncByRl } from './utils/common';
 import { getLogger } from './utils/get-logger';
 import { rmrfAsync } from './utils/rmrf';
 

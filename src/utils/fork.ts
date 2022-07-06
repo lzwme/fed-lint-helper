@@ -2,12 +2,12 @@
  * @Author: lzw
  * @Date: 2021-08-25 10:12:21
  * @LastEditors: lzw
- * @LastEditTime: 2021-12-09 19:05:10
+ * @LastEditTime: 2022-07-06 14:26:15
  * @Description: 在 fork 子进程中执行 Check 任务
  */
 
 import { fork } from 'child_process';
-import path from 'path';
+import { resolve } from 'path';
 import type { TsCheckConfig, ESLintCheckConfig, JestCheckConfig, JiraCheckConfig, ILintTypes } from '../config';
 
 export interface CreateThreadOptions {
@@ -27,8 +27,8 @@ export interface WorkerMessageBody<T = unknown> {
 }
 
 export function createForkThread<T>(options: CreateThreadOptions, onMessage?: (d: WorkerMessageBody<T>) => void): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const worker = fork(path.resolve(__dirname, './forked-process.js'), { silent: false });
+  return new Promise((rs, reject) => {
+    const worker = fork(resolve(__dirname, './forked-process.js'), { silent: false });
     worker.send(options);
 
     worker.on('message', (info: WorkerMessageBody<T>) => {
@@ -38,7 +38,7 @@ export function createForkThread<T>(options: CreateThreadOptions, onMessage?: (d
 
       if (info.end) {
         worker.kill();
-        resolve(info.data as never as T);
+        rs(info.data as never as T);
       }
     });
 

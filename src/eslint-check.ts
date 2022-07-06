@@ -2,14 +2,14 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-06-29 10:06:02
+ * @LastEditTime: 2022-07-06 14:23:31
  * @Description:  eslint check
  */
 
 import { color } from 'console-log-colors';
 import { ESLint } from 'eslint';
-import fs from 'fs';
-import path from 'path';
+import { existsSync, unlinkSync, writeFileSync, readFileSync } from 'fs';
+import { resolve } from 'path';
 import { fixToshortPath, assign, getLogger, execSync, getTimeCost } from './utils';
 import { createForkThread } from './utils/fork';
 import { ESLintCheckConfig, getConfig } from './config';
@@ -82,8 +82,8 @@ export class ESLintCheck {
 
     if (config !== this.config) config = assign<ESLintCheckConfig>({}, this.config, config);
     this.config = assign<ESLintCheckConfig>({ fix: baseConfig.fix }, baseConfig.eslint, config);
-    this.cacheFilePath = path.resolve(this.config.rootDir, baseConfig.cacheLocation, 'eslintCache.json');
-    this.config.whiteListFilePath = path.resolve(this.config.rootDir, this.config.whiteListFilePath);
+    this.cacheFilePath = resolve(this.config.rootDir, baseConfig.cacheLocation, 'eslintCache.json');
+    this.config.whiteListFilePath = resolve(this.config.rootDir, this.config.whiteListFilePath);
 
     const level = this.config.silent ? 'silent' : this.config.debug ? 'debug' : 'log';
     this.logger = getLogger(`[ESLint]`, level, baseConfig.logDir);
@@ -92,12 +92,12 @@ export class ESLintCheck {
   private init() {
     const config = this.config;
 
-    if (fs.existsSync(this.cacheFilePath) && config.removeCache) fs.unlinkSync(this.cacheFilePath);
+    if (existsSync(this.cacheFilePath) && config.removeCache) unlinkSync(this.cacheFilePath);
 
     // 读取白名单列表
-    if (fs.existsSync(config.whiteListFilePath)) {
+    if (existsSync(config.whiteListFilePath)) {
       // && !config.toWhiteList
-      this.whiteList = JSON.parse(fs.readFileSync(config.whiteListFilePath, { encoding: 'utf8' }));
+      this.whiteList = JSON.parse(readFileSync(config.whiteListFilePath, { encoding: 'utf8' }));
     }
   }
   /**
@@ -122,8 +122,8 @@ export class ESLintCheck {
     };
 
     ['.eslintrc.js', '.eslintrc', '.eslintrc.json'].some(d => {
-      const filepath = path.resolve(cfg.rootDir, d);
-      if (fs.existsSync(filepath)) {
+      const filepath = resolve(cfg.rootDir, d);
+      if (existsSync(filepath)) {
         option.overrideConfigFile = filepath;
         return true;
       }
@@ -223,13 +223,13 @@ export class ESLintCheck {
           this.logger.info(`\n ${resultText}`);
         }
         this.logger.info('[ADD]write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
-        fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, void 0, 2));
+        writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, void 0, 2));
         execSync(`git add ${config.whiteListFilePath}`, void 0, config.rootDir, !config.silent);
       }
     } else {
       if (removeFromWhiteList.length > 0) {
         this.logger.info(' [REMOVE]write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
-        fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, void 0, 2));
+        writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, void 0, 2));
         this.logger.info(' remove from whilelist:\n' + removeFromWhiteList.join('\n'));
         execSync(`git add ${config.whiteListFilePath}`, void 0, config.rootDir, !config.silent);
       }

@@ -2,13 +2,14 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-06-29 10:19:47
+ * @LastEditTime: 2022-07-06 14:20:39
  * @Description:  jest check
  */
 
-import fs from 'fs';
-import path from 'path';
-import { exec } from 'child_process';
+import { resolve } from 'path';
+import { cpus } from 'os';
+import { existsSync, unlinkSync, statSync, readFileSync, writeFileSync } from 'fs';
+// import { exec } from 'child_process';
 import { color } from 'console-log-colors';
 import glob from 'fast-glob';
 import { runCLI } from '@jest/core';
@@ -17,6 +18,7 @@ import { fixToshortPath, md5, assign, getLogger, getTimeCost } from './utils';
 import { createForkThread } from './utils/fork';
 import { JestCheckConfig, getConfig } from './config';
 import { exit } from './exit';
+import { execSync } from './utils/exec';
 
 const { bold, redBright, greenBright } = color;
 export interface JestCheckResult {
@@ -38,6 +40,7 @@ export class JestCheck {
    */
   private cacheFilePath = '';
   private logger: ReturnType<typeof getLogger>;
+  private baseConfig = getConfig();
 
   constructor(private config: JestCheckConfig = {}) {
     config = this.parseConfig(config);
@@ -70,11 +73,9 @@ export class JestCheck {
   }
   /** 配置参数格式化 */
   public parseConfig(config: JestCheckConfig) {
-    const baseConfig = getConfig();
-
     if (config !== this.config) config = assign<JestCheckConfig>({}, this.config, config);
-    this.config = assign<JestCheckConfig>({}, baseConfig.jest, config);
-    this.cacheFilePath = path.resolve(this.config.rootDir, baseConfig.cacheLocation, 'jestcache.json');
+    this.config = assign<JestCheckConfig>(this.baseConfig.jest, config);
+    this.cacheFilePath = resolve(this.config.rootDir, this.baseConfig.cacheLocation, 'jestcache.json');
 
     const level = this.config.silent ? 'silent' : this.config.debug ? 'debug' : 'log';
     this.logger = getLogger(`[Jest]`, level);
@@ -83,7 +84,7 @@ export class JestCheck {
   private init() {
     const config = this.config;
 
-    if (fs.existsSync(this.cacheFilePath) && config.removeCache) fs.unlinkSync(this.cacheFilePath);
+    if (existsSync(this.cacheFilePath) && config.removeCache) unlinkSync(this.cacheFilePath);
 
     // 文件列表过滤
     // 必须以 spec|test.ts|js 结尾
@@ -107,6 +108,8 @@ export class JestCheck {
       onlyChanged: config.cache,
       forceExit: config.exitOnError,
       verbose: config.debug,
+      maxWorkers: cpus.length * 2,
+      ci: this.baseConfig.ci,
     };
 
     return option;
@@ -119,8 +122,8 @@ export class JestCheck {
       specFileList = [];
 
       for (const d of this.config.src) {
-        const p = path.resolve(config.rootDir, d);
-        if (!fs.existsSync(p) && fs.statSync(p).isDirectory()) continue;
+        const p = resolve(config.rootDir, d);
+        if (!existsSync(p) && statSync(p).isDirectory()) continue;
 
         const files = await glob('**/*.{spec,test}.{ts,js,tsx,jsx}', { cwd: p, absolute: true });
         specFileList.push(...files);
@@ -134,8 +137,8 @@ export class JestCheck {
 
     this.logger.debug('total test files:', color.magentaBright(specFileList.length));
 
-    if (specFileList.length > 0 && config.cache && fs.existsSync(this.cacheFilePath)) {
-      Object.assign(jestPassedFiles, JSON.parse(fs.readFileSync(this.cacheFilePath, 'utf8')));
+    if (specFileList.length > 0 && config.cache && existsSync(this.cacheFilePath)) {
+      Object.assign(jestPassedFiles, JSON.parse(readFileSync(this.cacheFilePath, 'utf8')));
 
       specFileList = specFileList.filter(filepath => {
         filepath = fixToshortPath(filepath, config.rootDir);
@@ -145,7 +148,7 @@ export class JestCheck {
 
         const tsFilePath = filepath.replace(/\.(spec|test)\./, '.');
         // 同名业务文件 md5 发生改变
-        if (fs.existsSync(tsFilePath) && item.md5 && md5(tsFilePath, true) !== item.md5) {
+        if (existsSync(tsFilePath) && item.md5 && md5(tsFilePath, true) !== item.md5) {
           return true;
         }
 
@@ -191,21 +194,38 @@ export class JestCheck {
 
     if (config.silent || config.useJestCli) {
       const files = isCheckAll ? config.src : specFileList;
+      const cmd = [
+        `node --max_old_space_size=4096 ./node_modules/jest/bin/jest.js`,
+        `--unhandled-rejections=strict`,
+        `--forceExit`,
+        // isCheckAll ? null : `--onlyChanged`,
+        config.removeCache ? `--clearCache` : null,
+        config.cache ? `--cache` : null,
+        config.cache && config.cacheLocation ? `--cacheDirectory="${config.cacheLocation}"` : null,
+        config.silent ? ` --silent` : null,
+        this.baseConfig.ci ? `--ci` : null,
+        files.map(f => fixToshortPath(f, config.rootDir)).join(' '),
+      ]
+        .filter(Boolean)
+        .join(' ');
 
-      stats.isPassed = await new Promise(resolve => {
-        exec(
-          `node --max_old_space_size=4096 ./node_modules/jest/bin/jest.js --unhandled-rejections=strict --forceExit ${files
-            .map(f => f.replace(/\\/g, '\\\\'))
-            .join(' ')}`,
-          (error, _stdout, _stderr) => {
-            if (error) {
-              this.logger.error(error);
-              return resolve(false);
-            }
-            resolve(true);
-          }
-        );
-      });
+      const result = execSync(cmd, config.silent ? 'pipe' : 'inherit', config.rootDir, config.debug);
+      this.logger.debug(result);
+      stats.isPassed = !result.stderr;
+
+      // stats.isPassed = await new Promise(resolve => {
+      //   exec(cmd, { maxBuffer: 100 * 1024 * 1024 }, (error, _stdout, _stderr) => {
+      //     if (error) {
+      //       this.logger.error(error);
+      //       return resolve(false);
+      //     }
+      //     resolve(true);
+      //   });
+      //   // if (!config.silent) {
+      //   //   child.stdout.pipe(process.stdin);
+      //   //   child.stderr.pipe(process.stderr);
+      //   // }
+      // });
     } else {
       const options = this.getJestOptions(specFileList);
       const data = await runCLI(options, ['.']);
@@ -220,14 +240,14 @@ export class JestCheck {
         } else {
           const tsFilePath = d.testFilePath.replace('.spec.', '.');
           jestPassedFiles[testFilePath] = {
-            md5: fs.existsSync(tsFilePath) ? md5(tsFilePath, true) : '',
+            md5: existsSync(tsFilePath) ? md5(tsFilePath, true) : '',
             specMd5: md5(d.testFilePath, true),
             updateTime: data.results.startTime,
           };
         }
       }
 
-      fs.writeFileSync(cacheFilePath, JSON.stringify(stats.cacheInfo, undefined, 2));
+      writeFileSync(cacheFilePath, JSON.stringify(stats.cacheInfo, undefined, 2));
 
       stats.isPassed = data.results.success && !data.results.numFailedTestSuites;
       logger.debug(data);
@@ -285,8 +305,10 @@ export class JestCheck {
     else result = await this.check();
 
     stats.isPassed = !!result.isPassed;
-    logger.debug('result', result);
-    logger.info(getTimeCost(stats.startTime));
+    if (!globalThis.isChildProc) {
+      logger.debug('result', result);
+      logger.info(getTimeCost(stats.startTime));
+    }
     if (!result.isPassed && config.exitOnError) exit(result.errorCount || -1, 'JestCheck');
 
     return result;

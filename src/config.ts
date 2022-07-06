@@ -2,13 +2,14 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-01 10:21:37
+ * @LastEditTime: 2022-07-06 14:24:13
  * @Description:
  */
 
 import { color } from 'console-log-colors';
-import fs from 'fs';
-import path from 'path';
+import { existsSync, mkdirSync } from 'fs';
+import { resolve } from 'path';
+import { env } from 'process';
 import type { ESLint } from 'eslint';
 import type { Config } from '@jest/types';
 import type { IncomingHttpHeaders } from 'http';
@@ -159,6 +160,8 @@ export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {
   logDir?: string;
   /** 是否开启调试模式(打印更多的细节) */
   debug?: boolean;
+  /** 是否运行为持续集成模式 */
+  ci?: boolean;
   /** 企业微信机器人 webhook key 配置，用于 ci 中发送通知。可配置多个 */
   wxWorkKeys?: string[];
   /** 自定义微信通知的消息格式化 */
@@ -193,6 +196,7 @@ export const config: FlhConfig = {
   configPath: '.flh.config.js',
   cacheLocation: `node_modules/.cache/flh/`,
   logDir: `node_modules/.cache/flh/log`,
+  ci: Boolean(env.CI || env.GITLAB_CI || env.JENKINS_HOME),
   tscheck: {
     tsFiles: [],
     exclude: ['**/*.test.{ts,tsx}', '**/*/*.mock.{ts,tsx}', '**/*/*.d.ts'],
@@ -266,8 +270,8 @@ export function getConfig(options?: FlhConfig, useCache = isInited) {
 
   // 配置文件只处理一次
   if (!isInited) {
-    const configPath = path.resolve(config.configPath);
-    if (fs.existsSync(configPath)) {
+    const configPath = resolve(config.configPath);
+    if (existsSync(configPath)) {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const cfg: FlhConfig = require(configPath);
       assign(config, cfg);
@@ -287,8 +291,8 @@ export function getConfig(options?: FlhConfig, useCache = isInited) {
   mergeCommConfig(config);
 
   if (!config.cacheLocation) config.cacheLocation = `node_modules/.cache/flh/`;
-  if (!fs.existsSync(config.cacheLocation)) {
-    fs.mkdirSync(config.cacheLocation, { recursive: true });
+  if (!existsSync(config.cacheLocation)) {
+    mkdirSync(config.cacheLocation, { recursive: true });
   }
 
   config.wxWorkKeys = formatWxWorkKeys(config.wxWorkKeys);

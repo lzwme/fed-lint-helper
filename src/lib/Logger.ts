@@ -2,12 +2,12 @@
  * @Author: lzw
  * @Date: 2022-04-08 10:30:02
  * @LastEditors: lzw
- * @LastEditTime: 2022-06-28 22:43:54
+ * @LastEditTime: 2022-07-06 14:29:04
  * @Description:
  */
 /* eslint no-console: 0 */
-import fs from 'fs';
-import path from 'path';
+import { type WriteStream, existsSync, mkdirSync, createWriteStream } from 'fs';
+import { dirname, resolve } from 'path';
 
 /** 日志级别 */
 export enum LogLevel {
@@ -53,7 +53,7 @@ const LogLevelHeadTip = {
   debug: ['[DEBUG]', 'gray'],
 } as const;
 
-const fsStreamCache: { [logPath: string]: fs.WriteStream } = {};
+const fsStreamCache: { [logPath: string]: WriteStream } = {};
 
 export class Logger {
   public static map: { [tag: string]: Logger } = {};
@@ -90,15 +90,15 @@ export class Logger {
     this.setLogDir(options.logDir);
   }
   public setLogDir(logDir: string) {
-    if (!logDir || !fs?.createWriteStream) return;
+    if (!logDir || !createWriteStream) return;
 
     let logPath = logDir;
 
     if (logDir.endsWith('.log')) {
-      logDir = path.dirname(logDir);
+      logDir = dirname(logDir);
     } else {
       const curTime = new Date().toISOString().slice(0, 10).replace(/\D/g, '');
-      logPath = path.resolve(logDir, `${this.tag.replace(/[^\dA-Za-z]/g, '')}_${curTime}.log`);
+      logPath = resolve(logDir, `${this.tag.replace(/[^\dA-Za-z]/g, '')}_${curTime}.log`);
     }
 
     if (logPath === this.logPath) return;
@@ -163,8 +163,8 @@ export class Logger {
     if (!this.logPath) return;
     let logFsStream = fsStreamCache[this.logPath];
     if (!logFsStream || logFsStream.destroyed) {
-      if (!fs.existsSync(this.logDir)) fs.mkdirSync(this.logDir, { recursive: true });
-      logFsStream = fs.createWriteStream(this.logPath, { encoding: 'utf8', flags: 'a' });
+      if (!existsSync(this.logDir)) mkdirSync(this.logDir, { recursive: true });
+      logFsStream = createWriteStream(this.logPath, { encoding: 'utf8', flags: 'a' });
       fsStreamCache[this.logPath] = logFsStream;
     }
     // eslint-disable-next-line no-control-regex
