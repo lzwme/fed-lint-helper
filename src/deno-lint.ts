@@ -1,6 +1,6 @@
 import { lint, denolint } from '@node-rs/deno-lint';
 
-export function denoLint(filepath, source, enableAllRules = true) {
+export function denoLint(filepath: string, source: string, enableAllRules = true) {
   return lint(filepath, source, enableAllRules);
 }
 

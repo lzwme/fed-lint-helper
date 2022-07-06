@@ -2,12 +2,12 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-06 14:23:31
+ * @LastEditTime: 2022-07-06 15:37:16
  * @Description:  eslint check
  */
 
 import { color } from 'console-log-colors';
-import { ESLint } from 'eslint';
+import type { ESLint } from 'eslint';
 import { existsSync, unlinkSync, writeFileSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import { fixToshortPath, assign, getLogger, execSync, getTimeCost } from './utils';
@@ -150,6 +150,7 @@ export class ESLintCheck {
     this.logger.debug('[options]:', config);
     this.logger.debug(`TOTAL:`, lintList.length, `, Files:\n`, lintList);
 
+    const { ESLint } = await import('eslint');
     const eslint = new ESLint(this.getESLintOptions(lintList));
     const results = await eslint.lintFiles(lintList);
     const errorReults: ESLint.LintResult[] = [];
@@ -159,7 +160,7 @@ export class ESLintCheck {
     /** 不在旧文件白名单中的 warning 类结果 */
     const newWaringReults: ESLint.LintResult[] = [];
     /** 在白名单列表中但本次检测无异常的文件列表（将从白名单列表中移除） */
-    const removeFromWhiteList = [];
+    const removeFromWhiteList: string[] = [];
     let errorCount = 0;
     let warningCount = 0;
     let fixableErrorCount = 0;

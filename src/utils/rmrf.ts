@@ -17,7 +17,7 @@ export function rmrf(filepath: string) {
   }
 }
 
-export async function rmrfAsync(filepath: string) {
+export async function rmrfAsync(filepath: string): Promise<void> {
   try {
     return promises.rm(filepath, { recursive: true, maxRetries: 3 });
   } catch {

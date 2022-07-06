@@ -48,11 +48,16 @@ export function dateFormat(fmt: string, date: Date | string = new Date()): strin
     S: String(date.getMilliseconds()).padStart(3, '0'), // 毫秒
   };
 
+  if (!fmt) {
+    return '' + date.getTime();
+  }
+
   if (/(y+)/.test(fmt)) {
     fmt = fmt.replace(RegExp.$1, (date.getFullYear() + '').slice(4 - RegExp.$1.length));
   }
   for (const k in o) {
     if (new RegExp(`(${k})`).test(fmt)) {
+      // @ts-ignore
       fmt = fmt.replace(RegExp.$1, RegExp.$1.length === 1 ? o[k] : ('00' + o[k]).slice(('' + o[k]).length));
     }
   }

@@ -50,14 +50,6 @@ export function logTimeCost(startTime: number, prefix = '') {
 }
 
 /**
- * 打印待时间戳前缀的日志信息
- * @deprecated 请使用 Logger 对象
- */
-export function log(prefix, ...args: string[]) {
-  console.log(`[${color.cyanBright(new Date().toTimeString().slice(0, 8))}]${prefix}`, ...args);
-}
-
-/**
  * 生成指定字符串或指定文件路径的md5值
  * @param str {string} 指定的字符串，或者指定的文件路径
  * @param isFile {boolean} str 是否为一个文件路径

@@ -27,7 +27,6 @@ describe('utils/common', () => {
 
   it('logTimeCost', () => {
     comm.logTimeCost(Date.now());
-    comm.log(Date.now());
     expect(1).toBeTruthy();
   });
 

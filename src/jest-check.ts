@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-06 14:20:39
+ * @LastEditTime: 2022-07-06 14:52:38
  * @Description:  jest check
  */
 
@@ -12,7 +12,6 @@ import { existsSync, unlinkSync, statSync, readFileSync, writeFileSync } from 'f
 // import { exec } from 'child_process';
 import { color } from 'console-log-colors';
 import glob from 'fast-glob';
-import { runCLI } from '@jest/core';
 import type { Config } from '@jest/types';
 import { fixToshortPath, md5, assign, getLogger, getTimeCost } from './utils';
 import { createForkThread } from './utils/fork';
@@ -228,6 +227,7 @@ export class JestCheck {
       // });
     } else {
       const options = this.getJestOptions(specFileList);
+      const { runCLI } = await import('@jest/core');
       const data = await runCLI(options, ['.']);
       const jestPassedFiles = stats.cacheInfo.passed;
 

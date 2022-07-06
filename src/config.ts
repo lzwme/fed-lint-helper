@@ -249,9 +249,11 @@ export function mergeCommConfig(options: FlhConfig, useDefault = true) {
   // 公共通用配置
   for (const key of Object.keys(commConfig)) {
     for (const type of LintTypes) {
-      if (undefined == options[type][key]) {
-        if (undefined == options[key]) {
+      if (!(key in options[type])) {
+        if (!(key in options)) {
+          // @ts-ignore
           if (useDefault) options[type][key] = commConfig[key];
+          // @ts-ignore
         } else options[type][key] = options[key];
       }
     }

@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-06 14:22:11
+ * @LastEditTime: 2022-07-06 15:39:26
  * @Description:  Jira check
  */
 
@@ -297,12 +297,12 @@ export class JiraCheck {
       /** 最新一次的 review 信息 */
       const reviewComment = comments.find(item => item.body.includes('[已阅]'));
       const gitlabCommiter = gitlabComment.body.split('|')[0].slice(1);
-      const reviewers = fields.customfield_13002;
+      const reviewers = fields.customfield_13002 as { displayName: string }[];
       let errmsg = '';
 
       // review的留言需要在gitlab提交日志之后
       if (!reviewComment || reviewComment.id < gitlabComment.id) {
-        errmsg = `[${gitlabCommiter}]的代码提交未被[${reviewers && reviewers[0] ? reviewers[0].displayName : '未指定'}]审阅`;
+        errmsg = `[${gitlabCommiter}]的代码提交未被[${reviewers?.[0]?.displayName || '未指定'}]审阅`;
       } else {
         if (gitlabCommiter === reviewComment.author.key) {
           errmsg = `[${reviewComment.author.displayName.split('（')[0]}]不能 review 自己的提交，请指派给熟悉相关模块的开发人员审阅！`;
@@ -480,7 +480,8 @@ export class JiraCheck {
       stats.success = this.config.type === 'commit' ? await this.commitMsgCheck() : await this.pipelineCheck();
       checkResult.isPassed = stats.success;
     } catch (error) {
-      this.logger.error(error.message, error.stack);
+      const e = error as Error;
+      this.logger.error(e.message, e.stack);
       checkResult.isPassed = stats.success = false;
     }
 

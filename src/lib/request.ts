@@ -43,7 +43,7 @@ export class Request {
     if (cookie) this.setCookie(cookie);
     if (headers) this.headers = Object.assign(this.headers, toLowcaseKeyObject(headers));
   }
-  private getHeaders(urlObject, headers?: http.IncomingHttpHeaders) {
+  private getHeaders(urlObject: URL, headers?: http.IncomingHttpHeaders) {
     headers = {
       ...this.headers,
       host: urlObject.host,
@@ -84,7 +84,7 @@ export class Request {
 
     return new Promise((resolve, reject) => {
       const request = (urlObject.protocol == 'http:' ? http : https).request(options, response => {
-        const chunks = [];
+        const chunks: Buffer[] = [];
         response.on('data', data => chunks.push(data));
         request.on('error', error => reject(error));
         response.on('end', () => {
@@ -96,7 +96,7 @@ export class Request {
               result.data = JSON.parse(body);
               resolve(result);
             } catch (error) {
-              console.error(error.message, result);
+              console.error((error as Error).message, result);
               resolve(result);
             }
           };

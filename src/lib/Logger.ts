@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2022-04-08 10:30:02
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-06 14:29:04
+ * @LastEditTime: 2022-07-06 15:28:06
  * @Description:
  */
 /* eslint no-console: 0 */
@@ -34,7 +34,7 @@ export interface LoggerOptions {
 }
 
 export type LogLevelType = keyof typeof LogLevel;
-type LogFn = (...p) => void;
+type LogFn = (...p: unknown[]) => void;
 
 const defaultOptions: LoggerOptions = {
   levelType: 'log',
@@ -126,7 +126,7 @@ export class Logger {
     return now;
   }
 
-  private _log(type: LogLevelType, ...args) {
+  private _log(type: LogLevelType, ...args: unknown[]) {
     const lvl = LogLevel[type];
 
     if (lvl <= this.level) {
@@ -136,16 +136,16 @@ export class Logger {
       const msg = args.map(s => (typeof s === 'string' ? s : JSON.stringify(s))).join(' ');
 
       this.writeToFile(`[${curTime}]${this.tag}[${type}] ${msg}\n`);
-      if (this.options.silent) return;
+      if (this.options.silent || type === 'silent') return;
 
-      if (console[type]) {
+      if (type in console) {
         let header = `[${curTime}]${this.tag}`;
         if (this.options.color) {
           header = this.options.color.greenBright(header);
         }
 
         if (lvl === LogLevel.debug) header += `[${this.times}]`;
-        if (LogLevelHeadTip[type]) {
+        if (type in LogLevelHeadTip) {
           const tip = LogLevelHeadTip[type][0];
           header = tip + header;
         }
@@ -172,10 +172,11 @@ export class Logger {
   }
   public updateOptions(options: LoggerOptions) {
     if (!headTipColored && options.color) {
-      for (const key of Object.keys(LogLevelHeadTip)) {
-        const [tag, colorType] = LogLevelHeadTip[key];
+      for (const value of Object.values(LogLevelHeadTip)) {
+        const [tag, colorType] = value;
         if (options.color[colorType]) {
-          LogLevelHeadTip[key][0] = options.color[colorType](tag);
+          // @ts-ignore
+          value[0] = options.color[colorType](tag);
           headTipColored = true;
         }
       }
@@ -188,6 +189,7 @@ export class Logger {
           if (null == options.logDir) continue;
           this.setLogDir(options.logDir);
         }
+        // @ts-ignore
         this.options[key] = options[key];
       }
     }

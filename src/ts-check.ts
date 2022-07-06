@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-06 11:36:05
+ * @LastEditTime: 2022-07-06 15:28:02
  * @Description: typescript Diagnostics report
  */
 
@@ -96,7 +96,8 @@ export class TsCheck {
           if (cacheInfo.version !== VERSION) fs.unlinkSync(this.cacheFilePath);
           else if (cacheInfo.tsCheckFilesPassed) this.stats.tsCache = cacheInfo;
         }
-      } catch (error) {
+        // @ts-ignore
+      } catch (error: Error) {
         this.logger.error(error.message || error.stack || error);
       }
     }
@@ -105,7 +106,8 @@ export class TsCheck {
     if (!this.config.toWhiteList && fs.existsSync(whiteListFilePath)) {
       try {
         this.whiteList = JSON.parse(fs.readFileSync(whiteListFilePath, { encoding: 'utf8' }));
-      } catch (error) {
+        // @ts-ignore
+      } catch (error: Error) {
         this.logger.error(error.message || error.stack || error);
       }
     }
@@ -384,11 +386,11 @@ export class TsCheck {
     if (result.failed) {
       for (const filepath of errorFileList) {
         const d = stats.allDiagnosticsFileMap[filepath];
-        const cateString = ts.DiagnosticCategory[d.category];
+        const cateString = ts.DiagnosticCategory[d.category] as keyof typeof ts.DiagnosticCategory;
         stats.allDiagnosticsCategory[cateString] = (stats.allDiagnosticsCategory[cateString] || 0) + 1;
       }
       for (const keyString of Object.keys(stats.allDiagnosticsCategory)) {
-        this.logger.info(bold(cyan(` -- ${keyString} Count：`)), bold(yellowBright(result.diagnosticCategory[keyString])));
+        this.logger.info(bold(cyan(` -- ${keyString} Count：`)), bold(yellowBright(result.diagnosticCategory[keyString as never])));
       }
     }
 

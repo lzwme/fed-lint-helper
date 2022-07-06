@@ -28,7 +28,8 @@ export function execSync(cmd: string, stdio?: StdioOptions, cwd = process.cwd(),
     if (!stdio) stdio = debug ? 'inherit' : 'pipe';
     const res = cpExecSync(cmd, { stdio, encoding: 'utf8', cwd });
     result.stdout = res ? res.toString().trim() : '';
-  } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
     if (debug) getLogger().error(color.redBright(error.message));
     result.stderr = error.message;
     result.error = error;

@@ -9,6 +9,7 @@ CHANGELOG.md
 LICENSE
 benchmark
 tmp
+typings
 
 # build dist
 build/docs
