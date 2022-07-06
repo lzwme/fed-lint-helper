@@ -10,14 +10,12 @@ import { resolve, dirname, join } from 'path';
 import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'fs';
 import type { IncomingHttpHeaders } from 'http';
 import { color } from 'console-log-colors';
-import { assign, getHeadBranch, PlainObject, getLogger, getTimeCost } from './utils';
-import { createForkThread } from './utils/fork';
+import { assign, getHeadBranch, PlainObject, getLogger } from './utils';
 import { JiraCheckConfig, getConfig } from './config';
 import { Request } from './lib';
-import { exit } from './exit';
+import { LintBase, type LintResult } from './LintBase';
 
-const { bold, redBright, greenBright } = color;
-export interface JiraCheckResult {
+export interface JiraCheckResult extends LintResult {
   /** 是否检测通过 */
   isPassed: boolean;
 }
@@ -95,33 +93,11 @@ const ignoredCommitList = [
   /^Automatic merge(.*)/,
   /^Auto-merged (.*?) into (.*)/,
 ];
-export class JiraCheck {
-  /** 统计信息 */
-  private stats = this.getInitStats();
+export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
   private reqeust: Request;
-  private logger: ReturnType<typeof getLogger>;
 
-  constructor(private config: JiraCheckConfig = {}) {
-    config = this.parseConfig(config);
-    this.logger.debug('config', this.config);
-    if (config.checkOnInit) this.start();
-  }
-  /** 获取初始化的统计信息 */
-  private getInitStats() {
-    const stats = {
-      /** 最近一次处理是否成功。默认为 true，遇到异常时应设置为 false */
-      success: true,
-      /** 最近一次处理的开始时间 */
-      startTime: Date.now(),
-      /** pipeline 检测不通过的 jira issues 数量 */
-      errCount: 0,
-    };
-    this.stats = stats;
-    return stats;
-  }
-  /** 返回执行结果统计信息 */
-  public get statsInfo() {
-    return this.stats;
+  constructor(protected override config: JiraCheckConfig = {}) {
+    super('jira', config);
   }
   /** 配置参数格式化 */
   public parseConfig(config: JiraCheckConfig) {
@@ -129,6 +105,7 @@ export class JiraCheck {
 
     if (config !== this.config) config = assign<JiraCheckConfig>({}, this.config, config);
     config = assign<JiraCheckConfig>({ commitMsgPrefix: '[ET]' }, baseConfig.jira, config);
+    baseConfig.jira = config;
     if (!config.issuePrefix) config.issuePrefix = [];
     if (!Array.isArray(config.issuePrefix)) config.issuePrefix = [config.issuePrefix];
 
@@ -138,12 +115,8 @@ export class JiraCheck {
 
     const level = config.silent ? 'silent' : config.debug ? 'debug' : 'log';
     this.logger = getLogger(`[JIRA][${config.type}]`, level, baseConfig.logDir);
-    this.config = config;
 
-    return this.config;
-  }
-  private init() {
-    this.initRequest();
+    return config;
   }
   private initRequest() {
     if (this.reqeust) return;
@@ -248,13 +221,13 @@ export class JiraCheck {
     this.logger.debug('url:', url, info);
     if (!info.issues) {
       this.logger.error(info.errorMessages);
-      stats.errCount = -1;
+      stats.failedFilesNum = -1;
       return false;
     }
 
     this.logger.info('[检查信息]', query);
     this.logger.info('[检查信息]', `提取的JIRA(${color.magentaBright(info.total)}):`, info.issues.map(item => item.key).join(', '));
-    this.logger.info('------------------------------------------------------------------------------------------');
+    this.logger.info('-'.repeat(80));
 
     for (const item of info.issues) {
       let fields = item.fields;
@@ -263,13 +236,13 @@ export class JiraCheck {
         try {
           const { data } = await this.reqeust.get(item.self);
           if (!data.fields) {
-            stats.errCount = -1;
+            stats.failedFilesNum = -1;
             return false;
           }
           fields = data.fields;
         } catch (error) {
           this.logger.error(error);
-          stats.errCount = -1;
+          stats.failedFilesNum = -1;
           return false;
         }
       }
@@ -321,16 +294,16 @@ export class JiraCheck {
 
       if (errmsg) {
         this.logger.info(
-          `[${++stats.errCount}] 指派给`,
+          `[${++stats.failedFilesNum}] 指派给`,
           fields.assignee.displayName.split('（')[0],
           `http://jira.gf.com.cn/browse/${item.key}`,
-          redBright(errmsg)
+          color.redBright(errmsg)
         );
-        this.logger.info('------------------------------------------------------------------------------------------');
+        this.logger.info('-'.repeat(80));
       }
     }
 
-    return stats.errCount === 0;
+    return stats.failedFilesNum === 0;
   }
   /** git hooks commit-msg 检查 */
   private async commitMsgCheck(): Promise<boolean> {
@@ -358,9 +331,9 @@ export class JiraCheck {
     const jiraIDReg = new RegExp(`${issuePrefix}(\\d+)`, 'g');
     const jiraIDs = commitMessage.match(jiraIDReg);
 
-    this.logger.info('===================================');
+    this.logger.info('='.repeat(40));
     this.logger.info(`[COMMIT-MSG] ${color.yellowBright(commitMessage)}`);
-    this.logger.info('===================================');
+    this.logger.info('='.repeat(40));
 
     if (jiraIDs) {
       /** 智能匹配正则表达式，commit覆盖, JIRA号后需要输入至少一个中文、【|[、英文或者空格进行隔开 例子: JGCPS-1234测试提交123 或 [JGCPS-1234] 测试提交123 => [ET][2.9.1][feature][JGCPS-1234]测试提交123 */
@@ -445,7 +418,7 @@ export class JiraCheck {
         return false;
       }
 
-      if (isSeal && stats.success) {
+      if (isSeal && stats.isPassed) {
         this.logger.info(color.magentaBright(versionName), color.yellowBright('已经封版'));
         // 查找由产品指派给当前用户的jira，备注了 [必须修复] 文案提交
         const comment = info.fields.comment.comments.find(comment => {
@@ -470,67 +443,21 @@ export class JiraCheck {
 
     return true;
   }
-  private async check() {
-    this.init();
+  protected async check() {
+    this.initRequest();
     const stats = this.getInitStats();
-    const checkResult: JiraCheckResult = { isPassed: false };
     this.logger.info(color.green(`start checking`));
 
     try {
-      stats.success = this.config.type === 'commit' ? await this.commitMsgCheck() : await this.pipelineCheck();
-      checkResult.isPassed = stats.success;
+      stats.isPassed = this.config.type === 'commit' ? await this.commitMsgCheck() : await this.pipelineCheck();
     } catch (error) {
-      const e = error as Error;
-      this.logger.error(e.message, e.stack);
-      checkResult.isPassed = stats.success = false;
+      this.logger.error((error as Error).message, '\n', (error as Error).stack);
+      stats.isPassed = false;
     }
 
-    this.logger.info(bold(checkResult.isPassed ? greenBright('Verification passed!') : redBright('Verification failed!')));
-
-    return checkResult;
+    return stats;
   }
-  /** 在 fork 子进程中执行 */
-  private checkInChildProc() {
-    this.logger.info('start fork child progress');
-    return createForkThread<JiraCheckResult>({
-      type: 'jira',
-      debug: this.config.debug,
-      config: this.config,
-    }).catch(error => {
-      this.logger.error('checkInChildProc error, code:', error);
-      this.stats.errCount = error;
-      return { isPassed: false } as JiraCheckResult;
-    });
-  }
-  /** 在 work_threads 子线程中执行 */
-  private checkInWorkThreads() {
-    this.logger.info('start create work threads');
-    return import('./utils/worker-threads').then(({ createWorkerThreads }) => {
-      return createWorkerThreads<JiraCheckResult>({
-        type: 'jira',
-        debug: this.config.debug,
-        config: this.config,
-      }).catch(error => {
-        this.logger.error('checkInWorkThreads error, code:', error);
-        this.stats.errCount = error;
-        return { isPassed: false } as JiraCheckResult;
-      });
-    });
-  }
-  async start() {
-    this.init();
-    let result: JiraCheckResult;
-    if (this.config.mode === 'proc') result = await this.checkInChildProc();
-    else if (this.config.mode === 'thread') result = await this.checkInWorkThreads();
-    else result = await this.check();
-
-    this.stats.success = !!result.isPassed;
-    if (!globalThis.isChildProc) {
-      this.logger.debug('result', result);
-      this.logger.info(getTimeCost(this.stats.startTime));
-    }
-    if (!result.isPassed && this.config.exitOnError) exit(this.stats.errCount || -1, 'JiraCheck');
-
-    return result;
+  protected beforeStart(): boolean {
+    return true;
   }
 }

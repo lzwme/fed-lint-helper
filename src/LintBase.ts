@@ -9,10 +9,11 @@
 import { existsSync, unlinkSync } from 'fs';
 import { getLogger, getTimeCost } from './utils';
 import { createForkThread } from './utils/fork';
-import { CommConfig, ILintTypes } from './config';
+import { CommConfig, getConfig, ILintTypes } from './config';
 import { exit } from './exit';
 import { assign } from './utils/assgin';
 import { color } from 'console-log-colors';
+import { resolve } from 'path';
 
 export interface LintResult {
   /** 是否检测通过 */
@@ -31,7 +32,8 @@ export interface LintResult {
   cacheHits?: number;
 }
 
-export abstract class LintBase<C extends CommConfig, R extends LintResult = LintResult> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export abstract class LintBase<C extends CommConfig & Record<string, any>, R extends LintResult = LintResult> {
   /** 统计信息 */
   protected stats = this.getInitStats() as R;
   /**
@@ -46,20 +48,23 @@ export abstract class LintBase<C extends CommConfig, R extends LintResult = Lint
   protected abstract beforeStart(fileList?: string[]): boolean;
   /** 执行校验 */
   protected abstract check(): Promise<R>;
-  protected abstract init(): void;
 
   constructor(protected tag: ILintTypes, protected config?: C) {
-    config = this.parseConfig(config);
-    const level = this.config.silent ? 'silent' : this.config.debug ? 'debug' : 'log';
-    this.logger = getLogger(this.tag, level);
+    this.config = this.parseConfig(config);
+    const baseConfig = getConfig();
+    if (!this.logger) {
+      const level = this.config.silent ? 'silent' : this.config.debug ? 'debug' : 'log';
+      this.logger = getLogger(this.tag, level);
+    }
     this.logger.debug('config', this.config);
 
+    this.cacheFilePath = resolve(this.config.rootDir, baseConfig.cacheLocation, `${tag}Cache.json`);
     if (existsSync(this.cacheFilePath) && this.config.removeCache) unlinkSync(this.cacheFilePath);
 
     if (this.config.checkOnInit) this.start();
   }
   /** 获取初始化的统计信息 */
-  protected getInitStats(): LintResult {
+  protected getInitStats(): R {
     const stats: LintResult = {
       isPassed: true,
       startTime: Date.now(),
@@ -69,7 +74,7 @@ export abstract class LintBase<C extends CommConfig, R extends LintResult = Lint
       cacheHits: 0,
     };
 
-    return stats;
+    return stats as R;
   }
   /** 返回执行结果统计信息 */
   public get statsInfo() {
@@ -105,12 +110,11 @@ export abstract class LintBase<C extends CommConfig, R extends LintResult = Lint
       });
     });
   }
-  /** 执行 jest 校验 */
   async start(fileList?: string[]) {
+    let result: R = (this.stats = this.getInitStats());
     const { config, logger, stats } = this;
-    this.init();
 
-    let result: R = this.stats;
+    if (fileList && fileList !== this.config.fileList) this.config.fileList = fileList;
 
     if (!this.beforeStart(fileList)) {
       logger.info('No files to process\n');
@@ -126,9 +130,7 @@ export abstract class LintBase<C extends CommConfig, R extends LintResult = Lint
 
     if (!globalThis.isChildProc) {
       logger.debug('result', stats);
-
-      const tip = stats.isPassed ? color.greenBright('Verification passed!') : color.redBright('Verification failed!');
-      this.logger.info(color.bold(tip));
+      logger.info(color.bold(stats.isPassed ? color.greenBright('Verification passed!') : color.redBright('Verification failed!')));
       logger.info(getTimeCost(stats.startTime));
       if (!stats.isPassed && config.exitOnError) exit(stats.failedFilesNum || -1, this.tag);
     }

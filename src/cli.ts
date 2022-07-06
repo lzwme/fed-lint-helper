@@ -100,7 +100,7 @@ program
     if (options.projectName) config.jira.projectName = options.projectName;
     if (options.commitEdit) config.jira.COMMIT_EDITMSG = options.commitEdit;
 
-    for (const key of ['src', 'fix', 'wxWorkKeys', 'debug', 'cache', 'removeCache'] as const) {
+    for (const key of ['src', 'fix', 'wxWorkKeys', 'debug', 'cache', 'removeCache', 'onlyChanges'] as const) {
       if (options[key] != null) config[key] = options[key] as never;
     }
 

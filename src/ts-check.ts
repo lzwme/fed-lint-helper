@@ -22,24 +22,24 @@ export interface TsCheckResult extends LintResult {
   diagnosticsCategory: Partial<Record<keyof typeof ts.DiagnosticCategory, number>>;
   /** 异常总数 */
   totalDiagnostics: 0;
-  /** 检测到异常且需要 report 的文件列表 */
-  allDiagnosticsFileMap: { [file: string]: ts.Diagnostic };
-  /** 要缓存到 cacheFilePath 的信息 */
-  tsCache: {
-    /** 已经检测且无异常的文件列表 */
-    tsCheckFilesPassed: { [filepath: string]: { md5: string; updateTime: number } };
-    version: string;
-  };
-  /** 检测通过的文件列表是否有变动(记录变动文件数)，用于标记是否需要写回缓存 */
-  tsCheckFilesPassedChanged: number;
 }
 export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
   /** 白名单列表 */
   private whiteList = {} as Record<string, keyof typeof ts.DiagnosticCategory>; // ts.DiagnosticCategory
   /** 检测缓存文件的路径。不应提交至 git 仓库: 默认为 <config.rootDir>/node_modules/.cache/flh/tsCheckCache.json */
   protected override cacheFilePath = 'node_modules/.cache/flh/tscheckcache.json';
-  // protected override stats = this.getInitStats();
-
+  private cache: {
+    /** 检测到异常且需要 report 的文件列表 */
+    allDiagnosticsFileMap: { [file: string]: ts.Diagnostic };
+    /** 要缓存到 cacheFilePath 的信息 */
+    tsCache: {
+      /** 已经检测且无异常的文件列表 */
+      tsCheckFilesPassed: { [filepath: string]: { md5: string; updateTime: number } };
+      version: string;
+    };
+    /** 检测通过的文件列表是否有变动(记录变动文件数)，用于标记是否需要写回缓存 */
+    tsCheckFilesPassedChanged: number;
+  };
   constructor(override config: TsCheckConfig = {}) {
     super('tscheck', config);
     config = this.parseConfig(config);
@@ -52,6 +52,9 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
       /** 异常总数 */
       totalDiagnostics: 0,
       diagnosticsCategory: {},
+    };
+    this.stats = stats;
+    this.cache = {
       allDiagnosticsFileMap: {},
       tsCache: {
         tsCheckFilesPassed: {},
@@ -75,7 +78,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     this.logger = getLogger(`[TSCheck]`, level, baseConfig.logDir);
     return this.config;
   }
-  protected override init() {
+  protected init() {
     const { whiteListFilePath, removeCache } = this.config;
 
     if (existsSync(this.cacheFilePath)) {
@@ -85,7 +88,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
         } else {
           const cacheInfo = JSON.parse(readFileSync(this.cacheFilePath, { encoding: 'utf8' }));
           if (cacheInfo.version !== VERSION) unlinkSync(this.cacheFilePath);
-          else if (cacheInfo.tsCheckFilesPassed) this.stats.tsCache = cacheInfo;
+          else if (cacheInfo.tsCheckFilesPassed) this.cache.tsCache = cacheInfo;
         }
         // @ts-ignore
       } catch (error: Error) {
@@ -102,15 +105,6 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
         this.logger.error(error.message || error.stack || error);
       }
     }
-
-    // 文件列表过滤
-    this.config.fileList = this.config.fileList.filter(filepath => {
-      // 过滤 .d.ts 文件
-      if (filepath.endsWith('.d.ts')) return false;
-      // 必须以 .tsx? 结尾
-      if (!/\.tsx?$/i.test(filepath)) return false;
-      return true;
-    });
   }
   /** 返回可检测的子项目路径 */
   private getCheckProjectDirs(source = this.config.src) {
@@ -125,7 +119,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
   private compile(sourceFiles: string[], subDirection: string): void {
     const total = sourceFiles.length;
     const { config, stats } = this;
-    const { tsCheckFilesPassed } = this.stats.tsCache;
+    const { tsCheckFilesPassed } = this.cache.tsCache;
 
     this.stats.totalFiles += total;
 
@@ -210,7 +204,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
         const shortpath = item.file.moduleName || fixToshortPath(normalize(item.file.fileName));
 
         if (!this.whiteList[shortpath]) {
-          stats.allDiagnosticsFileMap[shortpath] = item;
+          this.cache.allDiagnosticsFileMap[shortpath] = item;
           errorDiagnostics.push(item);
         }
 
@@ -221,7 +215,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
 
         if (tsCheckFilesPassed[shortpath]) {
           // 从已有中移除缓存，需标记缓存有变更
-          if (tsCheckFilesPassed[shortpath].updateTime != null) stats.tsCheckFilesPassedChanged++;
+          if (tsCheckFilesPassed[shortpath].updateTime != null) this.cache.tsCheckFilesPassedChanged++;
           delete tsCheckFilesPassed[shortpath];
         }
       }
@@ -265,15 +259,15 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
   }
   private updateCache() {
     const { config, stats } = this;
-    const passedFileList = Object.keys(stats.tsCache.tsCheckFilesPassed);
+    const passedFileList = Object.keys(this.cache.tsCache.tsCheckFilesPassed);
     /** 在白名单列表中但本次检测无异常的文件列表（将从白名单列表中移除） */
     const removeFromWhiteList: string[] = [];
 
     for (const shortpath of passedFileList) {
-      const item = stats.tsCache.tsCheckFilesPassed[shortpath];
+      const item = this.cache.tsCache.tsCheckFilesPassed[shortpath];
       if (!item.updateTime) {
         item.updateTime = stats.startTime;
-        stats.tsCheckFilesPassedChanged++;
+        this.cache.tsCheckFilesPassedChanged++;
 
         if (this.whiteList[shortpath]) {
           delete this.whiteList[shortpath];
@@ -281,14 +275,17 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
         }
       } else if (this.whiteList[shortpath]) {
         // 在白名单中的旧缓存，可能有规则更新，缓存已不适用
-        delete stats.tsCache.tsCheckFilesPassed[shortpath];
-        stats.tsCheckFilesPassedChanged++;
+        delete this.cache.tsCache.tsCheckFilesPassed[shortpath];
+        this.cache.tsCheckFilesPassedChanged++;
       }
     }
 
-    if (stats.tsCheckFilesPassedChanged) {
-      writeFileSync(this.cacheFilePath, JSON.stringify(stats.tsCache, void 0, 2));
-      this.logger.info(`update cache(${stats.tsCheckFilesPassedChanged}):`, cyanBright(fixToshortPath(this.cacheFilePath, config.rootDir)));
+    if (this.cache.tsCheckFilesPassedChanged) {
+      writeFileSync(this.cacheFilePath, JSON.stringify(this.cache.tsCache, void 0, 2));
+      this.logger.info(
+        `update cache(${this.cache.tsCheckFilesPassedChanged}):`,
+        cyanBright(fixToshortPath(this.cacheFilePath, config.rootDir))
+      );
     }
 
     return { removeFromWhiteList };
@@ -296,6 +293,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
   /** 执行 ts check */
   public async check(fileList = this.config.fileList) {
     this.logger.info('start checking');
+    this.init();
 
     const { config, stats } = this;
     const directionMap = {
@@ -350,7 +348,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
       }
     }
 
-    const errorFileList = Object.keys(stats.allDiagnosticsFileMap);
+    const errorFileList = Object.keys(this.cache.allDiagnosticsFileMap);
 
     stats.passedFilesNum = stats.totalFiles - errorFileList.length;
     stats.failedFilesNum = errorFileList.length;
@@ -367,7 +365,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     // 异常类型统计
     if (!stats.isPassed) {
       for (const filepath of errorFileList) {
-        const d = stats.allDiagnosticsFileMap[filepath];
+        const d = this.cache.allDiagnosticsFileMap[filepath];
         const cateString = ts.DiagnosticCategory[d.category] as keyof typeof ts.DiagnosticCategory;
         stats.diagnosticsCategory[cateString] = (stats.diagnosticsCategory[cateString] || 0) + 1;
       }
@@ -379,8 +377,14 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     return stats;
   }
   beforeStart(fileList?: string[]): boolean {
-    if (fileList && fileList !== this.config.fileList) this.config.fileList = fileList;
-    this.init();
+    // 文件列表过滤
+    this.config.fileList = this.config.fileList.filter(filepath => {
+      // 过滤 .d.ts 文件
+      if (filepath.endsWith('.d.ts')) return false;
+      // 必须以 .tsx? 结尾
+      if (!/\.tsx?$/i.test(filepath)) return false;
+      return true;
+    });
 
     if (this.config.fileList.length === 0 && (fileList || this.config.src.length === 0)) {
       return false;

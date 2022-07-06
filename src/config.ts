@@ -27,6 +27,10 @@ export interface CommConfig {
   printDetail?: boolean;
   /** 要执行 lint 的源码目录，默认为 ['src'] */
   src?: string[];
+  /** 要检测的文件列表。主要用于指定仅检测发生变更的文件 */
+  fileList?: string[];
+  /** 是否仅检测 git 变化的文件 */
+  onlyChanges?: boolean;
   /** 初始化即执行check。默认为 false。设置为 true 则初始化后即调用 start 方法 */
   checkOnInit?: boolean;
   /** 执行完成时存在 lint 异常，是否退出程序。默认为 true */
@@ -185,6 +189,7 @@ const commConfig: CommConfig = {
   silent: false,
   printDetail: true,
   src: ['src'],
+  onlyChanges: false,
   checkOnInit: false,
   exitOnError: true,
   cache: true,
@@ -227,6 +232,7 @@ export const config: FlhConfig = {
   jira: {
     mode: 'current',
     type: 'commit',
+    commitMsgPrefix: '[ET]',
     sealedCommentAuthors: [],
     jiraHome: 'http://jira.com.cn',
     issuePrefix: [],
