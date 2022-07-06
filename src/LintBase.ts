@@ -21,7 +21,7 @@ export interface LintResult {
   /** 开始处理时间 */
   startTime?: number;
   /** 处理的文件总数 */
-  totalFiles?: number;
+  totalFilesNum?: number;
   // /** 失败文件数 */
   // errorCount?: number;
   /** 检测通过的文件数 */
@@ -52,9 +52,10 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
   constructor(protected tag: ILintTypes, protected config?: C) {
     this.config = this.parseConfig(config);
     const baseConfig = getConfig();
+
     if (!this.logger) {
       const level = this.config.silent ? 'silent' : this.config.debug ? 'debug' : 'log';
-      this.logger = getLogger(this.tag, level);
+      this.logger = getLogger(`[${this.tag.toUpperCase()}]`, level);
     }
     this.logger.debug('config', this.config);
 
@@ -68,7 +69,7 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
     const stats: LintResult = {
       isPassed: true,
       startTime: Date.now(),
-      totalFiles: 0,
+      totalFilesNum: 0,
       passedFilesNum: 0,
       failedFilesNum: 0,
       cacheHits: 0,

@@ -121,7 +121,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     const { config, stats } = this;
     const { tsCheckFilesPassed } = this.cache.tsCache;
 
-    this.stats.totalFiles += total;
+    this.stats.totalFilesNum += total;
 
     console.log();
     this.logger.info(bold(cyanBright('Checking')), subDirection);
@@ -350,7 +350,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
 
     const errorFileList = Object.keys(this.cache.allDiagnosticsFileMap);
 
-    stats.passedFilesNum = stats.totalFiles - errorFileList.length;
+    stats.passedFilesNum = stats.totalFilesNum - errorFileList.length;
     stats.failedFilesNum = errorFileList.length;
     stats.isPassed = stats.failedFilesNum === 0;
 
@@ -358,7 +358,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
       this.logger.info(red('Failed Files:'), `\n - ${errorFileList.join('\n - ')}\n`);
     }
 
-    this.logger.info(cyan('Total :\t'), stats.totalFiles);
+    this.logger.info(cyan('Total :\t'), stats.totalFilesNum);
     this.logger.info(cyan('Passed:\t'), bold(greenBright(stats.passedFilesNum)));
     this.logger.info(cyan('Failed:\t'), bold(red(stats.failedFilesNum)));
 

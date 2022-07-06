@@ -34,6 +34,7 @@ interface POptions
   eslint?: boolean;
   /** 是否执行 jest */
   jest?: boolean;
+  jestCli?: boolean | string;
   /** 是否执行 jira check */
   jira?: boolean;
   /** 是否执行 commitlint */
@@ -71,6 +72,7 @@ program
   .addOption(new Option('--jira-type <type>', `执行 jira 检查的类型。可选值：`).choices(['commit', 'pipeline']))
   .option('--projectName', `指定 git 仓库项目名（用于 jira check）`)
   .option('--jest', `执行 jest 单元测试`)
+  .option('--jest-cli [value]', `使用 jest-cli 执行单元测试。1 是(默认)，0 否`)
   .action(() => {
     const options = getProgramOptions();
     const config: FlhConfig = {
@@ -99,6 +101,7 @@ program
     if (options.jiraHome) config.jira.jiraHome = options.jiraHome;
     if (options.projectName) config.jira.projectName = options.projectName;
     if (options.commitEdit) config.jira.COMMIT_EDITMSG = options.commitEdit;
+    if ('jestCli' in options) config.jest.useJestCli = Boolean(+options.jestCli);
 
     for (const key of ['src', 'fix', 'wxWorkKeys', 'debug', 'cache', 'removeCache', 'onlyChanges'] as const) {
       if (options[key] != null) config[key] = options[key] as never;

@@ -189,6 +189,7 @@ const commConfig: CommConfig = {
   silent: false,
   printDetail: true,
   src: ['src'],
+  fileList: [],
   onlyChanges: false,
   checkOnInit: false,
   exitOnError: true,

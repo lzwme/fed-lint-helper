@@ -26,7 +26,6 @@ export interface JestCheckResult extends LintResult {
 export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
   /** 统计信息 */
   protected override stats = this.getInitStats();
-  protected baseConfig = getConfig();
 
   /** 要缓存到 cacheFilePath 的信息 */
   cacheInfo = {
@@ -47,9 +46,11 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
   }
   /** 配置参数格式化 */
   public parseConfig(config: JestCheckConfig) {
+    const baseConfig = getConfig();
+
     if (config !== this.config) config = assign<JestCheckConfig>({}, this.config, config);
-    this.config = assign<JestCheckConfig>(this.baseConfig.jest, config);
-    this.cacheFilePath = resolve(this.config.rootDir, this.baseConfig.cacheLocation, 'jestcache.json');
+    this.config = assign<JestCheckConfig>(baseConfig.jest, config);
+    this.cacheFilePath = resolve(this.config.rootDir, baseConfig.cacheLocation, 'jestcache.json');
 
     return this.config;
   }
@@ -60,6 +61,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
    * 获取 Jest Options
    */
   protected getJestOptions(specFileList: string[]) {
+    const baseConfig = getConfig();
     const config = this.config;
     const option: Config.Argv = {
       ...config.jestOptions,
@@ -75,7 +77,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
       forceExit: config.exitOnError,
       verbose: config.debug,
       maxWorkers: cpus.length * 2,
-      ci: this.baseConfig.ci,
+      ci: baseConfig.ci,
     };
 
     return option;
@@ -126,7 +128,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
       if (cacheHits) this.logger.info(` - Cache hits:`, cacheHits);
     }
 
-    this.stats.totalFiles = totalFiles;
+    this.stats.totalFilesNum = totalFiles;
     this.stats.cacheHits = cacheHits;
 
     return specFileList;
@@ -138,7 +140,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
     this.logger.info('start checking');
     this.init();
 
-    const result = this.getInitStats();
+    const result = (this.stats = this.getInitStats());
     const { logger, stats, config, cacheFilePath } = this;
     const isCheckAll = config.fileList.length === 0;
 
@@ -154,6 +156,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
     logger.debug(specFileList);
 
     if (config.silent || config.useJestCli) {
+      const baseConfig = getConfig();
       const files = isCheckAll ? config.src : specFileList;
       const cmd = [
         `node --max_old_space_size=4096 ./node_modules/jest/bin/jest.js`,
@@ -164,14 +167,14 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
         config.cache ? `--cache` : null,
         config.cache && config.cacheLocation ? `--cacheDirectory="${config.cacheLocation}"` : null,
         config.silent ? ` --silent` : null,
-        this.baseConfig.ci ? `--ci` : null,
+        baseConfig.ci ? `--ci` : null,
         files.map(f => fixToshortPath(f, config.rootDir)).join(' '),
       ]
         .filter(Boolean)
         .join(' ');
 
       const res = execSync(cmd, config.silent ? 'pipe' : 'inherit', config.rootDir, config.debug);
-      this.logger.debug(res);
+      this.logger.debug(cmd, res);
       stats.isPassed = !res.stderr;
 
       // stats.isPassed = await new Promise(resolve => {
@@ -200,6 +203,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
           if (jestPassedFiles[testFilePath]) delete jestPassedFiles[testFilePath];
           result.failedFilesNum++;
         } else {
+          result.passedFilesNum++;
           const tsFilePath = d.testFilePath.replace('.spec.', '.');
           jestPassedFiles[testFilePath] = {
             md5: existsSync(tsFilePath) ? md5(tsFilePath, true) : '',
@@ -212,7 +216,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
       writeFileSync(cacheFilePath, JSON.stringify(this.cacheInfo, undefined, 2));
 
       stats.isPassed = data.results.success && !data.results.numFailedTestSuites;
-      logger.debug(data);
+      logger.debug('result use runCLI:\n', data);
     }
 
     return result;
