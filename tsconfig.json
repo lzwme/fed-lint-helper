@@ -1,7 +1,5 @@
 {
   "compilerOptions": {
-    "strict": true,
-    "strictNullChecks": false,
     "target": "ESNext",
     "module": "commonjs",
     "outDir": "build/module",
@@ -15,6 +13,9 @@
     "noImplicitOverride": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "strictNullChecks": false,
 
     /* Debugging Options */
     "traceResolution": false,

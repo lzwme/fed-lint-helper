@@ -2,22 +2,19 @@
  * @Author: lzw
  * @Date: 2021-08-25 10:12:21
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-06 14:26:15
+ * @LastEditTime: 2022-07-06 17:26:50
  * @Description: 在 fork 子进程中执行 Check 任务
  */
 
 import { fork } from 'child_process';
 import { resolve } from 'path';
-import type { TsCheckConfig, ESLintCheckConfig, JestCheckConfig, JiraCheckConfig, ILintTypes } from '../config';
+import type { ILintTypes } from '../config';
 
-export interface CreateThreadOptions {
+export interface CreateThreadOptions<C = unknown> {
   /** 启动的类型。eslint 存在插件报错异常，暂不支持 */
   type: ILintTypes;
   debug?: boolean;
-  eslintConfig?: ESLintCheckConfig;
-  tsCheckConfig?: TsCheckConfig;
-  jestConfig?: JestCheckConfig;
-  jiraConfig?: JiraCheckConfig;
+  config?: C;
 }
 
 export interface WorkerMessageBody<T = unknown> {
@@ -26,7 +23,10 @@ export interface WorkerMessageBody<T = unknown> {
   end?: boolean;
 }
 
-export function createForkThread<T>(options: CreateThreadOptions, onMessage?: (d: WorkerMessageBody<T>) => void): Promise<T> {
+export function createForkThread<T, C = unknown>(
+  options: CreateThreadOptions<C>,
+  onMessage?: (d: WorkerMessageBody<T>) => void
+): Promise<T> {
   return new Promise((rs, reject) => {
     const worker = fork(resolve(__dirname, './forked-process.js'), { silent: false });
     worker.send(options);

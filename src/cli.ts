@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-06 14:25:25
+ * @LastEditTime: 2022-07-06 17:11:15
  * @Description: cli 工具
  */
 import { Option, program } from 'commander';
@@ -100,8 +100,8 @@ program
     if (options.projectName) config.jira.projectName = options.projectName;
     if (options.commitEdit) config.jira.COMMIT_EDITMSG = options.commitEdit;
 
-    for (const key of ['src', 'fix', 'wxWorkKeys', 'debug', 'cache', 'removeCache']) {
-      if (options[key] != null) config[key] = options[key];
+    for (const key of ['src', 'fix', 'wxWorkKeys', 'debug', 'cache', 'removeCache'] as const) {
+      if (options[key] != null) config[key] = options[key] as never;
     }
 
     const baseConfig = getConfig(mergeCommConfig(config, false));

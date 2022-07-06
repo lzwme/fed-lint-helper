@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-06 14:24:13
+ * @LastEditTime: 2022-07-06 16:38:27
  * @Description:
  */
 
@@ -14,9 +14,9 @@ import type { ESLint } from 'eslint';
 import type { Config } from '@jest/types';
 import type { IncomingHttpHeaders } from 'http';
 import { type WxWorkReqParams } from './lib/WXWork';
-import { assign, ValueOf, formatWxWorkKeys, getLogger } from './utils';
+import { assign, formatWxWorkKeys, getLogger } from './utils';
 
-interface CommConfig {
+export interface CommConfig {
   /** 项目根目录，默认为当前工作目录 */
   rootDir?: string;
   /** 是否打印调试信息 */
@@ -50,7 +50,7 @@ export interface TsCheckConfig extends CommConfig {
   /** 项目源码目录，支持配置多个子项目(存在独立的 tsconfig.json)路径，默认为 ['src'] */
   src?: string[];
   /** ts 文件列表。当设置并存在内容时，只对该列表中的文件进行检测。主要用于 git hook 获取 commit 文件列表的场景 */
-  tsFiles?: string[];
+  fileList?: string[];
   /** 文件排除列表， glob 规则。用于过滤一些不需要检测的文件 */
   exclude?: string | string[];
   /** 白名单列表文件保存的路径，用于过滤允许出错的历史文件。默认为 `<config.rootDir>/tsCheckWhiteList.json` 文件 */
@@ -198,7 +198,7 @@ export const config: FlhConfig = {
   logDir: `node_modules/.cache/flh/log`,
   ci: Boolean(env.CI || env.GITLAB_CI || env.JENKINS_HOME),
   tscheck: {
-    tsFiles: [],
+    fileList: [],
     exclude: ['**/*.test.{ts,tsx}', '**/*/*.mock.{ts,tsx}', '**/*/*.d.ts'],
     whiteListFilePath: 'tsCheckWhiteList.json',
     tsConfigFileName: 'tsconfig.json',
@@ -241,7 +241,7 @@ export const config: FlhConfig = {
 };
 
 export const LintTypes = ['eslint', 'tscheck', 'jest', 'jira'] as const;
-export type ILintTypes = ValueOf<typeof LintTypes>;
+export type ILintTypes = 'eslint' | 'tscheck' | 'jest' | 'jira';
 let isInited = false;
 
 /** 将公共参数值合并进 LintTypes 内部 */
@@ -249,13 +249,13 @@ export function mergeCommConfig(options: FlhConfig, useDefault = true) {
   // 公共通用配置
   for (const key of Object.keys(commConfig)) {
     for (const type of LintTypes) {
-      if (!(key in options[type])) {
-        if (!(key in options)) {
-          // @ts-ignore
-          if (useDefault) options[type][key] = commConfig[key];
-          // @ts-ignore
-        } else options[type][key] = options[key];
-      }
+      if (!options[type] || key in options[type]) continue;
+
+      if (!(key in options)) {
+        // @ts-ignore
+        if (useDefault) options[type][key] = commConfig[key];
+        // @ts-ignore
+      } else options[type][key] = options[key];
     }
   }
   return options;

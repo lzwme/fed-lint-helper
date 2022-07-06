@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-25 10:12:21
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-06 11:34:27
+ * @LastEditTime: 2022-07-06 17:26:21
  * @Description: worker_threads 实现在 worker 线程中执行
  *
  * - worker_threads 比 child_process 和 cluster 更为轻量级的并行性，而且 worker_threads 可有效地共享内存
@@ -10,16 +10,13 @@
  */
 
 import { Worker, isMainThread, parentPort, workerData } from 'worker_threads';
-import type { TsCheckConfig, ESLintCheckConfig, JestCheckConfig, JiraCheckConfig, ILintTypes } from '../config';
+import type { ESLintCheckConfig, ILintTypes, JestCheckConfig, JiraCheckConfig, TsCheckConfig } from '../config';
 import { getLogger } from './get-logger';
-interface CreateThreadOptions {
+interface CreateThreadOptions<C = unknown> {
   debug?: boolean;
   /** 创建线程的类型。eslint 尽量使用该模式，使用 fork 进程方式 */
   type: ILintTypes;
-  eslintConfig?: ESLintCheckConfig;
-  tsCheckConfig?: TsCheckConfig;
-  jestConfig?: JestCheckConfig;
-  jiraConfig?: JiraCheckConfig;
+  config: C;
 }
 
 interface WorkerMessageBody<T = unknown> {
@@ -28,7 +25,10 @@ interface WorkerMessageBody<T = unknown> {
   end: boolean;
 }
 
-export function createWorkerThreads<T>(options: CreateThreadOptions, onMessage?: (d: WorkerMessageBody<T>) => void): Promise<T> {
+export function createWorkerThreads<T, C = unknown>(
+  options: CreateThreadOptions<C>,
+  onMessage?: (d: WorkerMessageBody<T>) => void
+): Promise<T> {
   return new Promise((resolve, reject) => {
     if (!isMainThread) return reject(-2);
 
@@ -57,51 +57,51 @@ export function createWorkerThreads<T>(options: CreateThreadOptions, onMessage?:
 
 if (!isMainThread) {
   globalThis.isChildProc = true;
-  const config: CreateThreadOptions = workerData;
-  if (config.debug) console.log('workerData:', config);
+  const options: CreateThreadOptions = workerData;
+  if (options.debug) console.log('workerData:', options);
   const done = (data: unknown) => {
-    if (config.debug) console.log('emit msg from worker thread:', { type: config.type, data, end: true });
+    if (options.debug) console.log('emit msg from worker thread:', { type: options.type, data, end: true });
     setTimeout(() => {
-      parentPort.postMessage({ type: config.type, data, end: true } as WorkerMessageBody);
+      parentPort.postMessage({ type: options.type, data, end: true } as WorkerMessageBody);
     }, 300);
   };
   const resetConfig = { checkOnInit: false, exitOnError: false, mode: 'current' };
 
-  switch (config.type) {
+  switch (options.type) {
     case 'tscheck':
-      if (config.tsCheckConfig) {
+      if (options.config) {
         import('../ts-check').then(({ TsCheck }) => {
-          const inc = new TsCheck(Object.assign(config.tsCheckConfig, resetConfig));
+          const inc = new TsCheck(Object.assign(options.config as TsCheckConfig, resetConfig));
           inc.start().then(d => done(d));
         });
       }
       break;
     case 'eslint':
-      if (config.eslintConfig) {
+      if (options.config) {
         import('../eslint-check').then(({ ESLintCheck }) => {
-          const inc = new ESLintCheck(Object.assign(config.eslintConfig, resetConfig));
+          const inc = new ESLintCheck(Object.assign(options.config as ESLintCheckConfig, resetConfig));
           inc.start().then(d => done(d));
         });
       }
       break;
     case 'jest':
-      if (config.jestConfig) {
+      if (options.config) {
         import('../jest-check').then(({ JestCheck }) => {
-          const inc = new JestCheck(Object.assign(config.jestConfig, resetConfig));
+          const inc = new JestCheck(Object.assign(options.config as JestCheckConfig, resetConfig));
           inc.start().then(d => done(d));
         });
       }
       break;
     case 'jira':
-      if (config.jiraConfig) {
+      if (options.config) {
         import('../jira-check').then(({ JiraCheck }) => {
-          const inc = new JiraCheck(Object.assign(config.jiraConfig, resetConfig));
+          const inc = new JiraCheck(Object.assign(options.config as JiraCheckConfig, resetConfig));
           inc.start().then(d => done(d));
         });
       }
       break;
     default:
-      console.log('TODO', config);
+      console.log('TODO', options);
       process.exit(1);
   }
 }

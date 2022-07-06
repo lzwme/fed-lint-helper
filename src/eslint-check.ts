@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-06 15:37:16
+ * @LastEditTime: 2022-07-06 17:29:00
  * @Description:  eslint check
  */
 
@@ -330,10 +330,10 @@ export class ESLintCheck {
   private checkInChildProc() {
     this.logger.info('start fork child progress');
 
-    return createForkThread<ESLintCheckResult>({
+    return createForkThread<ESLintCheckResult, ESLintCheckConfig>({
       type: 'eslint',
       debug: this.config.debug,
-      eslintConfig: this.config,
+      config: this.config,
     }).catch(error => {
       this.logger.error('checkInChildProc error, code:', error);
       return { isPassed: false, errorCount: error } as ESLintCheckResult;
@@ -349,7 +349,7 @@ export class ESLintCheck {
       return createWorkerThreads<ESLintCheckResult>({
         type: 'eslint',
         debug: this.config.debug,
-        eslintConfig: this.config,
+        config: this.config,
       }).catch(error => {
         this.logger.error('checkInWorkThreads error, code:', error);
         return { isPassed: false, errorCount: error } as ESLintCheckResult;

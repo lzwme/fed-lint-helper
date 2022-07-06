@@ -2,98 +2,89 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-06 15:28:02
+ * @LastEditTime: 2022-07-06 18:13:11
  * @Description: typescript Diagnostics report
  */
 
+import { resolve, dirname, normalize } from 'path';
+import { existsSync, unlinkSync, readFileSync, statSync, writeFileSync, mkdirSync } from 'fs';
 import { color } from 'console-log-colors';
-import fs from 'fs';
-import path from 'path';
 import * as ts from 'typescript';
 import glob from 'fast-glob';
 import minimatch from 'minimatch';
-import { fixToshortPath, md5, assign, getLogger, execSync, getTimeCost } from './utils';
-import { createForkThread } from './utils/fork';
+import { fixToshortPath, md5, assign, getLogger, execSync } from './utils';
 import { TsCheckConfig, getConfig, VERSION } from './config';
-import { exit } from './exit';
+import { LintBase, LintResult } from './LintBase';
 
 const { bold, redBright, yellowBright, cyanBright, red, greenBright, cyan } = color;
-export interface TsCheckResult {
-  /**是否检测通过 */
-  isPassed: boolean;
-  /** 匹配到的文件总数 */
-  total: number;
-  /** 检测通过的文件数 */
-  passed: number;
-  /** 失败的文件数 */
-  failed: number;
-  diagnosticCategory: Record<keyof typeof ts.DiagnosticCategory, number>;
+export interface TsCheckResult extends LintResult {
+  /** 异常类型数量统计 */
+  diagnosticsCategory: Partial<Record<keyof typeof ts.DiagnosticCategory, number>>;
+  /** 异常总数 */
+  totalDiagnostics: 0;
+  /** 检测到异常且需要 report 的文件列表 */
+  allDiagnosticsFileMap: { [file: string]: ts.Diagnostic };
+  /** 要缓存到 cacheFilePath 的信息 */
+  tsCache: {
+    /** 已经检测且无异常的文件列表 */
+    tsCheckFilesPassed: { [filepath: string]: { md5: string; updateTime: number } };
+    version: string;
+  };
+  /** 检测通过的文件列表是否有变动(记录变动文件数)，用于标记是否需要写回缓存 */
+  tsCheckFilesPassedChanged: number;
 }
-export class TsCheck {
-  private stats = this.getInitStats();
+export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
   /** 白名单列表 */
   private whiteList = {} as Record<string, keyof typeof ts.DiagnosticCategory>; // ts.DiagnosticCategory
   /** 检测缓存文件的路径。不应提交至 git 仓库: 默认为 <config.rootDir>/node_modules/.cache/flh/tsCheckCache.json */
-  private cacheFilePath = 'node_modules/.cache/flh/tscheckcache.json';
-  private logger: ReturnType<typeof getLogger>;
+  protected override cacheFilePath = 'node_modules/.cache/flh/tscheckcache.json';
+  // protected override stats = this.getInitStats();
 
-  constructor(private config: TsCheckConfig = {}) {
+  constructor(override config: TsCheckConfig = {}) {
+    super('tscheck', config);
     config = this.parseConfig(config);
     this.logger.debug('config', this.config);
     if (config.checkOnInit) this.start();
   }
-  private getInitStats() {
-    const stats = {
-      /** 最近一次处理是否成功 */
-      success: false,
-      /** 最近一次处理的开始时间 */
-      startTime: Date.now(),
-      /** 匹配到的 ts 文件总数 */
-      totalFiles: 0,
+  protected override getInitStats() {
+    const stats: TsCheckResult = {
+      ...super.getInitStats(),
       /** 异常总数 */
       totalDiagnostics: 0,
-      /** 异常类型数量统计 */
-      allDiagnosticsCategory: {} as Record<keyof typeof ts.DiagnosticCategory, number>,
-      /** 检测到异常且需要 report 的文件列表 */
-      allDiagnosticsFileMap: {} as { [file: string]: ts.Diagnostic },
-      /** 要缓存到 cacheFilePath 的信息 */
+      diagnosticsCategory: {},
+      allDiagnosticsFileMap: {},
       tsCache: {
-        /** 已经检测且无异常的文件列表 */
-        tsCheckFilesPassed: {} as { [filepath: string]: { md5: string; updateTime: number } },
+        tsCheckFilesPassed: {},
         version: VERSION,
       },
       /** 检测通过的文件列表是否有变动(记录变动文件数)，用于标记是否需要写回缓存 */
       tsCheckFilesPassedChanged: 0,
     };
-    this.stats = stats;
+
     return stats;
-  }
-  /** 返回执行结果统计信息 */
-  public get statsInfo() {
-    return this.stats;
   }
   /** 配置参数格式化 */
   public parseConfig(config: TsCheckConfig) {
-    const baseConfig = getConfig({ tscheck: config });
+    const baseConfig = getConfig({ tscheck: config }, false);
 
     this.config = assign<TsCheckConfig>({}, baseConfig.tscheck);
-    this.cacheFilePath = path.resolve(this.config.rootDir, baseConfig.cacheLocation, 'tsCheckCache.json');
-    this.config.whiteListFilePath = path.resolve(this.config.rootDir, this.config.whiteListFilePath);
+    this.cacheFilePath = resolve(this.config.rootDir, baseConfig.cacheLocation, 'tsCheckCache.json');
+    this.config.whiteListFilePath = resolve(this.config.rootDir, this.config.whiteListFilePath);
 
     const level = this.config.silent ? 'silent' : this.config.debug ? 'debug' : 'log';
     this.logger = getLogger(`[TSCheck]`, level, baseConfig.logDir);
     return this.config;
   }
-  private init() {
+  protected override init() {
     const { whiteListFilePath, removeCache } = this.config;
 
-    if (fs.existsSync(this.cacheFilePath)) {
+    if (existsSync(this.cacheFilePath)) {
       try {
         if (removeCache) {
-          fs.unlinkSync(this.cacheFilePath);
+          unlinkSync(this.cacheFilePath);
         } else {
-          const cacheInfo = JSON.parse(fs.readFileSync(this.cacheFilePath, { encoding: 'utf8' }));
-          if (cacheInfo.version !== VERSION) fs.unlinkSync(this.cacheFilePath);
+          const cacheInfo = JSON.parse(readFileSync(this.cacheFilePath, { encoding: 'utf8' }));
+          if (cacheInfo.version !== VERSION) unlinkSync(this.cacheFilePath);
           else if (cacheInfo.tsCheckFilesPassed) this.stats.tsCache = cacheInfo;
         }
         // @ts-ignore
@@ -103,9 +94,9 @@ export class TsCheck {
     }
 
     // 读取白名单列表
-    if (!this.config.toWhiteList && fs.existsSync(whiteListFilePath)) {
+    if (!this.config.toWhiteList && existsSync(whiteListFilePath)) {
       try {
-        this.whiteList = JSON.parse(fs.readFileSync(whiteListFilePath, { encoding: 'utf8' }));
+        this.whiteList = JSON.parse(readFileSync(whiteListFilePath, { encoding: 'utf8' }));
         // @ts-ignore
       } catch (error: Error) {
         this.logger.error(error.message || error.stack || error);
@@ -113,7 +104,7 @@ export class TsCheck {
     }
 
     // 文件列表过滤
-    this.config.tsFiles = this.config.tsFiles.filter(filepath => {
+    this.config.fileList = this.config.fileList.filter(filepath => {
       // 过滤 .d.ts 文件
       if (filepath.endsWith('.d.ts')) return false;
       // 必须以 .tsx? 结尾
@@ -125,8 +116,8 @@ export class TsCheck {
   private getCheckProjectDirs(source = this.config.src) {
     const { rootDir } = this.config;
     return source.filter(d => {
-      const p = path.resolve(rootDir, d);
-      return fs.existsSync(p) && fs.statSync(p).isDirectory();
+      const p = resolve(rootDir, d);
+      return existsSync(p) && statSync(p).isDirectory();
     });
   }
 
@@ -174,11 +165,11 @@ export class TsCheck {
 
     if (sourceFiles.length === 0) return;
 
-    const subConfigFile = path.resolve(subDirection, config.tsConfigFileName);
-    const hasSubConfig = fs.existsSync(subConfigFile);
+    const subConfigFile = resolve(subDirection, config.tsConfigFileName);
+    const hasSubConfig = existsSync(subConfigFile);
 
     const options: ts.CompilerOptions = ts.readConfigFile(hasSubConfig ? subConfigFile : config.tsConfigFileName, ts.sys.readFile).config;
-    const cfg = ts.parseJsonConfigFileContent(options, ts.sys, hasSubConfig ? subDirection : path.dirname(config.tsConfigFileName));
+    const cfg = ts.parseJsonConfigFileContent(options, ts.sys, hasSubConfig ? subDirection : dirname(config.tsConfigFileName));
 
     const host = ts.createCompilerHost(cfg.options);
     const program = ts.createProgram(sourceFiles, cfg.options, host);
@@ -192,7 +183,7 @@ export class TsCheck {
       }
 
       if (item.file) {
-        const shortpath = fixToshortPath(path.normalize(item.file.fileName));
+        const shortpath = fixToshortPath(normalize(item.file.fileName));
         item.file.moduleName = shortpath;
 
         // 过滤间接依赖进来的文件
@@ -216,7 +207,7 @@ export class TsCheck {
           continue;
         }
 
-        const shortpath = item.file.moduleName || fixToshortPath(path.normalize(item.file.fileName));
+        const shortpath = item.file.moduleName || fixToshortPath(normalize(item.file.fileName));
 
         if (!this.whiteList[shortpath]) {
           stats.allDiagnosticsFileMap[shortpath] = item;
@@ -261,16 +252,16 @@ export class TsCheck {
   }
   /** 返回指定子目录中匹配到的 ts 文件列表 */
   private async getTsFiles(subDirection: string) {
-    if (!fs.existsSync(subDirection)) return void 0;
+    if (!existsSync(subDirection)) return void 0;
 
-    const tsFiles = await glob('**/*.{ts,tsx}', {
+    const fileList = await glob('**/*.{ts,tsx}', {
       cwd: subDirection,
       ignore: this.config.exclude as string[],
       absolute: true,
     });
 
-    // checkUnUse(tsFiles);
-    return { tsFiles, subDirection };
+    // checkUnUse(fileList);
+    return { fileList, subDirection };
   }
   private updateCache() {
     const { config, stats } = this;
@@ -296,26 +287,25 @@ export class TsCheck {
     }
 
     if (stats.tsCheckFilesPassedChanged) {
-      fs.writeFileSync(this.cacheFilePath, JSON.stringify(stats.tsCache, void 0, 2));
+      writeFileSync(this.cacheFilePath, JSON.stringify(stats.tsCache, void 0, 2));
       this.logger.info(`update cache(${stats.tsCheckFilesPassedChanged}):`, cyanBright(fixToshortPath(this.cacheFilePath, config.rootDir)));
     }
 
     return { removeFromWhiteList };
   }
   /** 执行 ts check */
-  public async check(tsFiles = this.config.tsFiles) {
+  public async check(fileList = this.config.fileList) {
     this.logger.info('start checking');
-    this.init();
 
     const { config, stats } = this;
     const directionMap = {
       // 没有 tsconfig.json 独立配置文件的子目录文件，也将全部放到这里一起编译
-      [config.rootDir]: tsFiles || [],
+      [config.rootDir]: fileList || [],
     };
 
     this.logger.debug('config:', config);
 
-    // 没有指定 tsFiles 文件列表，才按 src 指定规则匹配
+    // 没有指定 fileList 文件列表，才按 src 指定规则匹配
     if (directionMap[config.rootDir].length === 0) {
       const directories = this.getCheckProjectDirs(config.src);
       if (!directories) {
@@ -326,12 +316,12 @@ export class TsCheck {
       this.logger.debug('本次检测的子目录包括：', directories);
       const allTsFiles = await Promise.all(directories.map(d => this.getTsFiles(d)));
       for (const info of allTsFiles) {
-        if (!info || info.tsFiles.length === 0) continue;
+        if (!info || info.fileList.length === 0) continue;
 
-        if (fs.existsSync(path.resolve(info.subDirection, config.tsConfigFileName))) {
-          directionMap[info.subDirection] = info.tsFiles;
+        if (existsSync(resolve(info.subDirection, config.tsConfigFileName))) {
+          directionMap[info.subDirection] = info.fileList;
         } else {
-          directionMap[config.rootDir].push(...info.tsFiles);
+          directionMap[config.rootDir].push(...info.fileList);
         }
       }
     }
@@ -341,8 +331,8 @@ export class TsCheck {
     const { removeFromWhiteList } = this.updateCache();
 
     if (config.toWhiteList) {
-      if (!fs.existsSync(path.dirname(config.whiteListFilePath))) fs.mkdirSync(path.dirname(config.whiteListFilePath), { recursive: true });
-      fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, void 0, 2));
+      if (!existsSync(dirname(config.whiteListFilePath))) mkdirSync(dirname(config.whiteListFilePath), { recursive: true });
+      writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, void 0, 2));
       this.logger.info(
         `[ADD]write to whitelist(${Object.keys(this.whiteList).length}):`,
         cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir))
@@ -354,108 +344,47 @@ export class TsCheck {
           `[REMOVE]write to whitelist(${Object.keys(this.whiteList).length}):`,
           cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir))
         );
-        fs.writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, void 0, 2));
+        writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, void 0, 2));
         this.logger.info(`remove from whilelist(${removeFromWhiteList.length}):\n` + removeFromWhiteList.join('\n'));
         execSync(`git add ${config.whiteListFilePath}`, void 0, config.rootDir, !config.silent);
       }
     }
 
     const errorFileList = Object.keys(stats.allDiagnosticsFileMap);
-    const result: TsCheckResult = {
-      isPassed: errorFileList.length === 0,
-      /** 匹配到的文件总数 */
-      total: stats.totalFiles,
-      /** 检测通过的文件数 */
-      passed: stats.totalFiles - errorFileList.length,
-      /** 失败的文件数 */
-      failed: errorFileList.length,
-      diagnosticCategory: stats.allDiagnosticsCategory,
-    };
 
-    this.stats.success = result.failed !== 0;
+    stats.passedFilesNum = stats.totalFiles - errorFileList.length;
+    stats.failedFilesNum = errorFileList.length;
+    stats.isPassed = stats.failedFilesNum === 0;
 
-    if (result.failed && config.printDetail) {
+    if (!stats.isPassed && config.printDetail) {
       this.logger.info(red('Failed Files:'), `\n - ${errorFileList.join('\n - ')}\n`);
     }
 
-    this.logger.info(cyan('Total :\t'), result.total);
-    this.logger.info(cyan('Passed:\t'), bold(greenBright(result.passed)));
-    this.logger.info(cyan('Failed:\t'), bold(red(result.failed)));
+    this.logger.info(cyan('Total :\t'), stats.totalFiles);
+    this.logger.info(cyan('Passed:\t'), bold(greenBright(stats.passedFilesNum)));
+    this.logger.info(cyan('Failed:\t'), bold(red(stats.failedFilesNum)));
 
     // 异常类型统计
-    if (result.failed) {
+    if (!stats.isPassed) {
       for (const filepath of errorFileList) {
         const d = stats.allDiagnosticsFileMap[filepath];
         const cateString = ts.DiagnosticCategory[d.category] as keyof typeof ts.DiagnosticCategory;
-        stats.allDiagnosticsCategory[cateString] = (stats.allDiagnosticsCategory[cateString] || 0) + 1;
+        stats.diagnosticsCategory[cateString] = (stats.diagnosticsCategory[cateString] || 0) + 1;
       }
-      for (const keyString of Object.keys(stats.allDiagnosticsCategory)) {
-        this.logger.info(bold(cyan(` -- ${keyString} Count：`)), bold(yellowBright(result.diagnosticCategory[keyString as never])));
+      for (const keyString of Object.keys(stats.diagnosticsCategory)) {
+        this.logger.info(bold(cyan(` -- ${keyString} Count：`)), bold(yellowBright(stats.diagnosticsCategory[keyString as never])));
       }
     }
 
-    if (!result.failed) {
-      this.logger.info(bold(greenBright('Verification passed!')));
-    } else {
-      this.logger.info(bold(redBright('Verification failed!')));
-    }
-
-    return result;
+    return stats;
   }
-  /**
-   * 在 fork 子进程中执行
-   */
-  private checkInChildProc() {
-    this.logger.info('start fork child progress');
-
-    return createForkThread<TsCheckResult>({
-      type: 'tscheck',
-      debug: this.config.debug,
-      tsCheckConfig: this.config,
-    }).catch(error => {
-      this.logger.error('checkInChildProc error, code:', error);
-      return { isPassed: false, failed: error } as TsCheckResult;
-    });
-  }
-  /**
-   * 在 work_threads 子线程中执行
-   */
-  private checkInWorkThreads() {
-    this.logger.info('start create work threads');
-
-    return import('./utils/worker-threads').then(({ createWorkerThreads }) => {
-      return createWorkerThreads<TsCheckResult>({
-        type: 'tscheck',
-        debug: this.config.debug,
-        tsCheckConfig: this.config,
-      }).catch(error => {
-        this.logger.error('checkInWorkThreads error, code:', error);
-        return { isPassed: false, failed: error } as TsCheckResult;
-      });
-    });
-  }
-  /** 执行 check */
-  public async start(tsFiles?: string[]) {
-    if (tsFiles && tsFiles !== this.config.tsFiles) this.config.tsFiles = tsFiles;
+  beforeStart(fileList?: string[]): boolean {
+    if (fileList && fileList !== this.config.fileList) this.config.fileList = fileList;
     this.init();
 
-    if (this.config.tsFiles.length === 0 && (tsFiles || this.config.src.length === 0)) {
-      this.logger.info('No files to process\n');
-      return { isPassed: true } as TsCheckResult;
+    if (this.config.fileList.length === 0 && (fileList || this.config.src.length === 0)) {
+      return false;
     }
-
-    let result: TsCheckResult;
-    if (this.config.mode === 'proc') result = await this.checkInChildProc();
-    else if (this.config.mode === 'thread') result = await this.checkInWorkThreads();
-    else result = await this.check(this.config.tsFiles);
-
-    this.stats.success = !!result.isPassed;
-    if (!globalThis.isChildProc) {
-      this.logger.debug('result', result);
-      this.logger.info(getTimeCost(this.stats.startTime));
-    }
-    if (!result.isPassed && this.config.exitOnError) exit(result.failed || -1, '[TsCheck]');
-
-    return result;
+    return true;
   }
 }

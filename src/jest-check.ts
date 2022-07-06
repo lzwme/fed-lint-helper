@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-06 14:52:38
+ * @LastEditTime: 2022-07-06 17:31:45
  * @Description:  jest check
  */
 
@@ -265,7 +265,7 @@ export class JestCheck {
     return createForkThread<JestCheckResult>({
       type: 'jest',
       debug: this.config.debug,
-      jestConfig: this.config,
+      config: this.config,
     }).catch(error => {
       this.logger.error('checkInChildProc error, code:', error);
       return { isPassed: false } as JestCheckResult;
@@ -280,7 +280,7 @@ export class JestCheck {
       return createWorkerThreads<JestCheckResult>({
         type: 'jest',
         debug: this.config.debug,
-        jestConfig: this.config,
+        config: this.config,
       }).catch(error => {
         this.logger.error('checkInWorkThreads error, code:', error);
         return { isPassed: false } as JestCheckResult;

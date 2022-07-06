@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-06 15:39:26
+ * @LastEditTime: 2022-07-06 17:29:15
  * @Description:  Jira check
  */
 
@@ -495,7 +495,7 @@ export class JiraCheck {
     return createForkThread<JiraCheckResult>({
       type: 'jira',
       debug: this.config.debug,
-      jiraConfig: this.config,
+      config: this.config,
     }).catch(error => {
       this.logger.error('checkInChildProc error, code:', error);
       this.stats.errCount = error;
@@ -509,7 +509,7 @@ export class JiraCheck {
       return createWorkerThreads<JiraCheckResult>({
         type: 'jira',
         debug: this.config.debug,
-        jiraConfig: this.config,
+        config: this.config,
       }).catch(error => {
         this.logger.error('checkInWorkThreads error, code:', error);
         this.stats.errCount = error;

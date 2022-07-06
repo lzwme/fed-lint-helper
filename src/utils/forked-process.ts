@@ -2,17 +2,18 @@
  * @Author: lzw
  * @Date: 2021-08-25 13:31:22
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-06 11:35:45
+ * @LastEditTime: 2022-07-06 17:30:00
  * @Description: fork 子进程的具体调用逻辑实现
  */
 
 import type { CreateThreadOptions, WorkerMessageBody } from './fork';
+import type { TsCheckConfig, ESLintCheckConfig, JestCheckConfig, JiraCheckConfig } from '../config';
 
 globalThis.isChildProc = true;
-process.on('message', (config: CreateThreadOptions) => {
-  if (config.debug) console.log('ForkWorker received:', config);
+process.on('message', (options: CreateThreadOptions) => {
+  if (options.debug) console.log('ForkWorker received:', options);
   const done = (data: unknown) => {
-    process.send({ type: config.type, data, end: true } as WorkerMessageBody);
+    process.send({ type: options.type, data, end: true } as WorkerMessageBody);
     process.exit(0);
   };
   const resetConfig = {
@@ -21,41 +22,32 @@ process.on('message', (config: CreateThreadOptions) => {
     mode: 'current',
   };
 
-  switch (config.type) {
-    case 'tscheck':
-      if (config.tsCheckConfig) {
-        import('../ts-check').then(({ TsCheck }) => {
-          const inc = new TsCheck(Object.assign(config.tsCheckConfig, resetConfig));
+  if (options.config) {
+    switch (options.type) {
+      case 'tscheck':
+        return import('../ts-check').then(({ TsCheck }) => {
+          const inc = new TsCheck(Object.assign(options.config as TsCheckConfig, resetConfig));
           inc.start().then(d => done(d));
         });
-      }
-      break;
-    case 'eslint':
-      if (config.eslintConfig) {
-        import('../eslint-check').then(({ ESLintCheck }) => {
-          const inc = new ESLintCheck(Object.assign(config.eslintConfig, resetConfig));
+      case 'eslint':
+        return import('../eslint-check').then(({ ESLintCheck }) => {
+          const inc = new ESLintCheck(Object.assign(options.config as ESLintCheckConfig, resetConfig));
           inc.start().then(d => done(d));
         });
-      }
-      break;
-    case 'jest':
-      if (config.jestConfig) {
-        import('../jest-check').then(({ JestCheck }) => {
-          const inc = new JestCheck(Object.assign(config.jestConfig, resetConfig));
+      case 'jest':
+        return import('../jest-check').then(({ JestCheck }) => {
+          const inc = new JestCheck(Object.assign(options.config as JestCheckConfig, resetConfig));
           inc.start().then(d => done(d));
         });
-      }
-      break;
-    case 'jira':
-      if (config.jiraConfig) {
-        import('../jira-check').then(({ JiraCheck }) => {
-          const inc = new JiraCheck(Object.assign(config.jiraConfig, resetConfig));
+      case 'jira':
+        return import('../jira-check').then(({ JiraCheck }) => {
+          const inc = new JiraCheck(Object.assign(options.config as JiraCheckConfig, resetConfig));
           inc.start().then(d => done(d));
         });
-      }
-      break;
-    default:
-      console.log('TODO', config);
-      process.exit(1);
+      default:
+        console.log('TODO', options);
+    }
   }
+
+  process.exit(1);
 });
