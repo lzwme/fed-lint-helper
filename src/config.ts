@@ -56,7 +56,7 @@ export interface TsCheckConfig extends CommConfig {
   /** ts 文件列表。当设置并存在内容时，只对该列表中的文件进行检测。主要用于 git hook 获取 commit 文件列表的场景 */
   fileList?: string[];
   /** 文件排除列表， glob 规则。用于过滤一些不需要检测的文件 */
-  exclude?: string | string[];
+  exclude?: string[];
   /** 白名单列表文件保存的路径，用于过滤允许出错的历史文件。默认为 `<config.rootDir>/tsCheckWhiteList.json` 文件 */
   whiteListFilePath?: string;
   /** tsconfig 配置文件的文件名。默认为 tsconfig.json */

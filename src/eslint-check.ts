@@ -10,7 +10,7 @@ import { color } from 'console-log-colors';
 import type { ESLint } from 'eslint';
 import { existsSync, unlinkSync, writeFileSync, readFileSync } from 'fs';
 import { resolve } from 'path';
-import { fixToshortPath, assign, execSync, getTimeCost } from './utils';
+import { fixToshortPath, assign, execSync } from './utils';
 import { ESLintCheckConfig, getConfig } from './config';
 import { LintBase, type LintResult } from './LintBase';
 
@@ -163,6 +163,9 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
         }
         return;
       }
+
+      // todo: 文件路径过滤
+
       stats.failedFilesNum++;
 
       if (Array.isArray(result.messages)) {
@@ -273,23 +276,16 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
         );
       }
     }
-
-    this.logger.info(getTimeCost(stats.startTime));
-
-    this.stats = {
-      ...this.stats,
-      // newErrCount: newErrorReults.length,
-      // newWarningCount: newWaringReults.length,
-      /** 自动修复的错误数量 */
+    Object.assign(this.stats, {
       fixedCount: config.fix ? stats.fixableErrorCount + stats.fixableWarningCount : 0,
-      /** 本次检测的目录或文件列表 */
       lintList,
       totalFilesNum: results.length,
       errorFiles: errorReults.map(d => d.filePath), // results.filter(d => d.errorCount).map(d => d.filePath),
       warningFiles: waringReults.map(d => d.filePath), // results.filter(d => d.warningCount).map(d => d.filePath),
-      // /** LintResult，用于 API 调用自行处理相关逻辑 */
       // results,
-    };
+      // newErrCount: newErrorReults.length,
+      // newWarningCount: newWaringReults.length,
+    } as ESLintCheckResult);
 
     return this.stats;
   }

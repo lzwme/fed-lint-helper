@@ -250,7 +250,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
 
     const fileList = await glob('**/*.{ts,tsx}', {
       cwd: subDirection,
-      ignore: this.config.exclude as string[],
+      ignore: this.config.exclude,
       absolute: true,
     });
 
