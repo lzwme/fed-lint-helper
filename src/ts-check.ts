@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-07 09:29:16
+ * @LastEditTime: 2022-07-07 15:40:32
  * @Description: typescript Diagnostics report
  */
 
@@ -17,7 +17,7 @@ import { getConfig, VERSION } from './config';
 import type { TsCheckConfig } from './types';
 import { LintBase, LintResult } from './LintBase';
 
-const { bold, redBright, yellowBright, cyanBright, red, greenBright, cyan } = color;
+const { bold, redBright, yellowBright, cyanBright, red, cyan } = color;
 export interface TsCheckResult extends LintResult {
   /** 异常类型数量统计 */
   diagnosticsCategory: Partial<Record<keyof typeof ts.DiagnosticCategory, number>>;
@@ -27,8 +27,6 @@ export interface TsCheckResult extends LintResult {
 export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
   /** 白名单列表 */
   private whiteList = {} as Record<string, keyof typeof ts.DiagnosticCategory>; // ts.DiagnosticCategory
-  /** 检测缓存文件的路径。不应提交至 git 仓库: 默认为 <config.rootDir>/node_modules/.cache/flh/tsCheckCache.json */
-  protected override cacheFilePath = 'node_modules/.cache/flh/tscheckcache.json';
   private cache: {
     /** 检测到异常且需要 report 的文件列表 */
     allDiagnosticsFileMap: { [file: string]: ts.Diagnostic };
@@ -72,7 +70,6 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     const baseConfig = getConfig({ tscheck: config }, false);
 
     this.config = assign<TsCheckConfig>({}, baseConfig.tscheck);
-    this.cacheFilePath = resolve(this.config.rootDir, baseConfig.cacheLocation, 'tsCheckCache.json');
     this.config.whiteListFilePath = resolve(this.config.rootDir, this.config.whiteListFilePath);
 
     return this.config;
@@ -182,6 +179,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
         // 过滤间接依赖进来的文件
         if (shortpath.includes('node_modules') || shortpath.endsWith('.d.ts')) return false;
         for (const p of config.exclude) {
+          if (shortpath.includes(p)) return false;
           if (minimatch(shortpath, p, { debug: config.debug })) return false;
         }
       }
@@ -291,7 +289,6 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
   }
   /** 执行 ts check */
   public async check(fileList = this.config.fileList) {
-    this.logger.info('start checking');
     this.init();
 
     const { config, stats } = this;
@@ -354,12 +351,8 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     stats.isPassed = stats.failedFilesNum === 0;
 
     if (!stats.isPassed && config.printDetail) {
-      this.logger.info(red('Failed Files:'), `\n - ${errorFileList.join('\n - ')}\n`);
+      this.logger.error(red('Failed Files:'), `\n - ${errorFileList.join('\n - ')}\n`);
     }
-
-    this.logger.info(cyan('Total :\t'), stats.totalFilesNum);
-    this.logger.info(cyan('Passed:\t'), bold(greenBright(stats.passedFilesNum)));
-    this.logger.info(cyan('Failed:\t'), bold(red(stats.failedFilesNum)));
 
     // 异常类型统计
     if (!stats.isPassed) {

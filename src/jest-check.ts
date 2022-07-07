@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-07 09:29:05
+ * @LastEditTime: 2022-07-07 13:15:05
  * @Description:  jest check
  */
 
@@ -27,9 +27,8 @@ export interface JestCheckResult extends LintResult {
 export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
   /** 统计信息 */
   protected override stats = this.getInitStats();
-
   /** 要缓存到 cacheFilePath 的信息 */
-  cacheInfo = {
+  private cacheInfo = {
     /** 已经检测且无异常的文件列表 */
     passed: {} as { [filepath: string]: { md5: string; specMd5: string; updateTime: number } },
   };
@@ -51,12 +50,8 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
 
     if (config !== this.config) config = assign<JestCheckConfig>({}, this.config, config);
     this.config = assign<JestCheckConfig>(baseConfig.jest, config);
-    this.cacheFilePath = resolve(this.config.rootDir, baseConfig.cacheLocation, 'jestcache.json');
 
     return this.config;
-  }
-  protected init() {
-    this.cacheInfo = { passed: {} };
   }
   /**
    * 获取 Jest Options
@@ -92,7 +87,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
 
       for (const d of this.config.src) {
         const p = resolve(config.rootDir, d);
-        if (!existsSync(p) && statSync(p).isDirectory()) continue;
+        if (!existsSync(p) || !statSync(p).isDirectory()) continue;
 
         const files = await glob('**/*.{spec,test}.{ts,js,tsx,jsx}', { cwd: p, absolute: true });
         specFileList.push(...files);
@@ -134,14 +129,14 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
 
     return specFileList;
   }
+  protected init(): void {
+    this.cacheInfo = { passed: {} };
+  }
   /**
    * 执行 jest 校验
    */
   protected async check(specFileList = this.config.fileList): Promise<JestCheckResult> {
-    this.logger.info('start checking');
-    this.init();
-
-    const { logger, stats, config, cacheFilePath } = this;
+    const { logger, stats, config } = this;
     const isCheckAll = config.fileList.length === 0;
 
     // 全量检测默认使用 jest-cli
@@ -213,9 +208,9 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
         }
       }
 
-      writeFileSync(cacheFilePath, JSON.stringify(this.cacheInfo, undefined, 2));
-
-      stats.isPassed = data.results.success && !data.results.numFailedTestSuites;
+      writeFileSync(this.cacheFilePath, JSON.stringify(this.cacheInfo, undefined, 2));
+      stats.errorCount = data.results.numFailedTestSuites;
+      stats.isPassed = stats.failedFilesNum === 0; // data.results.success && !data.results.numFailedTestSuites;
       logger.debug('result use runCLI:\n', data);
     }
 

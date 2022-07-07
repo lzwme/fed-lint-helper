@@ -2,12 +2,13 @@
  * @Author: lzw
  * @Date: 2022-04-08 10:30:02
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-06 15:28:06
+ * @LastEditTime: 2022-07-07 16:22:06
  * @Description:
  */
 /* eslint no-console: 0 */
 import { type WriteStream, existsSync, mkdirSync, createWriteStream } from 'fs';
 import { dirname, resolve } from 'path';
+import { cursorTo, clearScreenDown } from 'readline';
 
 /** 日志级别 */
 export enum LogLevel {
@@ -197,6 +198,15 @@ export class Logger {
     if (options.levelType in LogLevel) this.level = LogLevel[options.levelType];
 
     return this.options;
+  }
+
+  public logInline(msg: string, start = 0) {
+    cursorTo(process.stdout as never, start);
+    clearScreenDown(process.stdout as never);
+    process.stdout.write(msg, 'utf8');
+    // readline.clearLine(process.stdout, 0);
+    // readline.moveCursor(process.stdout, -curLineLen, 0);
+    // curLineLen = Buffer.byteLength(msg, 'utf8');
   }
 
   public static getLogger(tag?: string, options?: LoggerOptions): Logger {

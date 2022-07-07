@@ -2,13 +2,13 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-07 09:17:05
+ * @LastEditTime: 2022-07-07 10:32:24
  * @Description:  eslint check
  */
 
 import { color } from 'console-log-colors';
 import type { ESLint } from 'eslint';
-import { existsSync, unlinkSync, writeFileSync, readFileSync } from 'fs';
+import { existsSync, writeFileSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import { fixToshortPath, assign, execSync } from './utils';
 import { getConfig } from './config';
@@ -71,15 +71,12 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
 
     if (config !== this.config) config = assign<ESLintCheckConfig>({}, this.config, config);
     this.config = assign<ESLintCheckConfig>({ fix: baseConfig.fix }, baseConfig.eslint, config);
-    this.cacheFilePath = resolve(this.config.rootDir, baseConfig.cacheLocation, 'eslintCache.json');
     this.config.whiteListFilePath = resolve(this.config.rootDir, this.config.whiteListFilePath);
 
     return this.config;
   }
-  private init() {
+  protected init() {
     const config = this.config;
-
-    if (existsSync(this.cacheFilePath) && config.removeCache) unlinkSync(this.cacheFilePath);
 
     // 读取白名单列表
     if (existsSync(config.whiteListFilePath)) {
@@ -97,7 +94,6 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
       // overrideConfigFile: './.eslintrc.js',
       // ignore: true,
       // overrideConfig: cfg.eslintOptions.overrideConfig,
-      // rulePaths: ['./pipelines/eslint-rules/'],
       ...cfg.eslintOptions,
       // 存在不以 ts、tsx 结尾的路径、或路径中包含 *，则允许 glob 匹配
       globInputPaths: lintList.some(d => !/\.(j|t)sx?$/.test(d) || d.includes('*')),
@@ -127,7 +123,6 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
    * 执行 eslint 校验
    */
   protected async check() {
-    this.logger.info('start checking');
     this.init();
 
     this.stats = this.getInitStats();

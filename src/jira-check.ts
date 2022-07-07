@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-07 09:19:28
+ * @LastEditTime: 2022-07-07 13:55:43
  * @Description:  Jira check
  */
 
@@ -444,8 +444,10 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
 
     return true;
   }
+  protected init() {
+    return this.initRequest();
+  }
   protected async check() {
-    this.initRequest();
     const stats = this.getInitStats();
     this.logger.info(color.green(`start checking`));
 

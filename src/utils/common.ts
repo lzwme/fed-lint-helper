@@ -2,7 +2,7 @@ import { resolve } from 'path';
 import { existsSync, readFileSync } from 'fs';
 import { createHash } from 'crypto';
 import { color } from 'console-log-colors';
-import {} from 'readline';
+import { createInterface } from 'readline';
 import { Logger } from '../lib/Logger';
 import { formatTimeCost } from './date';
 
@@ -12,17 +12,15 @@ export type ValueOf<T> = T[keyof T];
 
 /** 等待并获取用户输入内容 */
 export function readSyncByRl(tips = '> ') {
-  return import('readline').then(({ createInterface }) => {
-    return new Promise(resolve => {
-      const rl = createInterface({
-        input: process.stdin,
-        output: process.stdout,
-      });
+  return new Promise(resolve => {
+    const rl = createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
 
-      rl.question(tips, answer => {
-        resolve(answer.trim());
-        rl.close();
-      });
+    rl.question(tips, answer => {
+      resolve(answer.trim());
+      rl.close();
     });
   });
 }

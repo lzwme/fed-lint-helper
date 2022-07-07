@@ -2,18 +2,19 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-07 09:16:45
+ * @LastEditTime: 2022-07-07 17:03:13
  * @Description: cli 工具
  */
 import { Option, program } from 'commander';
 import { color } from 'console-log-colors';
 import { resolve } from 'path';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
-import type { FlhConfig, TsCheckConfig, JiraCheckConfig, CommitLintOptions } from './types';
+import { FlhConfig, TsCheckConfig, JiraCheckConfig, CommitLintOptions, LintTypes } from './types';
 import { getHeadDiffFileList, formatWxWorkKeys } from './utils';
 import { getConfig, config, mergeCommConfig } from './config';
 import { rmdir } from './rmdir';
 import { getLogger } from './utils';
+import { lintStartAsync } from './worker/lintStartAsync';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const packageInfo = require('../../package.json');
@@ -34,7 +35,9 @@ interface POptions
   eslint?: boolean;
   /** 是否执行 jest */
   jest?: boolean;
-  jestCli?: boolean | string;
+  useJestCli?: boolean | string;
+  prettier?: boolean;
+  usePrettierCli?: boolean | string;
   /** 是否执行 jira check */
   jira?: boolean;
   /** 是否执行 commitlint */
@@ -72,7 +75,9 @@ program
   .addOption(new Option('--jira-type <type>', `执行 jira 检查的类型。可选值：`).choices(['commit', 'pipeline']))
   .option('--projectName', `指定 git 仓库项目名（用于 jira check）`)
   .option('--jest', `执行 jest 单元测试`)
-  .option('--jest-cli [value]', `使用 jest-cli 执行单元测试。1 是(默认)，0 否`)
+  .option('--use-jest-cli [value]', `使用 jest-cli 执行单元测试。1 是(默认)，0 否`)
+  .option('--prettier', `执行 prettier 编码风格检查`)
+  .option('--use-prettier-cli [value]', `使用 jest-cli 执行单元测试。1 是，0 否(默认)`)
   .action(() => {
     const options = getProgramOptions();
     const config: FlhConfig = {
@@ -96,12 +101,14 @@ program
         type: options.jiraType === 'pipeline' ? 'pipeline' : 'commit',
         mode: options.mode || 'current',
       },
+      prettier: {},
     };
 
     if (options.jiraHome) config.jira.jiraHome = options.jiraHome;
     if (options.projectName) config.jira.projectName = options.projectName;
     if (options.commitEdit) config.jira.COMMIT_EDITMSG = options.commitEdit;
-    if ('jestCli' in options) config.jest.useJestCli = Boolean(+options.jestCli);
+    if ('useJestCli' in options) config.jest.useJestCli = Boolean(+options.useJestCli);
+    if ('usePrettierCli' in options) config.prettier.useCli = Boolean(+options.usePrettierCli);
 
     for (const key of ['src', 'fix', 'wxWorkKeys', 'debug', 'cache', 'removeCache', 'onlyChanges'] as const) {
       if (options[key] != null) config[key] = options[key] as never;
@@ -114,36 +121,11 @@ program
     logger.debug(options, baseConfig);
     if (options.onlyChanges) logger.debug('changeFiles:', changeFiles);
 
-    if (options.tscheck) {
-      hasAction = true;
-      import('./ts-check').then(({ TsCheck }) => {
-        const tsCheck = new TsCheck(baseConfig.tscheck);
-        tsCheck.start(changeFiles).then(result => logger.debug('tscheck done!', result));
-      });
-    }
-
-    if (options.eslint) {
-      hasAction = true;
-      import('./eslint-check').then(({ ESLintCheck }) => {
-        const eslintCheck = new ESLintCheck(baseConfig.eslint);
-        eslintCheck.start(changeFiles).then(result => logger.debug('eslint done!', result));
-      });
-    }
-
-    if (options.jest) {
-      hasAction = true;
-      import('./jest-check').then(({ JestCheck }) => {
-        const jestCheck = new JestCheck(baseConfig.jest);
-        jestCheck.start(changeFiles).then(result => logger.debug('jestCheck done!', result));
-      });
-    }
-
-    if (options.jira) {
-      hasAction = true;
-      import('./jira-check').then(({ JiraCheck }) => {
-        const jestCheck = new JiraCheck(baseConfig.jira);
-        jestCheck.start().then(result => logger.debug('jestCheck done!', result));
-      });
+    for (const type of LintTypes) {
+      if (options[type]) {
+        hasAction = true;
+        lintStartAsync(type, baseConfig[type], false, result => logger.debug(`lint for ${type} done!`, result));
+      }
     }
 
     if (options.commitlint) {

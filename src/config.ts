@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-07 09:36:30
+ * @LastEditTime: 2022-07-07 17:08:07
  * @Description:
  */
 
@@ -34,7 +34,6 @@ export const config: FlhConfig = {
   logDir: `node_modules/.cache/flh/log`,
   ci: Boolean(env.CI || env.GITLAB_CI || env.JENKINS_HOME),
   tscheck: {
-    fileList: [],
     exclude: ['**/*.test.{ts,tsx}', '**/*/*.mock.{ts,tsx}', '**/*/*.d.ts'],
     whiteListFilePath: 'config/tsCheckWhiteList.json',
     tsConfigFileName: 'tsconfig.json',
@@ -51,7 +50,6 @@ export const config: FlhConfig = {
     },
   },
   jest: {
-    fileList: [],
     // whiteListFilePath: 'jestWhitelist.json',
     jestOptions: {
       config: 'jest.config.js',
@@ -74,6 +72,10 @@ export const config: FlhConfig = {
   },
   commitlint: {
     useAngularStyle: true,
+  },
+  prettier: {
+    exclude: ['/node_modules/', '/dist/'],
+    extentions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.json', '.less', '.scss', '.md'],
   },
 };
 

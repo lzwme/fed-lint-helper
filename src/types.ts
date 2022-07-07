@@ -1,9 +1,10 @@
 import type { ESLint } from 'eslint';
 import type { Config } from '@jest/types';
+import { Config as PrettierConfig } from 'prettier';
 import type { IncomingHttpHeaders } from 'http';
 import { type WxWorkReqParams } from './lib/WXWork';
 
-export const LintTypes = ['eslint', 'tscheck', 'jest', 'jira'] as const;
+export const LintTypes = ['eslint', 'tscheck', 'jest', 'jira', 'prettier'] as const;
 export type ArrayLikeArgs<T> = T extends ArrayLike<infer U> ? U : T;
 export type ILintTypes = ArrayLikeArgs<typeof LintTypes>;
 
@@ -73,8 +74,6 @@ export interface TsCheckConfig extends CommConfig {
 export interface ESLintCheckConfig extends CommConfig, Pick<TsCheckConfig, 'toWhiteList'> {
   /** 是否自动修正可修复的 eslint 错误，同 ESLint.Option。默认 false。建议不设置为 true，手动逐个文件处理以避免造成大量不可控的业务代码变动 */
   fix?: boolean;
-  /** 要执行 lint 的源码目录，默认为 ['src'] */
-  src?: string[];
   /** 白名单列表文件保存的路径，用于过滤允许出错的历史文件。默认为 `<config.rootDir>/eslintWhitelist.json` 文件 */
   whiteListFilePath?: string;
   /** 警告提示附加信息 */
@@ -95,8 +94,6 @@ export interface ESLintCheckConfig extends CommConfig, Pick<TsCheckConfig, 'toWh
 }
 
 export interface JestCheckConfig extends CommConfig {
-  /** 要检测的源码目录，默认为 ['src'] */
-  src?: string[];
   /** spec 测试文件列表 */
   fileList?: string[];
   /** Jest Options。部分配置项会被内置修正 */
@@ -146,6 +143,17 @@ export interface CommitLintOptions extends CommConfig {
   verify?: ((message: string) => boolean | string) | string | RegExp;
 }
 
+export interface PrettierCheckConfig extends CommConfig {
+  /** prettier config。部分配置项会被内置修正 */
+  prettierConfig?: PrettierConfig;
+  /** 是否使用 spawn/exec 执行 prettier cli 的方式执行（全量执行时默认为 true，速度更快） */
+  useCli?: boolean;
+  /** 文件排除列表，用于过滤一些不需要检测的文件。glob 规则，如： ['builder/**'] */
+  exclude?: string[];
+  /** 指定处理的文件类型。默认为： ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.json', '.less', '.scss', '.md'] */
+  extentions?: string[];
+}
+
 export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {
   /** 用户自定义文件的路径 */
   configPath?: string;
@@ -165,11 +173,12 @@ export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {
   beforeExitOnError?: (code: number, msg?: string) => void;
   /** 是否尝试修正可自动修正的异常 */
   fix?: boolean;
-  tscheck?: TsCheckConfig;
+  commitlint?: CommitLintOptions;
   eslint?: ESLintCheckConfig;
   jest?: JestCheckConfig;
   jira?: JiraCheckConfig;
-  commitlint?: CommitLintOptions;
+  prettier?: PrettierCheckConfig;
+  tscheck?: TsCheckConfig;
   /** package manager check */
   pmcheck?: 'npm' | 'yarn' | 'pnpm';
 }

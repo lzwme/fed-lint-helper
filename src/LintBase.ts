@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-07 09:18:33
+ * @LastEditTime: 2022-07-07 16:39:07
  * @Description:  jest check
  */
 
@@ -11,7 +11,7 @@ import { color } from 'console-log-colors';
 import { resolve } from 'path';
 import { getTimeCost } from './utils/common';
 import { getLogger } from './utils/get-logger';
-import { createForkThread } from './utils/fork';
+import { createForkThread } from './worker/fork';
 import { getConfig } from './config';
 import type { CommConfig, ILintTypes } from './types';
 import { exit } from './exit';
@@ -24,8 +24,8 @@ export interface LintResult {
   startTime?: number;
   /** 处理的文件总数 */
   totalFilesNum?: number;
-  // /** 失败文件数 */
-  // errorCount?: number;
+  /** 异常信息数(一个文件可能包含多个异常) */
+  errorCount?: number;
   /** 检测通过的文件数 */
   passedFilesNum?: number;
   /** 失败的文件数 */
@@ -50,6 +50,7 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
   protected abstract beforeStart(fileList?: string[]): boolean;
   /** 执行校验 */
   protected abstract check(): Promise<R>;
+  protected abstract init(): void;
 
   constructor(protected tag: ILintTypes, protected config?: C) {
     this.config = this.parseConfig(config);
@@ -62,8 +63,6 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
     this.logger.debug('config', this.config);
 
     this.cacheFilePath = resolve(this.config.rootDir, baseConfig.cacheLocation, `${tag}Cache.json`);
-    if (existsSync(this.cacheFilePath) && this.config.removeCache) unlinkSync(this.cacheFilePath);
-
     if (this.config.checkOnInit) this.start();
   }
   /** 获取初始化的统计信息 */
@@ -74,6 +73,7 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
       totalFilesNum: 0,
       passedFilesNum: 0,
       failedFilesNum: 0,
+      errorCount: 0,
       cacheHits: 0,
     };
 
@@ -102,7 +102,7 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
    */
   protected checkInWorkThreads() {
     this.logger.info('start create work threads');
-    return import('./utils/worker-threads').then(({ createWorkerThreads }) => {
+    return import('./worker/worker-threads').then(({ createWorkerThreads }) => {
       return createWorkerThreads<R, C>({
         type: this.tag,
         debug: this.config.debug,
@@ -126,16 +126,28 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
 
     if (config.mode === 'proc') result = await this.checkInChildProc();
     else if (config.mode === 'thread') result = await this.checkInWorkThreads();
-    else result = await this.check();
+    else {
+      logger.info('start checking');
+      if (existsSync(this.cacheFilePath) && config.removeCache) unlinkSync(this.cacheFilePath);
+      if (this.init) this.init();
+      result = await this.check();
+    }
 
     result.startTime = stats.startTime;
     result = assign(stats, result);
 
     if (!globalThis.isChildProc) {
+      const { bold, cyan, red, redBright, greenBright } = color;
       logger.debug('result', stats);
-      logger.info(color.bold(stats.isPassed ? color.greenBright('Verification passed!') : color.redBright('Verification failed!')));
+      logger.info(bold(stats.isPassed ? greenBright('Verification passed!') : redBright('Verification failed!')));
+      if (stats.totalFilesNum) {
+        if (stats.errorCount) logger.info(cyan(' - errorCount:\t'), bold(redBright(stats.errorCount)));
+        logger.info(cyan(' - Failed:\t'), bold(red(stats.failedFilesNum)));
+        if (stats.passedFilesNum) logger.info(cyan(' - Passed:\t'), bold(greenBright(stats.passedFilesNum)));
+        logger.info(cyan(' - Total :\t'), stats.totalFilesNum);
+      }
       logger.info(getTimeCost(stats.startTime));
-      if (!stats.isPassed && config.exitOnError) exit(stats.failedFilesNum || -1, this.tag);
+      if (!stats.isPassed && config.exitOnError) exit(stats.errorCount || stats.failedFilesNum || -1, this.tag);
     }
 
     return stats;

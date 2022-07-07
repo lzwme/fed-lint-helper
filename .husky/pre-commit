@@ -3,4 +3,4 @@
 
 # npm run fix:lint
 node bin/flh.js --tscheck --eslint --jest --only-changes --fix
-# npm run fix:prettier
+npm run fix:prettier --cache

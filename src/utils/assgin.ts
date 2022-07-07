@@ -26,8 +26,7 @@ export function simpleAssign<T extends Record<string, any>, U>(
   seen = new Set<unknown>()
 ): T & U {
   // 入参不是对象格式则忽略
-  if (!a || typeof a !== 'object') return a as T & U;
-  if (typeof b !== 'object' || b instanceof RegExp || Array.isArray(b)) {
+  if (a === b || !a || typeof a !== 'object' || typeof b !== 'object' || b instanceof RegExp || Array.isArray(b)) {
     return a as T & U;
   }
 
@@ -35,6 +34,8 @@ export function simpleAssign<T extends Record<string, any>, U>(
 
   for (const key in b) {
     const value = b[key];
+
+    if (a[key] === value) continue;
     if (typeof filter === 'function' && !filter(value)) continue;
 
     if (null == value || typeof value !== 'object' || value instanceof RegExp || isSet(value) || isMap(value)) {
