@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-06 17:31:45
+ * @LastEditTime: 2022-07-07 09:29:05
  * @Description:  jest check
  */
 
@@ -13,7 +13,8 @@ import { color } from 'console-log-colors';
 import glob from 'fast-glob';
 import type { Config } from '@jest/types';
 import { fixToshortPath, md5, assign, execSync } from './utils';
-import { JestCheckConfig, getConfig } from './config';
+import { getConfig } from './config';
+import type { JestCheckConfig } from './types';
 import { LintBase, LintResult } from './LintBase';
 
 export interface JestCheckResult extends LintResult {
@@ -140,7 +141,6 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
     this.logger.info('start checking');
     this.init();
 
-    const result = (this.stats = this.getInitStats());
     const { logger, stats, config, cacheFilePath } = this;
     const isCheckAll = config.fileList.length === 0;
 
@@ -150,7 +150,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
     logger.debug('[options]:', config, specFileList);
     specFileList = await this.getSpecFileList(specFileList);
 
-    if (specFileList.length === 0) return result;
+    if (specFileList.length === 0) return stats;
 
     logger.info(`Total Spec Files:`, specFileList.length);
     logger.debug(specFileList);
@@ -201,9 +201,9 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
         // console.log(testFilePath, d.testFilePath);
         if (d.numFailingTests) {
           if (jestPassedFiles[testFilePath]) delete jestPassedFiles[testFilePath];
-          result.failedFilesNum++;
+          stats.failedFilesNum++;
         } else {
-          result.passedFilesNum++;
+          stats.passedFilesNum++;
           const tsFilePath = d.testFilePath.replace('.spec.', '.');
           jestPassedFiles[testFilePath] = {
             md5: existsSync(tsFilePath) ? md5(tsFilePath, true) : '',
@@ -219,7 +219,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
       logger.debug('result use runCLI:\n', data);
     }
 
-    return result;
+    return stats;
   }
   protected beforeStart(fileList?: string[]): boolean {
     // 文件列表过滤: 必须以 spec|test.ts|js 结尾

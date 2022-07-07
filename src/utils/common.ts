@@ -4,7 +4,7 @@ import { createHash } from 'crypto';
 import { color } from 'console-log-colors';
 import {} from 'readline';
 import { Logger } from '../lib/Logger';
-import { formatTimeCost } from './utils-date';
+import { formatTimeCost } from './date';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type PlainObject = Record<string, any>;

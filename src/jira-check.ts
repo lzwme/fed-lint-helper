@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-06 17:29:15
+ * @LastEditTime: 2022-07-07 09:19:28
  * @Description:  Jira check
  */
 
@@ -11,7 +11,8 @@ import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'fs';
 import type { IncomingHttpHeaders } from 'http';
 import { color } from 'console-log-colors';
 import { assign, getHeadBranch, PlainObject, getLogger } from './utils';
-import { JiraCheckConfig, getConfig } from './config';
+import { getConfig } from './config';
+import type { JiraCheckConfig } from './types';
 import { Request } from './lib';
 import { LintBase, type LintResult } from './LintBase';
 

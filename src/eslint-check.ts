@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-06 17:29:00
+ * @LastEditTime: 2022-07-07 09:17:05
  * @Description:  eslint check
  */
 
@@ -11,8 +11,9 @@ import type { ESLint } from 'eslint';
 import { existsSync, unlinkSync, writeFileSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import { fixToshortPath, assign, execSync } from './utils';
-import { ESLintCheckConfig, getConfig } from './config';
+import { getConfig } from './config';
 import { LintBase, type LintResult } from './LintBase';
+import type { ESLintCheckConfig } from './types';
 
 const { bold, red, redBright, yellowBright, cyanBright } = color;
 

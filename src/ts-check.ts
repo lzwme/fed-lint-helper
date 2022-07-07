@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-06 18:13:11
+ * @LastEditTime: 2022-07-07 09:29:16
  * @Description: typescript Diagnostics report
  */
 
@@ -12,8 +12,9 @@ import { color } from 'console-log-colors';
 import * as ts from 'typescript';
 import glob from 'fast-glob';
 import minimatch from 'minimatch';
-import { fixToshortPath, md5, assign, getLogger, execSync } from './utils';
-import { TsCheckConfig, getConfig, VERSION } from './config';
+import { fixToshortPath, md5, assign, execSync } from './utils';
+import { getConfig, VERSION } from './config';
+import type { TsCheckConfig } from './types';
 import { LintBase, LintResult } from './LintBase';
 
 const { bold, redBright, yellowBright, cyanBright, red, greenBright, cyan } = color;
@@ -74,8 +75,6 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     this.cacheFilePath = resolve(this.config.rootDir, baseConfig.cacheLocation, 'tsCheckCache.json');
     this.config.whiteListFilePath = resolve(this.config.rootDir, this.config.whiteListFilePath);
 
-    const level = this.config.silent ? 'silent' : this.config.debug ? 'debug' : 'log';
-    this.logger = getLogger(`[TSCheck]`, level, baseConfig.logDir);
     return this.config;
   }
   protected init() {
@@ -377,12 +376,10 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     return stats;
   }
   beforeStart(fileList?: string[]): boolean {
-    // 文件列表过滤
     this.config.fileList = this.config.fileList.filter(filepath => {
       // 过滤 .d.ts 文件
-      if (filepath.endsWith('.d.ts')) return false;
       // 必须以 .tsx? 结尾
-      if (!/\.tsx?$/i.test(filepath)) return false;
+      if (filepath.endsWith('.d.ts') || !/\.tsx?$/i.test(filepath)) return false;
       return true;
     });
 

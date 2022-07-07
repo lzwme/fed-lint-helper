@@ -2,13 +2,13 @@
  * @Author: lzw
  * @Date: 2021-08-25 10:12:21
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-06 17:26:50
+ * @LastEditTime: 2022-07-07 09:23:04
  * @Description: 在 fork 子进程中执行 Check 任务
  */
 
 import { fork } from 'child_process';
 import { resolve } from 'path';
-import type { ILintTypes } from '../config';
+import type { ILintTypes } from '../types';
 
 export interface CreateThreadOptions<C = unknown> {
   /** 启动的类型。eslint 存在插件报错异常，暂不支持 */

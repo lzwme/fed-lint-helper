@@ -2,18 +2,20 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-06 18:15:25
+ * @LastEditTime: 2022-07-07 09:18:33
  * @Description:  jest check
  */
 
 import { existsSync, unlinkSync } from 'fs';
-import { getLogger, getTimeCost } from './utils';
-import { createForkThread } from './utils/fork';
-import { CommConfig, getConfig, ILintTypes } from './config';
-import { exit } from './exit';
-import { assign } from './utils/assgin';
 import { color } from 'console-log-colors';
 import { resolve } from 'path';
+import { getTimeCost } from './utils/common';
+import { getLogger } from './utils/get-logger';
+import { createForkThread } from './utils/fork';
+import { getConfig } from './config';
+import type { CommConfig, ILintTypes } from './types';
+import { exit } from './exit';
+import { assign } from './utils/assgin';
 
 export interface LintResult {
   /** 是否检测通过 */

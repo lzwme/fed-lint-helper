@@ -2,14 +2,14 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-06 17:11:15
+ * @LastEditTime: 2022-07-07 09:16:45
  * @Description: cli 工具
  */
 import { Option, program } from 'commander';
 import { color } from 'console-log-colors';
 import { resolve } from 'path';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
-import type { FlhConfig, TsCheckConfig, JiraCheckConfig, CommitLintOptions } from './config';
+import type { FlhConfig, TsCheckConfig, JiraCheckConfig, CommitLintOptions } from './types';
 import { getHeadDiffFileList, formatWxWorkKeys } from './utils';
 import { getConfig, config, mergeCommConfig } from './config';
 import { rmdir } from './rmdir';

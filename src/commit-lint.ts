@@ -2,8 +2,9 @@
 
 import { readFileSync } from 'fs';
 import { color } from 'console-log-colors';
-import { config, CommitLintOptions } from './config';
+import { config } from './config';
 import { getLogger } from './utils/get-logger';
+import type { CommitLintOptions } from './types';
 
 const helpTips = {
   build: '构建相关',

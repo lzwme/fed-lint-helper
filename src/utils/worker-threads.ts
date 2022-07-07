@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-25 10:12:21
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-06 17:26:21
+ * @LastEditTime: 2022-07-07 09:20:39
  * @Description: worker_threads 实现在 worker 线程中执行
  *
  * - worker_threads 比 child_process 和 cluster 更为轻量级的并行性，而且 worker_threads 可有效地共享内存
@@ -10,7 +10,7 @@
  */
 
 import { Worker, isMainThread, parentPort, workerData } from 'worker_threads';
-import type { ESLintCheckConfig, ILintTypes, JestCheckConfig, JiraCheckConfig, TsCheckConfig } from '../config';
+import type { ESLintCheckConfig, ILintTypes, JestCheckConfig, JiraCheckConfig, TsCheckConfig } from '../types';
 import { getLogger } from './get-logger';
 interface CreateThreadOptions<C = unknown> {
   debug?: boolean;
