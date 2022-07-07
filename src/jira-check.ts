@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-07 13:55:43
+ * @LastEditTime: 2022-07-07 17:52:16
  * @Description:  Jira check
  */
 
@@ -240,7 +240,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
             stats.failedFilesNum = -1;
             return false;
           }
-          fields = data.fields;
+          fields = data.fields as typeof fields;
         } catch (error) {
           this.logger.error(error);
           stats.failedFilesNum = -1;

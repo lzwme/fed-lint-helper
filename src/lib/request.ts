@@ -1,8 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { URL } from 'url';
 import zlib from 'zlib';
 import http from 'http';
 import https from 'https';
-import type { PlainObject } from '../utils/common';
 
 function toLowcaseKeyObject(info: Record<string, unknown> = {}) {
   for (const key of Object.keys(info)) {
@@ -15,16 +15,19 @@ function toLowcaseKeyObject(info: Record<string, unknown> = {}) {
   return info;
 }
 
-export function urlFormat(url: string, params: PlainObject, isRepalce = false) {
-  if (!url || !params) return url;
+export function urlFormat(url: string, params: Record<string, unknown>, isRepalce = false) {
+  const u = new URL(url, 'file:');
 
-  const u = new URL(url);
-  for (const [key, value] of Object.entries(params)) {
-    if (isRepalce) u.searchParams.set(key, value);
-    else u.searchParams.append(key, value);
+  if (params) {
+    for (const [key, value] of Object.entries(params)) {
+      const val = value == null ? '' : typeof value === 'string' ? value : JSON.stringify(value);
+
+      if (isRepalce) u.searchParams.set(key, val);
+      else u.searchParams.append(key, val);
+    }
   }
 
-  return u.toString();
+  return u;
 }
 
 export class Request {
@@ -64,7 +67,12 @@ export class Request {
   getCookie(isString = true) {
     return isString ? this.cookies.join('; ') : this.cookies;
   }
-  request<T = PlainObject>(method: string, url: string | URL, parameters: PlainObject, headers?: http.IncomingHttpHeaders) {
+  request<T = Record<string, unknown>>(
+    method: string,
+    url: string | URL,
+    parameters: Record<string, any>,
+    headers?: http.IncomingHttpHeaders
+  ) {
     const urlObject = typeof url === 'string' ? new URL(url) : url;
     const options: https.RequestOptions = {
       hostname: urlObject.host.split(':')[0],
@@ -78,7 +86,7 @@ export class Request {
     if (parameters) {
       postBody = String(options.headers['content-type']).includes('application/json')
         ? JSON.stringify(parameters)
-        : new URLSearchParams(parameters).toString();
+        : new URLSearchParams(parameters as Record<string, string>).toString();
       options.headers['content-length'] = Buffer.byteLength(postBody).toString();
     }
 
@@ -115,10 +123,10 @@ export class Request {
       request.end();
     }) as Promise<{ data: T; headers: http.IncomingHttpHeaders }>;
   }
-  get<T = PlainObject>(url: string, parameters?: PlainObject, headers?: http.IncomingHttpHeaders) {
+  get<T = Record<string, unknown>>(url: string, parameters?: Record<string, any>, headers?: http.IncomingHttpHeaders) {
     return this.request<T>('GET', urlFormat(url, parameters), void 0, headers);
   }
-  post<T = PlainObject>(url: string, parameters: PlainObject, headers?: http.IncomingHttpHeaders) {
+  post<T = Record<string, unknown>>(url: string, parameters: Record<string, any>, headers?: http.IncomingHttpHeaders) {
     return this.request<T>('POST', url, parameters, headers);
   }
 }
