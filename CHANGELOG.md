@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.10.2](https://github.com/lzwme/fed-lint-helper/compare/v1.10.1...v1.10.2) (2022-07-08)
+
+
+### Bug Fixes
+
+* 修正 jest 在 only-changes 模式下不生效问题 ([c602696](https://github.com/lzwme/fed-lint-helper/commit/c6026966c9fa100e964a3a47352d2d5fe5b5ac85))
+
 ### [1.10.1](https://github.com/lzwme/fed-lint-helper/compare/v1.10.0...v1.10.1) (2022-07-08)
 
 
