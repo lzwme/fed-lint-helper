@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.10.0](https://github.com/lzwme/fed-lint-helper/compare/v1.9.2...v1.10.0) (2022-07-08)
+
+
+### Features
+
+* 新增 prettier check 功能 ([71975f8](https://github.com/lzwme/fed-lint-helper/commit/71975f8bbf0fcbb00c7779b3c6e2cbf8524a1aa9))
+
 ### [1.9.2](https://github.com/lzwme/fed-lint-helper/compare/v1.9.1...v1.9.2) (2022-07-05)
 
 
