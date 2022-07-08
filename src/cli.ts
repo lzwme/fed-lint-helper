@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-07 17:03:13
+ * @LastEditTime: 2022-07-08 16:32:04
  * @Description: cli 工具
  */
 import { Option, program } from 'commander';
@@ -124,6 +124,7 @@ program
     for (const type of LintTypes) {
       if (options[type]) {
         hasAction = true;
+        if (changeFiles) baseConfig[type].fileList = changeFiles;
         lintStartAsync(type, baseConfig[type], false, result => logger.debug(`lint for ${type} done!`, result));
       }
     }

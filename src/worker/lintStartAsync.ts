@@ -1,6 +1,14 @@
-import type { ILintTypes, TsCheckConfig, ESLintCheckConfig, JestCheckConfig, JiraCheckConfig, PrettierCheckConfig } from '../types';
+import type {
+  ILintTypes,
+  TsCheckConfig,
+  ESLintCheckConfig,
+  JestCheckConfig,
+  JiraCheckConfig,
+  PrettierCheckConfig,
+  CommConfig,
+} from '../types';
 
-export async function lintStartAsync(type: ILintTypes, config: unknown, isInWorker = true, done: (d: unknown) => void) {
+export async function lintStartAsync(type: ILintTypes, config: CommConfig, isInWorker = true, done: (d: unknown) => void) {
   if (isInWorker) {
     const resetConfig = { checkOnInit: false, exitOnError: false, mode: 'current' };
     Object.assign(config, resetConfig);
