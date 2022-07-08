@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-07 15:40:32
+ * @LastEditTime: 2022-07-08 21:43:14
  * @Description: typescript Diagnostics report
  */
 
@@ -121,7 +121,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
 
     console.log();
     this.logger.info(bold(cyanBright('Checking')), subDirection);
-    this.logger.info(' - Total Files:', total);
+    this.logger.info(' - Total Files:', cyanBright(total));
 
     /** 缓存命中数量 */
     let cacheHits = 0;
@@ -368,17 +368,12 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
 
     return stats;
   }
-  beforeStart(fileList?: string[]): boolean {
+  beforeStart(): boolean {
     this.config.fileList = this.config.fileList.filter(filepath => {
-      // 过滤 .d.ts 文件
-      // 必须以 .tsx? 结尾
+      // 过滤 .d.ts 文件，且必须以 .tsx? 结尾
       if (filepath.endsWith('.d.ts') || !/\.tsx?$/i.test(filepath)) return false;
       return true;
     });
-
-    if (this.config.fileList.length === 0 && (fileList || this.config.src.length === 0)) {
-      return false;
-    }
-    return true;
+    return this.config.fileList.length > 0;
   }
 }

@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-07 10:32:24
+ * @LastEditTime: 2022-07-08 21:50:24
  * @Description:  eslint check
  */
 
@@ -126,13 +126,12 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
     this.init();
 
     this.stats = this.getInitStats();
-    const config = this.config;
-    const stats = this.stats;
+    const { config, stats, logger } = this;
+    const lintList = this.isCheckAll ? config.src : config.fileList;
 
-    const lintList = config.fileList?.length ? config.fileList : config.src;
-
-    this.logger.debug('[options]:', config);
-    this.logger.debug(`TOTAL:`, lintList.length, `, Files:\n`, lintList);
+    if (this.isCheckAll) this.logger.info(cyanBright('Checking'), lintList);
+    else logger.info(' - Total Files:', cyanBright(lintList.length));
+    logger.debug('[options]:', config);
 
     const { ESLint } = await import('eslint');
     const eslint = new ESLint(this.getESLintOptions(lintList));
@@ -162,8 +161,6 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
 
       // todo: 文件路径过滤
 
-      stats.failedFilesNum++;
-
       if (Array.isArray(result.messages)) {
         for (const d of result.messages) {
           // ignored  file
@@ -175,6 +172,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
         }
       }
 
+      stats.failedFilesNum++;
       stats.fixableErrorCount += result.fixableErrorCount;
       stats.fixableWarningCount += result.fixableWarningCount;
 
@@ -285,13 +283,8 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
 
     return this.stats;
   }
-  protected beforeStart(fileList?: string[]): boolean {
-    // 文件列表过滤: 必须以 spec|test.ts|js 结尾
+  protected beforeStart(): boolean {
     this.config.fileList = this.config.fileList.filter(filepath => !filepath.includes('.') || /\.(js|ts)x?$/i.test(filepath));
-
-    if (this.config.fileList.length === 0 && (fileList || this.config.src.length === 0)) {
-      return false;
-    }
-    return true;
+    return this.config.fileList.length > 0;
   }
 }

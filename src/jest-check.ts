@@ -2,11 +2,11 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-07 13:15:05
+ * @LastEditTime: 2022-07-08 21:38:37
  * @Description:  jest check
  */
 
-import { resolve } from 'path';
+import { extname, resolve } from 'path';
 import { cpus } from 'os';
 import { existsSync, statSync, readFileSync, writeFileSync } from 'fs';
 import { color } from 'console-log-colors';
@@ -78,11 +78,11 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
 
     return option;
   }
-  protected async getSpecFileList(specFileList = this.config.fileList) {
+  protected async getSpecFileList(specFileList: string[]) {
     const config = this.config;
     const jestPassedFiles = this.cacheInfo.passed;
 
-    if (!specFileList || specFileList.length === 0) {
+    if (this.isCheckAll) {
       specFileList = [];
 
       for (const d of this.config.src) {
@@ -93,15 +93,29 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
         specFileList.push(...files);
       }
     } else {
-      specFileList = specFileList.filter(filepath => /\.(spec|test)\./.test(filepath));
+      specFileList = specFileList
+        .map(filepath => {
+          if (/\.(spec|test)\./.test(filepath)) return filepath;
+
+          const ext = extname(filepath);
+          for (const testId of ['spec', 'test'] as const) {
+            filepath = filepath.replace(ext, `.${testId}${ext}`);
+            if (existsSync(filepath)) return filepath;
+          }
+
+          return '';
+        })
+        .filter(Boolean);
     }
+
+    if (specFileList.length === 0) return specFileList;
 
     const totalFiles = specFileList.length;
     let cacheHits = 0;
 
-    this.logger.debug('total test files:', color.magentaBright(specFileList.length));
+    this.logger.info('Total Test Files:', color.magentaBright(specFileList.length));
 
-    if (specFileList.length > 0 && config.cache && existsSync(this.cacheFilePath)) {
+    if (config.cache && existsSync(this.cacheFilePath)) {
       Object.assign(jestPassedFiles, JSON.parse(readFileSync(this.cacheFilePath, 'utf8')));
 
       specFileList = specFileList.filter(filepath => {
@@ -137,22 +151,18 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
    */
   protected async check(specFileList = this.config.fileList): Promise<JestCheckResult> {
     const { logger, stats, config } = this;
-    const isCheckAll = config.fileList.length === 0;
 
     // 全量检测默认使用 jest-cli
-    if (isCheckAll && config.useJestCli == null) this.config.useJestCli = true;
+    if (this.isCheckAll && config.useJestCli == null) this.config.useJestCli = true;
 
-    logger.debug('[options]:', config, specFileList);
+    logger.debug('[options]:', this.isCheckAll, config, specFileList);
     specFileList = await this.getSpecFileList(specFileList);
 
     if (specFileList.length === 0) return stats;
 
-    logger.info(`Total Spec Files:`, specFileList.length);
-    logger.debug(specFileList);
-
     if (config.silent || config.useJestCli) {
       const baseConfig = getConfig();
-      const files = isCheckAll ? config.src : specFileList;
+      const files = this.isCheckAll ? config.src : specFileList;
       const cmd = [
         `node --max_old_space_size=4096 ./node_modules/jest/bin/jest.js`,
         `--unhandled-rejections=strict`,
@@ -171,20 +181,6 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
       const res = execSync(cmd, config.silent ? 'pipe' : 'inherit', config.rootDir, config.debug);
       this.logger.debug(cmd, res);
       stats.isPassed = !res.stderr;
-
-      // stats.isPassed = await new Promise(resolve => {
-      //   exec(cmd, { maxBuffer: 100 * 1024 * 1024 }, (error, _stdout, _stderr) => {
-      //     if (error) {
-      //       this.logger.error(error);
-      //       return resolve(false);
-      //     }
-      //     resolve(true);
-      //   });
-      //   // if (!config.silent) {
-      //   //   child.stdout.pipe(process.stdin);
-      //   //   child.stderr.pipe(process.stderr);
-      //   // }
-      // });
     } else {
       const options = this.getJestOptions(specFileList);
       const { runCLI } = await import('@jest/core');
@@ -216,13 +212,8 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
 
     return stats;
   }
-  protected beforeStart(fileList?: string[]): boolean {
-    // 文件列表过滤: 必须以 spec|test.ts|js 结尾
-    this.config.fileList = this.config.fileList.filter(filepath => /\.(spec|test)\.(ts|js)x?$/i.test(filepath));
-
-    if (this.config.fileList.length === 0 && (fileList || this.config.src.length === 0)) {
-      return false;
-    }
-    return true;
+  protected async beforeStart() {
+    const fileList = await this.getSpecFileList(this.config.fileList);
+    return fileList.length > 0;
   }
 }

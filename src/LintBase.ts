@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-07 16:39:07
+ * @LastEditTime: 2022-07-08 21:47:49
  * @Description:  jest check
  */
 
@@ -42,14 +42,15 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
    * 检测缓存文件的路径。不应提交至 git 仓库
    */
   protected cacheFilePath = '';
+  protected isCheckAll = false;
   protected logger: ReturnType<typeof getLogger>;
 
   /** 配置参数格式化 */
   public abstract parseConfig(config: C): C;
   /** start 之前调用。返回 false 则终止继续执行 */
-  protected abstract beforeStart(fileList?: string[]): boolean;
+  protected abstract beforeStart(fileList?: string[]): boolean | Promise<boolean>;
   /** 执行校验 */
-  protected abstract check(): Promise<R>;
+  protected abstract check(fileList?: string[]): Promise<R>;
   protected abstract init(): void;
 
   constructor(protected tag: ILintTypes, protected config?: C) {
@@ -58,7 +59,7 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
 
     if (!this.logger) {
       const level = this.config.silent ? 'silent' : this.config.debug ? 'debug' : 'log';
-      this.logger = getLogger(`[${this.tag.toUpperCase()}]`, level);
+      this.logger = getLogger(`[${this.tag}]`, level);
     }
     this.logger.debug('config', this.config);
 
@@ -113,13 +114,15 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
       });
     });
   }
-  async start(fileList?: string[]) {
+  async start(fileList: string[] = this.config.fileList) {
     let result: R = (this.stats = this.getInitStats());
     const { config, logger, stats } = this;
 
-    if (fileList && fileList !== this.config.fileList) this.config.fileList = fileList;
+    this.isCheckAll = !(config.onlyChanges || fileList.length > 0);
+    if (!this.isCheckAll && fileList !== config.fileList) config.fileList = fileList;
 
-    if (!this.beforeStart(fileList)) {
+    const isNoFiles = (this.isCheckAll && this.config.src.length === 0) || !(await this.beforeStart(this.config.fileList));
+    if (isNoFiles) {
       logger.info('No files to process\n');
       return result;
     }

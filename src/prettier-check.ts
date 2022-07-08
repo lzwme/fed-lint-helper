@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-07 17:15:17
+ * @LastEditTime: 2022-07-08 22:07:28
  * @Description:  jest check
  */
 
@@ -71,15 +71,15 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
       },
       config.prettierConfig
     );
-
+    this.logger.debug('configfile:', cfgFile, cfg);
+    this.logger.debug('[getOptons]', options);
     return options;
   }
   protected async getFileList(fileList: string[]) {
     const config = this.config;
     const passedFiles = this.cacheInfo.passed;
-    const isCheckAll = !config.onlyChanges && (!fileList || fileList.length === 0);
 
-    if (isCheckAll) {
+    if (this.isCheckAll) {
       const extGlobPattern = `**/*.{ts,js,tsx,jsx,json,md,mjs}`;
       fileList = [];
 
@@ -92,7 +92,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
       }
     }
 
-    fileList = this.filesFilter(fileList, !isCheckAll);
+    fileList = this.filesFilter(fileList, !this.isCheckAll);
     this.logger.info(`Total Files:`, color.magentaBright(fileList.length));
 
     const totalFiles = fileList.length;
@@ -139,7 +139,6 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
     this.init();
 
     const { logger, stats, config, cacheFilePath } = this;
-    const isCheckAll = fileList.length === 0;
 
     logger.debug('[options]:', config, fileList);
     fileList = await this.getFileList(fileList);
@@ -148,9 +147,9 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
 
     logger.debug(fileList);
 
-    if (config.useCli) {
+    if (config.useCli !== false) {
       const baseConfig = getConfig();
-      const files = isCheckAll ? config.src : fileList;
+      const files = this.isCheckAll ? config.src : fileList;
       const cmd = [
         `node --max_old_space_size=4096 ./node_modules/prettier/bin-prettier.js`,
         files.map(f => fixToshortPath(f, config.rootDir)).join(' '),
@@ -275,8 +274,8 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
 
     return fileList;
   }
-  protected beforeStart(fileList?: string[]): boolean {
-    this.config.fileList = this.filesFilter(fileList);
-    return !(this.config.fileList.length === 0 && (fileList || this.config.src.length === 0));
+  protected beforeStart(): boolean {
+    this.config.fileList = this.filesFilter(this.config.fileList);
+    return this.config.fileList.length > 0;
   }
 }
