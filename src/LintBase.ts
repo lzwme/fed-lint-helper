@@ -121,7 +121,7 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
     this.isCheckAll = !(config.onlyChanges || fileList.length > 0);
     if (!this.isCheckAll && fileList !== config.fileList) config.fileList = fileList;
 
-    const isNoFiles = (this.isCheckAll && this.config.src.length === 0) || !(await this.beforeStart(this.config.fileList));
+    const isNoFiles = this.isCheckAll ? this.config.src.length === 0 : !(await this.beforeStart(this.config.fileList));
     if (isNoFiles) {
       logger.info('No files to process\n');
       return result;
