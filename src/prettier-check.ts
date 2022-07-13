@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-08 22:07:28
+ * @LastEditTime: 2022-07-13 16:21:41
  * @Description:  jest check
  */
 
@@ -62,7 +62,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
     // const baseConfig = getConfig();
     const prettier = await import('prettier');
     const cfgFile = await prettier.resolveConfigFile();
-    const cfg = cfgFile ? await prettier.resolveConfig(cfgFile) : {};
+    const cfg = cfgFile ? await prettier.resolveConfig(cfgFile, { editorconfig: true }) : {};
     const config = this.config;
     const options = assign<PrettierCheckConfig['prettierConfig']>(
       {
