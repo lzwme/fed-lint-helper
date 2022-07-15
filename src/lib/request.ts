@@ -3,18 +3,10 @@ import zlib from 'zlib';
 import http, { type IncomingMessage, type IncomingHttpHeaders } from 'http';
 import https from 'https';
 
-function toLowcaseKeyObject(info: Record<string, unknown> = {}) {
-  for (const key of Object.keys(info)) {
-    const lowCaseKey = key.toLocaleLowerCase();
-    if (key !== lowCaseKey) {
-      info[lowCaseKey] = info[key];
-      delete info[key];
-    }
-  }
-  return info;
-}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyObject = Record<string, any>;
 
-export function urlFormat(url: string, params: Record<string, unknown>, isRepalce = false) {
+export function urlFormat(url: string, params: AnyObject, isRepalce = false) {
   const u = new URL(url, 'file:');
 
   if (params) {
@@ -27,6 +19,17 @@ export function urlFormat(url: string, params: Record<string, unknown>, isRepalc
   }
 
   return u;
+}
+
+function toLowcaseKeyObject(info: Record<string, unknown> = {}) {
+  for (const key of Object.keys(info)) {
+    const lowCaseKey = key.toLocaleLowerCase();
+    if (key !== lowCaseKey) {
+      info[lowCaseKey] = info[key];
+      delete info[key];
+    }
+  }
+  return info;
 }
 
 export class Request {
@@ -71,12 +74,7 @@ export class Request {
   getCookie(isString = true) {
     return isString ? this.cookies.join('; ') : this.cookies;
   }
-  request<T = Record<string, unknown>>(
-    method: string,
-    url: string | URL,
-    parameters: Record<string, unknown>,
-    headers?: IncomingHttpHeaders
-  ) {
+  request<T = Record<string, unknown>>(method: string, url: string | URL, parameters: AnyObject, headers?: IncomingHttpHeaders) {
     const urlObject = typeof url === 'string' ? new URL(url) : url;
     const options: https.RequestOptions = {
       hostname: urlObject.host.split(':')[0],
@@ -130,10 +128,10 @@ export class Request {
       request.end();
     });
   }
-  get<T = Record<string, unknown>>(url: string, parameters?: Record<string, unknown>, headers?: IncomingHttpHeaders) {
+  get<T = Record<string, unknown>>(url: string, parameters?: AnyObject, headers?: IncomingHttpHeaders) {
     return this.request<T>('GET', urlFormat(url, parameters), void 0, headers);
   }
-  post<T = Record<string, unknown>>(url: string, parameters: Record<string, unknown>, headers?: IncomingHttpHeaders) {
+  post<T = Record<string, unknown>>(url: string, parameters: AnyObject, headers?: IncomingHttpHeaders) {
     return this.request<T>('POST', url, parameters, headers);
   }
 }
