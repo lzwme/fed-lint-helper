@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-08 21:47:49
+ * @LastEditTime: 2022-07-15 18:04:15
  * @Description:  jest check
  */
 
@@ -118,7 +118,7 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
     let result: R = (this.stats = this.getInitStats());
     const { config, logger, stats } = this;
 
-    this.isCheckAll = !(config.onlyChanges || fileList.length > 0);
+    this.isCheckAll = !(config.onlyChanges || fileList?.length > 0);
     if (!this.isCheckAll && fileList !== config.fileList) config.fileList = fileList;
 
     const isNoFiles = this.isCheckAll ? this.config.src.length === 0 : !(await this.beforeStart(this.config.fileList));
