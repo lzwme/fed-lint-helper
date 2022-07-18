@@ -2,12 +2,12 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-08 21:43:14
+ * @LastEditTime: 2022-07-18 11:15:58
  * @Description: typescript Diagnostics report
  */
 
 import { resolve, dirname, normalize } from 'path';
-import { existsSync, unlinkSync, readFileSync, statSync, writeFileSync, mkdirSync } from 'fs';
+import { existsSync, unlinkSync, readFileSync, statSync } from 'fs';
 import { color } from 'console-log-colors';
 import * as ts from 'typescript';
 import glob from 'fast-glob';
@@ -278,7 +278,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     }
 
     if (this.cache.tsCheckFilesPassedChanged) {
-      writeFileSync(this.cacheFilePath, JSON.stringify(this.cache.tsCache, void 0, 2));
+      this.saveCache(this.cacheFilePath, this.cache.tsCache);
       this.logger.info(
         `update cache(${this.cache.tsCheckFilesPassedChanged}):`,
         cyanBright(fixToshortPath(this.cacheFilePath, config.rootDir))
@@ -325,8 +325,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     const { removeFromWhiteList } = this.updateCache();
 
     if (config.toWhiteList) {
-      if (!existsSync(dirname(config.whiteListFilePath))) mkdirSync(dirname(config.whiteListFilePath), { recursive: true });
-      writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, void 0, 2));
+      this.saveCache(config.whiteListFilePath, this.whiteList);
       this.logger.info(
         `[ADD]write to whitelist(${Object.keys(this.whiteList).length}):`,
         cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir))
@@ -338,7 +337,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
           `[REMOVE]write to whitelist(${Object.keys(this.whiteList).length}):`,
           cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir))
         );
-        writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, void 0, 2));
+        this.saveCache(config.whiteListFilePath, this.whiteList);
         this.logger.info(`remove from whilelist(${removeFromWhiteList.length}):\n` + removeFromWhiteList.join('\n'));
         execSync(`git add ${config.whiteListFilePath}`, void 0, config.rootDir, !config.silent);
       }

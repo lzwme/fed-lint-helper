@@ -33,6 +33,8 @@ export interface CommConfig {
   cacheLocation?: string;
   /** 是否移除缓存文件。设置为 true 将移除缓存并生成新的。默认 false */
   removeCache?: boolean;
+  /** 是否探测子项目并在子项目中分别执行 lint。默认为 true */
+  detectSubPackages?: boolean;
   /**
    * 执行检测的方式。默认为 proc
    * @var proc fork 子进程执行。默认
@@ -155,7 +157,9 @@ export interface PrettierCheckConfig extends CommConfig {
 }
 
 export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {
-  /** 用户自定义文件的路径 */
+  /** 子包配置。针对多子模块的 menorepo 类项目 */
+  packages?: Record<string, string>;
+  /** 配置文件路径 */
   configPath?: string;
   /** 根目录，默认为当前执行目录 */
   rootDir?: string;

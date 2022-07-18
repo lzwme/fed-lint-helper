@@ -2,16 +2,18 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-07 17:08:07
+ * @LastEditTime: 2022-07-18 17:49:39
  * @Description:
  */
 
 import { color } from 'console-log-colors';
+import { sync } from 'fast-glob';
 import { existsSync, mkdirSync } from 'fs';
-import { resolve } from 'path';
+import { resolve, dirname } from 'path';
 import { env } from 'process';
 import { CommConfig, FlhConfig, LintTypes } from './types';
 import { assign, formatWxWorkKeys, getLogger } from './utils';
+import { isEmptyObject } from './utils/is';
 
 const commConfig: CommConfig = {
   rootDir: process.cwd(),
@@ -25,13 +27,15 @@ const commConfig: CommConfig = {
   exitOnError: true,
   cache: true,
   removeCache: false,
-  mode: 'proc',
+  mode: 'thread',
 };
 
 export const config: FlhConfig = {
+  ...commConfig,
   configPath: '.flh.config.js',
   cacheLocation: `node_modules/.cache/flh/`,
   logDir: `node_modules/.cache/flh/log`,
+  packages: {},
   ci: Boolean(env.CI || env.GITLAB_CI || env.JENKINS_HOME),
   tscheck: {
     exclude: ['**/*.test.{ts,tsx}', '**/*/*.mock.{ts,tsx}', '**/*/*.d.ts'],
@@ -74,8 +78,9 @@ export const config: FlhConfig = {
     useAngularStyle: true,
   },
   prettier: {
-    exclude: ['/node_modules/', '/dist/'],
+    exclude: ['**/node_modules/**', '**/dist/**'],
     extentions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.json', '.less', '.scss', '.md'],
+    detectSubPackages: false,
   },
 };
 
@@ -130,15 +135,47 @@ export function getConfig(options?: FlhConfig, useCache = isInited) {
   mergeCommConfig(config);
 
   if (!config.cacheLocation) config.cacheLocation = `node_modules/.cache/flh/`;
+  config.cacheLocation = resolve(config.rootDir, config.cacheLocation);
   if (!existsSync(config.cacheLocation)) {
     mkdirSync(config.cacheLocation, { recursive: true });
   }
 
   config.wxWorkKeys = formatWxWorkKeys(config.wxWorkKeys);
-  isInited = true;
   if (config.logDir) logger.setLogDir(config.logDir);
 
+  if (isEmptyObject(config.packages)) config.packages = getMenorepoPackages();
+
+  isInited = true;
   return config;
+}
+
+function getMenorepoPackages(rootDir = process.cwd()) {
+  const packages: Record<string, string> = {};
+  let filepath = resolve(rootDir, 'package.json');
+
+  if (existsSync(filepath)) {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const pkgInfo = require(filepath);
+    if (pkgInfo.packages) Object.assign(packages, pkgInfo.packages);
+  }
+
+  filepath = resolve(rootDir, 'packages');
+  if (existsSync(filepath)) {
+    const pkgs = sync(['packages/**/*/package.json'], {
+      cwd: rootDir,
+      deep: 3,
+      ignore: ['**/node_modules/**', '**/dist/**'],
+      absolute: true,
+    }).map(d => resolve(rootDir, d));
+
+    for (filepath of pkgs) {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const projectName = require(filepath).name as string;
+      packages[projectName] = dirname(filepath);
+    }
+  }
+
+  return packages;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires

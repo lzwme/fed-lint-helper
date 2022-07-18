@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-08 16:32:04
+ * @LastEditTime: 2022-07-18 17:51:57
  * @Description: cli 工具
  */
 import { Option, program } from 'commander';
@@ -65,6 +65,7 @@ program
   .option('--no-exit-on-error', `检测到异常时，不以非 0 值立即退出。`)
   .option('--toWhiteList', `是否将检测到异常的文件输出到白名单文件列表中。`, false)
   .option('--fix', `是否修正可自动修正的异常。如 eslint --fix 等`)
+  .option('--no-fix', `禁用自动修正。`)
   .option('--wx-work-keys <key...>', '发送至企业微信机器人，需指定 webhook key 的值，可指定多个机器人')
   .option('--tscheck', `执行 TypeScript Diagnostics check`)
   .option('--eslint', `执行 eslint 检查`)
@@ -85,17 +86,18 @@ program
       checkOnInit: false,
       silent: !options.debug && options.silent,
       printDetail: options.printDetail !== false,
-      mode: options.mode || 'proc',
+      mode: options.mode || 'thread',
       tscheck: {
         toWhiteList: options.toWhiteList,
-        mode: options.mode || 'proc',
+        mode: options.mode || 'thread',
       },
       eslint: {
         // tsConfigFileName: 'tsconfig.eslint.json',
         toWhiteList: options.toWhiteList,
+        mode: options.mode || 'proc',
       },
       jest: {
-        mode: options.mode || 'proc',
+        mode: options.mode || 'thread',
       },
       jira: {
         type: options.jiraType === 'pipeline' ? 'pipeline' : 'commit',

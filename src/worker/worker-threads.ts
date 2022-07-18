@@ -58,7 +58,7 @@ export function createWorkerThreads<T, C = unknown>(
 }
 
 if (!isMainThread) {
-  globalThis.isChildProc = true;
+  globalThis.isInChildProcess = true;
   const options: CreateThreadOptions = workerData;
   if (options.debug) console.log('workerData:', options);
   const done = (data: unknown) => {

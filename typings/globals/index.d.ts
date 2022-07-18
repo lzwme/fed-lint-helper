@@ -1,1 +1,1 @@
-declare var isChildProc: boolean;
+declare var isInChildProcess: boolean;

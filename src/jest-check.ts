@@ -2,13 +2,13 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-08 21:38:37
+ * @LastEditTime: 2022-07-18 17:41:35
  * @Description:  jest check
  */
 
 import { extname, resolve } from 'path';
 import { cpus } from 'os';
-import { existsSync, statSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, statSync, readFileSync } from 'fs';
 import { color } from 'console-log-colors';
 import glob from 'fast-glob';
 import type { Config } from '@jest/types';
@@ -164,7 +164,8 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
       const baseConfig = getConfig();
       const files = this.isCheckAll ? config.src : specFileList;
       const cmd = [
-        `node --max_old_space_size=4096 ./node_modules/jest/bin/jest.js`,
+        `${baseConfig.pmcheck || 'npm'} exec jest`,
+        // `node --max_old_space_size=4096 ./node_modules/jest/bin/jest.js`,
         `--unhandled-rejections=strict`,
         `--forceExit`,
         // isCheckAll ? null : `--onlyChanged`,
@@ -204,7 +205,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
         }
       }
 
-      writeFileSync(this.cacheFilePath, JSON.stringify(this.cacheInfo, undefined, 2));
+      this.saveCache(this.cacheFilePath, this.cacheInfo);
       stats.errorCount = data.results.numFailedTestSuites;
       stats.isPassed = stats.failedFilesNum === 0; // data.results.success && !data.results.numFailedTestSuites;
       logger.debug('result use runCLI:\n', data);

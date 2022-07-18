@@ -2,13 +2,13 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-08 21:50:24
+ * @LastEditTime: 2022-07-18 11:12:18
  * @Description:  eslint check
  */
 
 import { color } from 'console-log-colors';
 import type { ESLint } from 'eslint';
-import { existsSync, writeFileSync, readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import { fixToshortPath, assign, execSync } from './utils';
 import { getConfig } from './config';
@@ -207,13 +207,13 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
           this.logger.info(`\n ${resultText}`);
         }
         this.logger.info('[ADD]write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
-        writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, void 0, 2));
+        this.saveCache(config.whiteListFilePath, this.whiteList);
         execSync(`git add ${config.whiteListFilePath}`, void 0, config.rootDir, !config.silent);
       }
     } else {
       if (removeFromWhiteList.length > 0) {
         this.logger.info(' [REMOVE]write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
-        writeFileSync(config.whiteListFilePath, JSON.stringify(this.whiteList, void 0, 2));
+        this.saveCache(config.whiteListFilePath, this.whiteList);
         this.logger.info(' remove from whilelist:\n' + removeFromWhiteList.join('\n'));
         execSync(`git add ${config.whiteListFilePath}`, void 0, config.rootDir, !config.silent);
       }

@@ -2,20 +2,20 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-15 18:04:15
+ * @LastEditTime: 2022-07-18 17:47:50
  * @Description:  jest check
  */
 
-import { existsSync, unlinkSync } from 'fs';
+import { existsSync, unlinkSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { color } from 'console-log-colors';
-import { resolve } from 'path';
+import { resolve, dirname } from 'path';
 import { getTimeCost } from './utils/common';
 import { getLogger } from './utils/get-logger';
 import { createForkThread } from './worker/fork';
 import { getConfig } from './config';
 import type { CommConfig, ILintTypes } from './types';
 import { exit } from './exit';
-import { assign } from './utils/assgin';
+import { assign, getObjectKeysUnsafe } from './utils/assgin';
 
 export interface LintResult {
   /** 是否检测通过 */
@@ -54,7 +54,7 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
   protected abstract init(): void;
 
   constructor(protected tag: ILintTypes, protected config?: C) {
-    this.config = this.parseConfig(config);
+    this.config = assign({} as C, this.parseConfig(config));
     const baseConfig = getConfig();
 
     if (!this.logger) {
@@ -87,13 +87,13 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
   /**
    * 在 fork 子进程中执行
    */
-  protected checkInChildProc() {
-    this.logger.info('start fork child progress');
+  protected checkInChildProc(config = this.config) {
+    // this.logger.info('start fork child progress');
     return createForkThread<R, C>({
       type: this.tag,
-      debug: this.config.debug,
-      config: this.config,
-    }).catch(error => {
+      debug: config.debug,
+      config,
+    }).catch((error: number) => {
       this.logger.error('checkInChildProc error, code:', error);
       return { isPassed: false } as R;
     });
@@ -101,48 +101,132 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
   /**
    * 在 work_threads 子线程中执行
    */
-  protected checkInWorkThreads() {
+  protected checkInWorkThreads(config = this.config) {
     this.logger.info('start create work threads');
     return import('./worker/worker-threads').then(({ createWorkerThreads }) => {
       return createWorkerThreads<R, C>({
         type: this.tag,
-        debug: this.config.debug,
-        config: this.config,
-      }).catch(error => {
+        debug: config.debug,
+        config: config,
+      }).catch((error: number) => {
         this.logger.error('checkInWorkThreads error, code:', error);
         return { isPassed: false } as R;
       });
     });
   }
+  protected saveCache(filepath: string, info: unknown, isReset = false) {
+    if (!isReset && existsSync(filepath)) {
+      info = assign(JSON.parse(readFileSync(filepath, 'utf8')), info);
+    }
+
+    const pDir = dirname(filepath);
+    if (!existsSync(pDir)) mkdirSync(pDir, { recursive: true });
+
+    writeFileSync(filepath, JSON.stringify(info, null, 2), { encoding: 'utf8' });
+  }
+  protected async checkForPackages() {
+    const { config } = this;
+    let result: LintResult;
+
+    // todo: 识别与处理 config.packages
+    const baseConfig = getConfig();
+    const pkgs = Object.values(baseConfig.packages);
+    const pkgsCfg: { [pkgpath: string]: { src: string[]; fileList: string[] } } = {};
+
+    if (pkgs.length === 0 || this.config.detectSubPackages === false) {
+      if (config.mode === 'thread') result = await this.checkInWorkThreads();
+      else if (config.mode === 'proc') result = await this.checkInChildProc();
+      else result = await this.startCheck();
+      return result;
+    }
+
+    // 文件分类
+    if (pkgs.length > 0) {
+      if (this.isCheckAll) {
+        for (const src of config.src) {
+          const srcpath = resolve(config.rootDir, src);
+          const pkgpath = pkgs.find(d => srcpath.startsWith(d)) || config.rootDir;
+          if (!pkgsCfg[pkgpath]) pkgsCfg[pkgpath] = { src: [srcpath], fileList: [] };
+          else pkgsCfg[pkgpath].src.push(srcpath);
+        }
+      } else {
+        for (let filepath of config.fileList) {
+          filepath = resolve(config.rootDir, filepath);
+          const pkgpath = pkgs.find(d => filepath.startsWith(d)) || config.rootDir;
+          if (!pkgsCfg[pkgpath]) pkgsCfg[pkgpath] = { src: [], fileList: [filepath] };
+          else pkgsCfg[pkgpath].fileList.push(filepath);
+        }
+      }
+    } else {
+      pkgsCfg[config.rootDir] = { src: config.src, fileList: config.fileList };
+    }
+
+    const results: Promise<LintResult>[] = [];
+    for (const [pkgDir, cfg] of Object.entries(pkgsCfg)) {
+      const newConfig = Object.assign({}, config, cfg);
+      newConfig.rootDir = pkgDir;
+      if (config.mode === 'thread') results.push(this.checkInWorkThreads(newConfig));
+      else if (config.mode === 'proc') results.push(this.checkInChildProc(newConfig));
+      else {
+        this.config = newConfig;
+        result = await this.startCheck();
+        results.push(Promise.resolve(assign({} as LintResult, result)));
+      }
+    }
+
+    result = { isPassed: true, startTime: this.stats.startTime };
+    const res = await Promise.all(results);
+    res.forEach(r => {
+      getObjectKeysUnsafe(r).forEach(key => {
+        if (key === 'startTime') return;
+        if (typeof r[key] === 'number') {
+          if (null == result[key]) result[key] = 0 as never;
+          result[key as 'totalFilesNum'] += r[key] as number;
+        } else if (typeof r[key] === 'boolean') {
+          if (null == result[key]) result[key] = true as never;
+          result[key] = (result[key] && r[key]) as never;
+        } else assign(result[key], r[key] as never);
+      });
+    });
+
+    return result;
+  }
+  private startCheck() {
+    this.logger.info(color.cyan('start checking in'), color.greenBright(this.config.rootDir));
+    if (this.init) this.init();
+    return this.check();
+  }
   async start(fileList: string[] = this.config.fileList) {
     let result: R = (this.stats = this.getInitStats());
     const { config, logger, stats } = this;
 
-    this.isCheckAll = !(config.onlyChanges || fileList?.length > 0);
-    if (!this.isCheckAll && fileList !== config.fileList) config.fileList = fileList;
+    if (!Array.isArray(config.fileList)) config.fileList = [];
+    if (!Array.isArray(fileList) || fileList.length === 0) fileList = config.fileList;
+    if (fileList !== config.fileList) config.fileList = fileList;
 
-    const isNoFiles = this.isCheckAll ? this.config.src.length === 0 : !(await this.beforeStart(this.config.fileList));
+    this.isCheckAll = !(config.onlyChanges || fileList.length > 0);
+
+    const isNoFiles = this.isCheckAll ? config.src.length === 0 : !(await this.beforeStart(config.fileList));
     if (isNoFiles) {
       logger.info('No files to process\n');
       return result;
     }
 
-    if (config.mode === 'proc') result = await this.checkInChildProc();
-    else if (config.mode === 'thread') result = await this.checkInWorkThreads();
-    else {
-      logger.info('start checking');
+    if (globalThis.isInChildProcess) {
+      config.exitOnError = false;
+      result = await this.startCheck();
+    } else {
       if (existsSync(this.cacheFilePath) && config.removeCache) unlinkSync(this.cacheFilePath);
-      if (this.init) this.init();
-      result = await this.check();
+      result = (await this.checkForPackages()) as R;
     }
 
     result.startTime = stats.startTime;
     result = assign(stats, result);
 
-    if (!globalThis.isChildProc) {
+    if (!globalThis.isInChildProcess) {
       const { bold, cyan, red, redBright, greenBright } = color;
       logger.debug('result', stats);
-      logger.info(bold(stats.isPassed ? greenBright('Verification passed!') : redBright('Verification failed!')));
+      logger.info(cyan(`[${config.mode}]`), bold(stats.isPassed ? greenBright('Verification passed!') : redBright('Verification failed!')));
       if (stats.totalFilesNum) {
         if (stats.errorCount) logger.info(cyan(' - errorCount:\t'), bold(redBright(stats.errorCount)));
         logger.info(cyan(' - Failed:\t'), bold(red(stats.failedFilesNum)));

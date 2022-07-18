@@ -68,3 +68,10 @@ export function assign<T = PlainObject>(a: T, ...args: PlainObject[]): T {
   }
   return a;
 }
+
+/**
+ * 获取一个对象的 key 列表（返回指定的类型）
+ */
+export function getObjectKeysUnsafe<T extends object>(value: T): (keyof T)[] {
+  return Object.keys(value) as (keyof T)[];
+}

@@ -2,12 +2,12 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-07 17:52:16
+ * @LastEditTime: 2022-07-18 11:10:23
  * @Description:  Jira check
  */
 
-import { resolve, dirname, join } from 'path';
-import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'fs';
+import { resolve, join } from 'path';
+import { existsSync, writeFileSync, readFileSync } from 'fs';
 import type { IncomingHttpHeaders } from 'http';
 import { color } from 'console-log-colors';
 import { assign, getHeadBranch, PlainObject, getLogger } from './utils';
@@ -200,8 +200,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
       this.logger.debug('[getIssueType]', result.data);
 
       // 写入缓存文件中
-      if (!existsSync(dirname(issueTypeCachePath))) mkdirSync(dirname(issueTypeCachePath), { recursive: true });
-      writeFileSync(issueTypeCachePath, JSON.stringify(issueTypeList), 'utf8');
+      this.saveCache(issueTypeCachePath, issueTypeList, true);
     }
 
     return issueTypeList;
@@ -396,18 +395,17 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
 
       const issueText = issueTypeToDesc[issuetype] || 'feature'; // 如果是其他类型，默认feature
       const reg = new RegExp(`^${config.commitMsgPrefix.replace(/([.[-])/g, '\\$1')}\\[${versionName}]\\[${issueText}]\\[${jiraID}]`);
+      let smartCommit = '';
 
       // 如果匹配到commit中包含中文，则保留提交信息
       if (smartRegWithMessage.test(commitMessage)) {
         // 如果用户需要手动填入commit信息
         const message = commitMessage.match(smartRegWithMessage)[1].trim();
-        const smartCommit = `${config.commitMsgPrefix}[${versionName}][${issueText}][${jiraID}] ${message}`;
-        writeFileSync(gitPath, smartCommit, { encoding: 'utf8' });
+        smartCommit = `${config.commitMsgPrefix}[${versionName}][${issueText}][${jiraID}] ${message}`;
         this.logger.info(`[智能修改commit]: ${color.greenBright(smartCommit)} \n`);
       } else if (smartRegWithJIRA.test(commitMessage)) {
         // 如果只匹配到JIRA号
-        const smartCommit = `${config.commitMsgPrefix}[${versionName}][${issueText}][${jiraID}] ${summary}`;
-        writeFileSync(gitPath, smartCommit, { encoding: 'utf8' });
+        smartCommit = `${config.commitMsgPrefix}[${versionName}][${issueText}][${jiraID}] ${summary}`;
         this.logger.info(`[智能修改commit]: ${color.greenBright(smartCommit)} \n`);
       } else if (!reg.test(commitMessage)) {
         // 如果都是自己填的
@@ -418,6 +416,8 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
         this.logger.log('===================  Example  ===================');
         return false;
       }
+
+      writeFileSync(gitPath, smartCommit, { encoding: 'utf8' });
 
       if (isSeal && stats.isPassed) {
         this.logger.info(color.magentaBright(versionName), color.yellowBright('已经封版'));

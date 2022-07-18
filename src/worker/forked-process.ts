@@ -9,7 +9,7 @@
 import type { CreateThreadOptions, WorkerMessageBody } from './fork';
 import { lintStartAsync } from './lintStartAsync';
 
-globalThis.isChildProc = true;
+globalThis.isInChildProcess = true;
 process.on('message', (options: CreateThreadOptions) => {
   if (options.debug) console.log('ForkWorker received:', options);
   const done = (data: unknown) => {

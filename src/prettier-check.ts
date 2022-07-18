@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-13 16:21:41
+ * @LastEditTime: 2022-07-18 16:51:01
  * @Description:  jest check
  */
 
@@ -51,7 +51,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
     const baseConfig = getConfig();
 
     if (config !== this.config) config = assign<PrettierCheckConfig>({}, this.config, config);
-    this.config = assign<PrettierCheckConfig>(baseConfig.jest, config);
+    this.config = assign<PrettierCheckConfig>({}, baseConfig.jest, config);
 
     return this.config;
   }
@@ -230,7 +230,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
         }
       }
 
-      writeFileSync(cacheFilePath, JSON.stringify(this.cacheInfo, undefined, 2));
+      this.saveCache(cacheFilePath, this.cacheInfo);
       if (baseConfig.fix && stats.fixedFileList.length > 0) {
         logger.info(`fixed files(${stats.fixedFileList.length}):\n`, stats.fixedFileList.map(d => ` - ${d}\n`).join(''));
       }
@@ -275,6 +275,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
     return fileList;
   }
   protected beforeStart(): boolean {
+    if (this.isCheckAll) return this.config.src.length > 0;
     this.config.fileList = this.filesFilter(this.config.fileList);
     return this.config.fileList.length > 0;
   }
