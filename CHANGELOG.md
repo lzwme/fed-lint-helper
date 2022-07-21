@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.11.1](https://github.com/lzwme/fed-lint-helper/compare/v1.11.0...v1.11.1) (2022-07-21)
+
+
+### Bug Fixes
+
+* 修复 override config 导致的配置参数初始化 ([583c5b1](https://github.com/lzwme/fed-lint-helper/commit/583c5b19dd559f19140b651539751c2d05c7fd20))
+
 ## [1.11.0](https://github.com/lzwme/fed-lint-helper/compare/v1.10.3...v1.11.0) (2022-07-21)
 
 
