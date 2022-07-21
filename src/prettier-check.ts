@@ -2,8 +2,8 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-18 20:01:05
- * @Description:  jest check
+ * @LastEditTime: 2022-07-21 22:20:19
+ * @Description:  prettier check
  */
 
 import { resolve } from 'path';
@@ -33,7 +33,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
     passed: {} as { [filepath: string]: { md5: string; updateTime: number } },
   };
 
-  constructor(protected override config: PrettierCheckConfig = {}) {
+  constructor(config: PrettierCheckConfig = {}) {
     super('prettier', config);
   }
   /** 获取初始化的统计信息 */
@@ -51,7 +51,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
     const baseConfig = getConfig();
 
     if (config !== this.config) config = assign<PrettierCheckConfig>({}, this.config, config);
-    this.config = assign<PrettierCheckConfig>({}, baseConfig.jest, config);
+    this.config = assign<PrettierCheckConfig>({}, baseConfig.prettier, config);
 
     return this.config;
   }

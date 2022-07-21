@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-18 11:10:23
+ * @LastEditTime: 2022-07-21 22:20:53
  * @Description:  Jira check
  */
 
@@ -97,7 +97,7 @@ const ignoredCommitList = [
 export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
   private reqeust: Request;
 
-  constructor(protected override config: JiraCheckConfig = {}) {
+  constructor(config: JiraCheckConfig = {}) {
     super('jira', config);
   }
   /** 配置参数格式化 */

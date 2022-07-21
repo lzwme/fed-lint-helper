@@ -33,7 +33,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
     passed: {} as { [filepath: string]: { md5: string; specMd5: string; updateTime: number } },
   };
 
-  constructor(protected override config: JestCheckConfig = {}) {
+  constructor(config: JestCheckConfig = {}) {
     super('jest', config);
   }
   /** 获取初始化的统计信息 */

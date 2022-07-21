@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-18 11:12:18
+ * @LastEditTime: 2022-07-21 22:21:23
  * @Description:  eslint check
  */
 
@@ -45,7 +45,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
   /** 白名单列表 */
   private whiteList = {} as { [filepath: string]: 'e' | 'w' }; // ts.DiagnosticCategory
 
-  constructor(protected override config: ESLintCheckConfig = {}) {
+  constructor(config: ESLintCheckConfig = {}) {
     super('eslint', config);
   }
   /** 获取初始化的统计信息 */
