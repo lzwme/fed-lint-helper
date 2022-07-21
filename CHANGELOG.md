@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.11.0](https://github.com/lzwme/fed-lint-helper/compare/v1.10.3...v1.11.0) (2022-07-21)
+
+
+### Features
+
+* 新增支持 menorepo 类多子包项目 ([b1eb053](https://github.com/lzwme/fed-lint-helper/commit/b1eb05365985b08a54c980a421e687dadf316114))
+
+
+### Bug Fixes
+
+* fix error when fileList is undefined ([899d6f1](https://github.com/lzwme/fed-lint-helper/commit/899d6f1f280c0c63a2b8b22124b902031e3eafd5))
+* prettier 应使用 editorconfig 配置 ([812f9f2](https://github.com/lzwme/fed-lint-helper/commit/812f9f20198b3c8a71ea06c0cdfd9069a8a0ed5d))
+
 ### [1.10.3](https://github.com/lzwme/fed-lint-helper/compare/v1.10.2...v1.10.3) (2022-07-12)
 
 
