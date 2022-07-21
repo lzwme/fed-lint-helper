@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-25 10:12:21
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-07 14:07:39
+ * @LastEditTime: 2022-07-18 19:50:47
  * @Description: worker_threads 实现在 worker 线程中执行
  *
  * - worker_threads 比 child_process 和 cluster 更为轻量级的并行性，而且 worker_threads 可有效地共享内存
@@ -60,10 +60,10 @@ export function createWorkerThreads<T, C = unknown>(
 if (!isMainThread) {
   globalThis.isInChildProcess = true;
   const options: CreateThreadOptions = workerData;
-  if (options.debug) console.log('workerData:', options);
+  getLogger().debug('workerData:', options);
   const done = (data: unknown) => {
     const info: WorkerMessageBody = { type: options.type, data, end: true };
-    if (options.debug) console.log('emit msg from worker thread:', info);
+    getLogger().debug('emit msg from worker thread:', info);
     // 等待写文件和日志完成
     setTimeout(() => parentPort.postMessage(info), 50);
   };

@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-18 17:49:39
+ * @LastEditTime: 2022-07-18 19:47:20
  * @Description:
  */
 
@@ -27,7 +27,7 @@ const commConfig: CommConfig = {
   exitOnError: true,
   cache: true,
   removeCache: false,
-  mode: 'thread',
+  mode: 'proc',
 };
 
 export const config: FlhConfig = {
@@ -38,6 +38,7 @@ export const config: FlhConfig = {
   packages: {},
   ci: Boolean(env.CI || env.GITLAB_CI || env.JENKINS_HOME),
   tscheck: {
+    mode: 'thread',
     exclude: ['**/*.test.{ts,tsx}', '**/*/*.mock.{ts,tsx}', '**/*/*.d.ts'],
     whiteListFilePath: 'config/tsCheckWhiteList.json',
     tsConfigFileName: 'tsconfig.json',
@@ -78,6 +79,7 @@ export const config: FlhConfig = {
     useAngularStyle: true,
   },
   prettier: {
+    mode: 'current',
     exclude: ['**/node_modules/**', '**/dist/**'],
     extentions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.json', '.less', '.scss', '.md'],
     detectSubPackages: false,

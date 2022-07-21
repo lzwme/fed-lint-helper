@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-18 16:51:01
+ * @LastEditTime: 2022-07-18 20:01:05
  * @Description:  jest check
  */
 
@@ -145,7 +145,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
 
     if (fileList.length === 0) return stats;
 
-    logger.debug(fileList);
+    logger.debug('fileList:', fileList);
 
     if (config.useCli !== false) {
       const baseConfig = getConfig();

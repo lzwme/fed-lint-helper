@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-18 17:51:57
+ * @LastEditTime: 2022-07-18 19:48:49
  * @Description: cli 工具
  */
 import { Option, program } from 'commander';
@@ -86,7 +86,7 @@ program
       checkOnInit: false,
       silent: !options.debug && options.silent,
       printDetail: options.printDetail !== false,
-      mode: options.mode || 'thread',
+      mode: options.mode || 'proc',
       tscheck: {
         toWhiteList: options.toWhiteList,
         mode: options.mode || 'thread',
@@ -97,7 +97,7 @@ program
         mode: options.mode || 'proc',
       },
       jest: {
-        mode: options.mode || 'thread',
+        mode: options.mode || 'proc',
       },
       jira: {
         type: options.jiraType === 'pipeline' ? 'pipeline' : 'commit',

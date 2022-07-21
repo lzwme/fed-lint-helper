@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-18 17:47:50
+ * @LastEditTime: 2022-07-18 18:32:50
  * @Description:  jest check
  */
 
@@ -102,7 +102,7 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
    * 在 work_threads 子线程中执行
    */
   protected checkInWorkThreads(config = this.config) {
-    this.logger.info('start create work threads');
+    // this.logger.info('start create work threads');
     return import('./worker/worker-threads').then(({ createWorkerThreads }) => {
       return createWorkerThreads<R, C>({
         type: this.tag,
