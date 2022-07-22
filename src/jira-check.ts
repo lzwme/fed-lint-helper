@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-21 22:20:53
+ * @LastEditTime: 2022-07-22 11:12:28
  * @Description:  Jira check
  */
 
@@ -327,7 +327,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
     const gitPath = join(config.rootDir, config.COMMIT_EDITMSG || './.git/COMMIT_EDITMSG');
     const commitMessage = readFileSync(gitPath, 'utf8').trim();
 
-    const issuePrefix = issuePrefixs.find(d => commitMessage.includes(d));
+    const issuePrefix = issuePrefixs.find(d => commitMessage.includes(d)) || issuePrefixs[0];
     const jiraIDReg = new RegExp(`${issuePrefix}(\\d+)`, 'g');
     const jiraIDs = commitMessage.match(jiraIDReg);
 
