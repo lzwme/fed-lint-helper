@@ -2,14 +2,14 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-18 11:15:58
+ * @LastEditTime: 2022-07-22 18:02:31
  * @Description: typescript Diagnostics report
  */
 
 import { resolve, dirname, normalize } from 'path';
 import { existsSync, unlinkSync, readFileSync, statSync } from 'fs';
 import { color } from 'console-log-colors';
-import * as ts from 'typescript';
+import type { Diagnostic, DiagnosticCategory, CompilerOptions } from 'typescript';
 import glob from 'fast-glob';
 import minimatch from 'minimatch';
 import { fixToshortPath, md5, assign, execSync } from './utils';
@@ -20,16 +20,16 @@ import { LintBase, LintResult } from './LintBase';
 const { bold, redBright, yellowBright, cyanBright, red, cyan } = color;
 export interface TsCheckResult extends LintResult {
   /** 异常类型数量统计 */
-  diagnosticsCategory: Partial<Record<keyof typeof ts.DiagnosticCategory, number>>;
+  diagnosticsCategory: Partial<Record<keyof typeof DiagnosticCategory, number>>;
   /** 异常总数 */
   totalDiagnostics: 0;
 }
 export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
   /** 白名单列表 */
-  private whiteList = {} as Record<string, keyof typeof ts.DiagnosticCategory>; // ts.DiagnosticCategory
+  private whiteList = {} as Record<string, keyof typeof DiagnosticCategory>; // DiagnosticCategory
   private cache: {
     /** 检测到异常且需要 report 的文件列表 */
-    allDiagnosticsFileMap: { [file: string]: ts.Diagnostic };
+    allDiagnosticsFileMap: { [file: string]: Diagnostic };
     /** 要缓存到 cacheFilePath 的信息 */
     tsCache: {
       /** 已经检测且无异常的文件列表 */
@@ -112,10 +112,11 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
   }
 
   /** ts 编译 */
-  private compile(sourceFiles: string[], subDirection: string): void {
+  private async compile(sourceFiles: string[], subDirection: string) {
     const total = sourceFiles.length;
     const { config, stats } = this;
     const { tsCheckFilesPassed } = this.cache.tsCache;
+    const TS = await import('typescript');
 
     this.stats.totalFilesNum += total;
 
@@ -158,13 +159,13 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     const subConfigFile = resolve(subDirection, config.tsConfigFileName);
     const hasSubConfig = existsSync(subConfigFile);
 
-    const options: ts.CompilerOptions = ts.readConfigFile(hasSubConfig ? subConfigFile : config.tsConfigFileName, ts.sys.readFile).config;
-    const cfg = ts.parseJsonConfigFileContent(options, ts.sys, hasSubConfig ? subDirection : dirname(config.tsConfigFileName));
+    const options: CompilerOptions = TS.readConfigFile(hasSubConfig ? subConfigFile : config.tsConfigFileName, TS.sys.readFile).config;
+    const cfg = TS.parseJsonConfigFileContent(options, TS.sys, hasSubConfig ? subDirection : dirname(config.tsConfigFileName));
 
-    const host = ts.createCompilerHost(cfg.options);
-    const program = ts.createProgram(sourceFiles, cfg.options, host);
+    const host = TS.createCompilerHost(cfg.options);
+    const program = TS.createProgram(sourceFiles, cfg.options, host);
 
-    const temporaryDiagnostics = [...ts.getPreEmitDiagnostics(program), ...program.getSyntacticDiagnostics()].filter(item => {
+    const temporaryDiagnostics = [...TS.getPreEmitDiagnostics(program), ...program.getSyntacticDiagnostics()].filter(item => {
       if (item.code) {
         // code 忽略列表
         if (config.tsCodeIgnore.length > 0 && config.tsCodeIgnore.includes(item.code)) return false;
@@ -190,7 +191,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     if (temporaryDiagnostics.length > 0) {
       stats.totalDiagnostics += temporaryDiagnostics.length;
 
-      const errorDiagnostics: ts.Diagnostic[] = [];
+      const errorDiagnostics: Diagnostic[] = [];
 
       for (const item of temporaryDiagnostics) {
         if (!item.file) {
@@ -207,7 +208,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
 
         // // Error 级别最高，不能被覆盖
         if (config.toWhiteList && this.whiteList[shortpath] !== 'Error') {
-          this.whiteList[shortpath] = ts.DiagnosticCategory[item.category] as never;
+          this.whiteList[shortpath] = TS.DiagnosticCategory[item.category] as never;
         }
 
         if (tsCheckFilesPassed[shortpath]) {
@@ -224,7 +225,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
 
         this.logger.info(
           bold(redBright(`Diagnostics of need repair(not in whitelist)[${fileList.length} files]:\n`)),
-          config.printDetail ? ts.formatDiagnosticsWithColorAndContext(errorDiagnostics, host) : `\n - ` + fileList.join('\n - ') + '\n'
+          config.printDetail ? TS.formatDiagnosticsWithColorAndContext(errorDiagnostics, host) : `\n - ` + fileList.join('\n - ') + '\n'
         );
       } else {
         const fileList = temporaryDiagnostics.filter(d => d.file).map(d => d.file.fileName);
@@ -234,7 +235,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
             bold(yellowBright(`Diagnostics in whitelist[${redBright(fileList.length)}`)),
             bold(yellowBright(`files]:\n`)),
             config.printDetail
-              ? ts.formatDiagnosticsWithColorAndContext(temporaryDiagnostics, host)
+              ? TS.formatDiagnosticsWithColorAndContext(temporaryDiagnostics, host)
               : `\n - ` + fileList.join('\n - ') + '\n'
           );
         }
@@ -291,6 +292,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
   public async check(fileList = this.config.fileList) {
     this.init();
 
+    const TS = await import('typescript');
     const { config, stats } = this;
     const directionMap = {
       // 没有 tsconfig.json 独立配置文件的子目录文件，也将全部放到这里一起编译
@@ -320,7 +322,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
       }
     }
 
-    for (const d of Object.keys(directionMap)) this.compile(directionMap[d], d);
+    for (const d of Object.keys(directionMap)) await this.compile(directionMap[d], d);
 
     const { removeFromWhiteList } = this.updateCache();
 
@@ -357,7 +359,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     if (!stats.isPassed) {
       for (const filepath of errorFileList) {
         const d = this.cache.allDiagnosticsFileMap[filepath];
-        const cateString = ts.DiagnosticCategory[d.category] as keyof typeof ts.DiagnosticCategory;
+        const cateString = TS.DiagnosticCategory[d.category] as keyof typeof DiagnosticCategory;
         stats.diagnosticsCategory[cateString] = (stats.diagnosticsCategory[cateString] || 0) + 1;
       }
       for (const keyString of Object.keys(stats.diagnosticsCategory)) {
