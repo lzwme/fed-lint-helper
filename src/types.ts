@@ -169,6 +169,8 @@ export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {
   debug?: boolean;
   /** 是否运行为持续集成模式 */
   ci?: boolean;
+  /** 用户邮箱规则。用于 commit lint 时检查提交者邮箱配置规范 */
+  userEmailRule?: string | RegExp;
   /** 企业微信机器人 webhook key 配置，用于 ci 中发送通知。可配置多个 */
   wxWorkKeys?: string[];
   /** 自定义微信通知的消息格式化 */

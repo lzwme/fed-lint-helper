@@ -5,6 +5,7 @@ import { color } from 'console-log-colors';
 import { config } from './config';
 import { getLogger } from './utils/get-logger';
 import type { CommitLintOptions } from './types';
+import { checkUserEmial } from './utils';
 
 const helpTips = {
   build: '构建相关',
@@ -32,46 +33,57 @@ const helpTips = {
 
 export function commitMessageVerify(options?: CommitLintOptions) {
   let isPass = true;
-  const commitRE =
-    /^(((\uD83C[\uDF00-\uDFFF])|(\uD83D[\uDC00-\uDE4F\uDE80-\uDEFF])|[\u2600-\u2B55]) )?(revert: )?(feat|fix|docs|UI|refactor|perf|workflow|build|ci|typos|chore|test|types|wip|release|dep|locale｜example｜Merge|style)(\(.+\))?: .{1,100}/;
+  const logger = getLogger('[commitlint]', options.debug ? 'debug' : 'log');
 
-  options = Object.assign({ exitOnError: true, useAngularStyle: true } as CommitLintOptions, config.commitlint, options);
-
-  if (!options.msgPath) options.msgPath = process.env.GIT_PARAMS || process.env.COMMIT_EDITMSG || './.git/COMMIT_EDITMSG';
-  const message = readFileSync(options.msgPath, 'utf8').trim();
-  const logger = getLogger('[commitlint]', config.debug ? 'debug' : 'log');
-
-  if (!config.silent) logger.info('[msg] =>', message);
-  logger.debug('options =>', options);
-
-  if (options.verify) {
-    if (typeof options.verify === 'function') {
-      const result = options.verify(message);
-      isPass = result === true;
-      if (!isPass) logger.error(`Failed by options.verify.`, result);
-    } else {
-      isPass = new RegExp(options.verify).test(message);
-      if (!isPass) logger.error(`Failed by options.verify:`, color.magentaBright(options.verify));
+  if (config.userEmailRule) {
+    const errmsg = checkUserEmial(config.userEmailRule, false, config.rootDir);
+    if (errmsg) {
+      logger.error(errmsg);
+      isPass = false;
     }
-  } else {
-    options.useAngularStyle = true;
   }
 
-  if (isPass && options.useAngularStyle && !commitRE.test(message)) {
-    isPass = false;
-    logger.error(
-      [
-        // color.red(`Invalid commit message format.\n`),
-        // color.red(`  Proper commit message format is required for automated changelog generation. Examples:\n`),
-        color.red(`提交日志不符合规范。\n`),
-        color.red(`  合法的提交日志格式如下(emoji 和 scope 可选填)：\n`),
-        color.green(`  [(emoji)?] [revert: ?]<type>[(scope)?]: <message>\n`),
-        color.green(`    💥 feat(compiler): add 'comments' option`),
-        color.green(`    🐛 fix(v-model): handle events on blur (close #28)\n\n`),
-        color.cyanBright(`  [type] 详细参考：\n`),
-        ...Object.entries(helpTips).map(([key, val]) => `    ${color.green(`${key}: ${val}`)}`),
-      ].join('\n')
-    );
+  if (isPass) {
+    options = Object.assign({ exitOnError: true, useAngularStyle: true } as CommitLintOptions, config.commitlint, options);
+    if (!options.msgPath) options.msgPath = process.env.GIT_PARAMS || process.env.COMMIT_EDITMSG || './.git/COMMIT_EDITMSG';
+
+    const message = readFileSync(options.msgPath, 'utf8').trim();
+
+    if (!config.silent) logger.info('[msg] =>', message);
+    logger.debug('options =>', options);
+
+    if (options.verify) {
+      if (typeof options.verify === 'function') {
+        const result = options.verify(message);
+        isPass = result === true;
+        if (!isPass) logger.error(`Failed by options.verify.`, result);
+      } else {
+        isPass = new RegExp(options.verify).test(message);
+        if (!isPass) logger.error(`Failed by options.verify:`, color.magentaBright(options.verify));
+      }
+    } else {
+      options.useAngularStyle = true;
+    }
+
+    const commitRE =
+      /^(((\uD83C[\uDF00-\uDFFF])|(\uD83D[\uDC00-\uDE4F\uDE80-\uDEFF])|[\u2600-\u2B55]) )?(revert: )?(feat|fix|docs|UI|refactor|perf|workflow|build|ci|typos|chore|test|types|wip|release|dep|locale｜example｜Merge|style)(\(.+\))?: .{1,100}/;
+
+    if (isPass && options.useAngularStyle && !commitRE.test(message)) {
+      isPass = false;
+      logger.error(
+        [
+          // color.red(`Invalid commit message format.\n`),
+          // color.red(`  Proper commit message format is required for automated changelog generation. Examples:\n`),
+          color.red(`提交日志不符合规范。\n`),
+          color.red(`  合法的提交日志格式如下(emoji 和 scope 可选填)：\n`),
+          color.green(`  [(emoji)?] [revert: ?]<type>[(scope)?]: <message>\n`),
+          color.green(`    💥 feat(compiler): add 'comments' option`),
+          color.green(`    🐛 fix(v-model): handle events on blur (close #28)\n\n`),
+          color.cyanBright(`  [type] 详细参考：\n`),
+          ...Object.entries(helpTips).map(([key, val]) => `    ${color.green(`${key}: ${val}`)}`),
+        ].join('\n')
+      );
+    }
   }
 
   if (!isPass && options.exitOnError !== false) process.exit(1);

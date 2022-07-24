@@ -1,4 +1,5 @@
 export * from './assgin';
+export * from './check-git-user-email';
 export * from './common';
 export * from './date';
 export * from './exec';
