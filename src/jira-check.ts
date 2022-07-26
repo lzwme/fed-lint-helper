@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-22 11:12:28
+ * @LastEditTime: 2022-07-26 21:55:21
  * @Description:  Jira check
  */
 
@@ -10,10 +10,11 @@ import { resolve, join } from 'path';
 import { existsSync, writeFileSync, readFileSync } from 'fs';
 import type { IncomingHttpHeaders } from 'http';
 import { color } from 'console-log-colors';
-import { assign, getHeadBranch, PlainObject, getLogger, checkUserEmial } from './utils';
+import { assign, getHeadBranch } from '@lzwme/fe-utils';
+import { PlainObject, getLogger, checkUserEmial } from './utils';
 import { getConfig } from './config';
 import type { JiraCheckConfig } from './types';
-import { Request } from './lib/request';
+import { Request } from '@lzwme/fe-utils';
 import { LintBase, type LintResult } from './LintBase';
 
 export interface JiraCheckResult extends LintResult {

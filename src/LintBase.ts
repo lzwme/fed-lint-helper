@@ -2,20 +2,20 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-18 18:32:50
+ * @LastEditTime: 2022-07-26 22:09:03
  * @Description:  jest check
  */
 
 import { existsSync, unlinkSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
-import { color } from 'console-log-colors';
 import { resolve, dirname } from 'path';
+import { color } from 'console-log-colors';
+import { assign, getObjectKeysUnsafe } from '@lzwme/fe-utils';
 import { getTimeCost } from './utils/common';
 import { getLogger } from './utils/get-logger';
 import { createForkThread } from './worker/fork';
 import { getConfig } from './config';
 import type { CommConfig, ILintTypes } from './types';
 import { exit } from './exit';
-import { assign, getObjectKeysUnsafe } from './utils/assgin';
 
 export interface LintResult {
   /** 是否检测通过 */
@@ -185,7 +185,7 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
         } else if (typeof r[key] === 'boolean') {
           if (null == result[key]) result[key] = true as never;
           result[key] = (result[key] && r[key]) as never;
-        } else assign(result[key], r[key] as never);
+        } else assign(result[key] as never, r[key] as never);
       });
     });
 

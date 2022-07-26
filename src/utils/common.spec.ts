@@ -1,24 +1,9 @@
 // import test from 'ava';
 import * as comm from './common';
-jest.mock('readline', () => ({
-  createInterface() {
-    return {
-      question(tip: string, callback: (answer: string) => void) {
-        callback(tip);
-      },
-      close: jest.fn,
-    };
-  },
-}));
 
 describe('utils/common', () => {
   console.log = jest.fn();
   console.error = jest.fn();
-
-  it('readSyncByRl', async () => {
-    expect(await comm.readSyncByRl()).toBe('>');
-    expect(await comm.readSyncByRl('ok')).toBe('ok');
-  });
 
   it('fixToshortPath', () => {
     expect(comm.fixToshortPath()).toBe('');
@@ -38,14 +23,6 @@ describe('utils/common', () => {
     // catch error
     expect(comm.md5(void 0)).toEqual('');
     expect(comm.md5(null, true)).toEqual('');
-  });
-
-  it('sleep', async () => {
-    const startTime = Date.now();
-    await comm.sleep(10);
-    expect(Date.now() - startTime).toBeGreaterThanOrEqual(8);
-    await comm.sleep();
-    expect(Date.now() - startTime).toBeGreaterThan(100);
   });
 
   it('formatWxWorkKeys', () => {

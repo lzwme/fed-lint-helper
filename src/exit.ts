@@ -1,7 +1,7 @@
+import { wxWorkNotify } from '@lzwme/fe-utils/cjs/node/lib/WXWork';
+import { sleep } from '@lzwme/fe-utils';
 import { config } from './config';
-import { wxWorkNotify } from './lib/WXWork';
 import { logTimeCost } from './utils/common';
-import { sleep } from './utils/common';
 
 /**
  * 退出当前 process 进程

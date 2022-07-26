@@ -1,9 +1,8 @@
 import { statSync, existsSync } from 'fs';
 import { color } from 'console-log-colors';
 import glob from 'fast-glob';
-import { readSyncByRl } from './utils/common';
+import { rmrfAsync, readSyncByRl } from '@lzwme/fe-utils';
 import { getLogger } from './utils/get-logger';
-import { rmrfAsync } from './utils/rmrf';
 
 async function doRmdir(source: string, slient = false, force = false) {
   if (!existsSync(source)) return false;

@@ -1,7 +1,7 @@
 import { color } from 'console-log-colors';
 import { existsSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
-import { execSync } from './exec';
+import { execSync } from '@lzwme/fe-utils';
 
 export const checkUserEmial = (regRule: string | RegExp, exitOnError = true, rootDir = process.cwd()) => {
   let errmsg = '';
