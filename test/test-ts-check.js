@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-18 10:33:52
  * @LastEditors: lzw
- * @LastEditTime: 2021-08-25 14:23:01
+ * @LastEditTime: 2022-07-27 15:42:20
  * @Description:
  */
 
@@ -21,7 +21,8 @@ const tsCheck = new TsCheck({
   debug: argv.includes('debug'),
   toWhiteList: true,
 });
-tsCheck.start().then(res => res && console.log(res));
+
+await tsCheck.start().then(res => res && console.log(res));
 
 tsCheck
   .start(['test-cases/ts-check-test-1.ts', 'src/ts-check.ts'])

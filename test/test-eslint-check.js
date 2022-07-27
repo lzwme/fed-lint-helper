@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-18 10:33:52
  * @LastEditors: lzw
- * @LastEditTime: 2021-08-25 15:20:04
+ * @LastEditTime: 2022-07-27 15:43:07
  * @Description: eslint 测试
  */
 // @ts-check
@@ -34,7 +34,7 @@ eslintCheck
   .start()
   .then(res => res && console.log('eslint test1:', res))
   .then(() => {
-    eslintCheck.parseConfig({ fork: false })
+    eslintCheck.parseConfig({ mode: 'current' });
     return eslintCheck
       .start(['test-cases/ts-check-test-1.ts', 'src/ts-check.ts'])
       .then(res => console.log('eslint test2:', res));

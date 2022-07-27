@@ -23,8 +23,14 @@ jobs:
           registry-url: https://registry.npmjs.com
           # cache: 'pnpm'
       - run: pnpm install --no-frozen-lockfile
-      - run: npm run test
+      # - run: npm run test
       - run: npm run release
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+
+      - name: GitHub Pages action
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+         github_token: ${{ secrets.GITHUB_TOKEN }}
+         publish_dir: ./build/docs

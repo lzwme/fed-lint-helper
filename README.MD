@@ -26,13 +26,19 @@
 - `tscheck` 自定义 TypeScript 检测
 - `jest` 自定义 jest 单元测试执行
 - `jira` 自定义关联 jira 的检测逻辑(测试)
+- `prettier` 自定义 prettier 编码风格检测与格式化
+- `commitlint` 自定义遵循 Angular commit style 的 git 提交规范(用于 git hooks)
+- more...
 
 ## 安装
 
 ```bash
-npm i @lzwme/fed-lint-helper
+# use pnpm
+pnpm add -D @lzwme/fed-lint-helper
 # use yarn
-yarn add @lzwme/fed-lint-helper
+yarn add -D @lzwme/fed-lint-helper
+# use npm
+npm i -D @lzwme/fed-lint-helper
 ```
 
 ## 使用
@@ -53,6 +59,8 @@ flh --eslint
 flh --jest
 # git commit lint
 flh --commitlint
+# prettier fix
+flh --prettier --fix
 
 # Multitask parallel execution
 flh --tscheck --eslint --jest
@@ -71,6 +79,22 @@ flh notify --help
 # 示例：企业微信机器人消息通知
 flh notify "任务执行失败！@all" --wx-work <web hook key1> <web hook key2>
 ```
+
+### 结合 `husky` 与 `git hooks` 使用
+
+推荐结合 `husky` 配置本地 `git hooks`。参考示例：
+
+```bash
+# .husky/commit-msg
+flh --commitlint
+
+# .husky/pre-commit
+flh --eslint --tscheck --jest --only-changes
+flh --prettier --only-changes --fix
+git add --update
+```
+
+`CI` 中可视具体需求配置。
 
 ### API 调用
 
@@ -91,7 +115,7 @@ const tsCheck = new TsCheck({
     // tsConfigFileName: 'tsconfig.eslint.json',
     // silent: false,
 });
-const res = tsCheck.start();
+const res = await tsCheck.start();
 console.log(res);
 
 
@@ -115,19 +139,17 @@ const eslintCheck = new ESLintCheck({
   // fix: argv.includes('fix'),
 });
 
-eslintCheck
-  .start()
-  .then(res => console.log(res))
-  .then(() => {
-    return eslintCheck.start(['test-cases/ts-check-test-1.ts', 'src/ts-check.ts']).then(res => console.log(res));
-  });
+let res = await eslintCheck.start();
+console.log(res);
+res = await eslintCheck.start(['test-cases/ts-check-test-1.ts', 'src/ts-check.ts']);
+console.log(res);
 ```
 
 更多细节可参考 [API 文档](https://lzw.me/doc/fed-lint-helper)。
 
 ## API 文档
 
-- [https://lzw.me/doc/fed-lint-helper](https://lzw.me/doc/fed-lint-helper)
+- [https://lzwme.github.io/fed-lint-helper/](https://lzwme.github.io/fed-lint-helper/)
 
 ## 开发
 
