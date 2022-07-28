@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-26 22:05:26
+ * @LastEditTime: 2022-07-28 09:58:54
  * @Description:
  */
 
@@ -181,4 +181,4 @@ function getMenorepoPackages(rootDir = process.cwd()) {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-export const VERSION: string = require('../../package.json').version;
+export const VERSION: string = require('../package.json').version;

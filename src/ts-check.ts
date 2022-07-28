@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-22 18:02:31
+ * @LastEditTime: 2022-07-28 09:20:19
  * @Description: typescript Diagnostics report
  */
 
@@ -11,8 +11,9 @@ import { existsSync, unlinkSync, readFileSync, statSync } from 'fs';
 import { color } from 'console-log-colors';
 import type { Diagnostic, DiagnosticCategory, CompilerOptions } from 'typescript';
 import glob from 'fast-glob';
-import minimatch from 'minimatch';
-import { fixToshortPath, md5, assign, execSync } from './utils';
+import { isMatch } from 'micromatch';
+import { md5, assign, execSync } from '@lzwme/fe-utils';
+import { fixToshortPath } from '@lzwme/fe-utils/cjs/node/path';
 import { getConfig, VERSION } from './config';
 import type { TsCheckConfig } from './types';
 import { LintBase, LintResult } from './LintBase';
@@ -181,7 +182,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
         if (shortpath.includes('node_modules') || shortpath.endsWith('.d.ts')) return false;
         for (const p of config.exclude) {
           if (shortpath.includes(p)) return false;
-          if (minimatch(shortpath, p, { debug: config.debug })) return false;
+          if (isMatch(shortpath, p, { debug: config.debug })) return false;
         }
       }
 

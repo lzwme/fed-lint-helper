@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-21 22:20:19
+ * @LastEditTime: 2022-07-28 09:20:57
  * @Description:  prettier check
  */
 
@@ -10,11 +10,12 @@ import { resolve } from 'path';
 import { existsSync, statSync, readFileSync, writeFileSync } from 'fs';
 import { color } from 'console-log-colors';
 import glob from 'fast-glob';
-import { fixToshortPath, md5, assign, execSync } from './utils';
+import { isMatch } from 'micromatch';
+import { md5, assign, execSync } from '@lzwme/fe-utils';
+import { fixToshortPath } from '@lzwme/fe-utils/cjs/node/path';
 import { getConfig } from './config';
 import type { PrettierCheckConfig } from './types';
 import { LintBase, type LintResult } from './LintBase';
-import minimatch from 'minimatch';
 
 export interface PrettierCheckResult extends LintResult {
   /** fix 修正过的文件路径列表 */
@@ -173,7 +174,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
             if (config.exclude?.length > 0) {
               for (const p of config.exclude) {
                 if (line.includes(p)) return false;
-                if (minimatch(line, p)) return false;
+                if (isMatch(line, p)) return false;
               }
             }
             return true;
@@ -260,13 +261,13 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
       if (this.config.exclude?.length) {
         for (const p of this.config.exclude) {
           if (filepath.includes(p)) return false;
-          if (minimatch(filepath, p)) return false;
+          if (isMatch(filepath, p)) return false;
         }
       }
 
       if (isFilterByExt) {
         const shortpath = fixToshortPath(filepath, this.config.rootDir);
-        return minimatch(shortpath, extGlobPattern);
+        return isMatch(shortpath, extGlobPattern);
       }
 
       return true;

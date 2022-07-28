@@ -1,0 +1,8 @@
+{
+  "extends": "@lzwme/fed-lint-helper/preset/tsconfig.base.json",
+  "compilerOptions": {
+    "strictNullChecks": false,
+    "module": "esnext",
+    "target": "ES2022"
+  }
+}

@@ -1,4 +1,4 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-node build/main/cli.js --commitlint
+node cjs/cli.js --commitlint

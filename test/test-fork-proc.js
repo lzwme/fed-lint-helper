@@ -2,11 +2,11 @@
  * @Author: lzw
  * @Date: 2021-08-25 11:13:47
  * @LastEditors: lzw
- * @LastEditTime: 2021-08-25 16:50:20
+ * @LastEditTime: 2022-07-28 09:56:54
  * @Description:  child_process.fork 子线程执行测试
  */
 
-const { createForkThread } = require('../build/main/utils');
+const { createForkThread } = require('../cjs/worker/fork');
 
 const argv = process.argv.slice(2).map(d => d.replace('--', ''));
 createForkThread({

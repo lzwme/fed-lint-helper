@@ -2,23 +2,22 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-26 21:58:59
+ * @LastEditTime: 2022-07-28 14:45:17
  * @Description: cli 工具
  */
 import { Option, program } from 'commander';
 import { color } from 'console-log-colors';
-import { resolve } from 'path';
-import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { getHeadDiffFileList } from '@lzwme/fe-utils';
 import { FlhConfig, TsCheckConfig, JiraCheckConfig, CommitLintOptions, LintTypes } from './types';
 import { formatWxWorkKeys } from './utils';
-import { getConfig, config, mergeCommConfig } from './config';
+import { getConfig, mergeCommConfig } from './config';
 import { rmdir } from './rmdir';
 import { getLogger } from './utils';
 import { lintStartAsync } from './worker/lintStartAsync';
+import { flhInit } from './init';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const packageInfo = require('../../package.json');
+const packageInfo = require('../package.json');
 const logger = getLogger();
 
 interface POptions
@@ -147,21 +146,9 @@ program
 program
   .command('init')
   .description('执行初始化操作')
-  .option('--config', '在当前目录下生成默认的配置文件')
   .option('--force', '是否强制执行(配置文件已存在，则覆盖生成)')
-  .action((options, destination) => {
-    if (!options.config) return destination.help();
-
-    if (options.config) {
-      if (existsSync(config.configPath) && !options.force) {
-        return logger.log(color.yellowBright(`当前目录下已存在配置文件：`), color.cyan(config.configPath));
-      }
-
-      const tpl = resolve(__dirname, '../../.flh.config.sample.js');
-      const cfgInfo = readFileSync(tpl, 'utf8').replace(`import('./src/config')`, `import('${packageInfo.name}')`);
-      writeFileSync(config.configPath, cfgInfo, 'utf8');
-      logger.log(`已在当前目录下生成配置文件：`, color.cyan(config.configPath));
-    }
+  .action(options => {
+    flhInit(options, packageInfo);
   });
 
 program

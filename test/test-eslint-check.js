@@ -2,12 +2,12 @@
  * @Author: lzw
  * @Date: 2021-08-18 10:33:52
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-27 15:43:07
+ * @LastEditTime: 2022-07-28 09:50:28
  * @Description: eslint 测试
  */
 // @ts-check
 
-const { ESLintCheck } = require('../build/main/eslint-check');
+const { ESLintCheck } = require('../cjs/eslint-check');
 
 const argv = process.argv.slice(2).map(d => d.replace('--', ''));
 

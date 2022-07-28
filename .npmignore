@@ -12,7 +12,7 @@ tmp
 typings
 
 # build dist
-build/docs
+docs
 coverage
 .nyc_output
 *.log
@@ -28,20 +28,20 @@ pnpm-lock.yaml
 .pnpm-debug.log
 
 # config
-.gitattributes
-publish.bat
-.github
-.vscode
-.husky
-.circleci
-tsconfig.*
-jest.config.*
-.travis.yml
-.gitlab-ci.yml
-.editorconfig
-.eslintrc.js
-.eslintrc.json
-.prettierignore
-.prettierrc
-.grs.config.js
-.flh.config.js
+/.gitattributes
+/publish.bat
+/.github
+/.vscode
+/.husky
+/.circleci
+/tsconfig.*
+/jest.config.*
+/.travis.yml
+/.gitlab-ci.yml
+/.editorconfig
+/.eslintrc.js
+/.eslintrc.json
+/.prettierignore
+/.prettierrc
+/.grs.config.js
+/.flh.config.js

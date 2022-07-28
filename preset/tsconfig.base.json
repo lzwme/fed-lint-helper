@@ -1,0 +1,41 @@
+{
+  "compileOnSave": false,
+  "ts-node": {
+    "transpileOnly": true,
+    "compilerOptions": {
+      "baseUrl": ".",
+      "sourceMap": false,
+      "noImplicitThis": true,
+      "noImplicitAny": false,
+      "module": "commonjs",
+      "target": "ESNext",
+      "declaration": false
+    }
+  },
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "alwaysStrict": false,
+    "baseUrl": ".",
+    "esModuleInterop": false,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "lib": ["ESNext", "dom", "webworker"],
+    "jsx": "react-jsx",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "noImplicitThis": true,
+    "noImplicitAny": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "outDir": "./dist/",
+    "resolveJsonModule": true,
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "strict": true,
+    "target": "ESNext",
+    "typeRoots": ["./typings", "./node_modules/@types"]
+  },
+  "exclude": ["dist", "mock", "node_modules"],
+  "include": ["./src/**/*.ts", "./src/**/*.tsx"]
+}
