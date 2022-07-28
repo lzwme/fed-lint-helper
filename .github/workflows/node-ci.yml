@@ -3,8 +3,12 @@ on:
   push:
     branches:
       - '**'
-    paths:
-      - src
+    paths-ignore:
+      - README.md
+      - CONTRIBUTING.md
+      - preset
+      - .vscode
+      - test
   pull_request:
     branches:
       - '**'
