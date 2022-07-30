@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-26 22:09:03
+ * @LastEditTime: 2022-07-30 14:46:51
  * @Description:  jest check
  */
 
@@ -170,7 +170,7 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
       else {
         this.config = newConfig;
         result = await this.startCheck();
-        results.push(Promise.resolve(assign({} as LintResult, result)));
+        results.push(Promise.resolve(assign({} as LintResult, result))); // todo: 实现并发执行？
       }
     }
 

@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-26 21:55:21
+ * @LastEditTime: 2022-07-30 13:35:23
  * @Description:  Jira check
  */
 
@@ -95,6 +95,7 @@ const ignoredCommitList = [
   /^Automatic merge(.*)/,
   /^Auto-merged (.*?) into (.*)/,
 ];
+
 export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
   private reqeust: Request;
 
@@ -375,17 +376,18 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
         return false;
       }
 
-      if (!info.fields.fixVersions || info.fields.fixVersions.length === 0) {
+      if (!info.fields.fixVersions?.length) {
         logger.error('JIRA没有挂修复版本，不允许提交');
         return false;
       }
 
       // 修复版本可能同时存在多个
-      if (!info.fields.fixVersions.some(item => allowedFixVersions.includes(item.name))) {
-        if (Array.isArray(config.allowedFixVersions)) {
-          if (info.fields.fixVersions.some(item => allowedFixVersions.includes(item.name))) {
-            logger.warn('修复版本与当前本地分支不一致，但在允许跳过检查的列表中', info.fields.fixVersions, config.allowedFixVersions);
-          }
+      if (!config.ignoreVersion && !info.fields.fixVersions.some(item => allowedFixVersions.includes(item.name))) {
+        if (
+          Array.isArray(config.allowedFixVersions) &&
+          info.fields.fixVersions.some(item => config.allowedFixVersions.includes(item.name))
+        ) {
+          logger.warn('修复版本与当前本地分支不一致，但在允许跳过检查的列表中', info.fields.fixVersions, config.allowedFixVersions);
         } else {
           logger.error('修复版本与当前本地分支不一致，不允许提交');
           return false;

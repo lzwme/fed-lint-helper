@@ -135,6 +135,8 @@ export interface JiraCheckConfig extends CommConfig {
   COMMIT_EDITMSG?: string;
   /** 允许跳过分支版本检查提交的 jira 版本号 */
   allowedFixVersions?: string[];
+  /** 是否忽略版本匹配检测 */
+  ignoreVersion?: boolean;
 }
 
 export interface CommitLintOptions extends CommConfig {

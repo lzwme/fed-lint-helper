@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-28 09:58:54
+ * @LastEditTime: 2022-07-30 14:46:34
  * @Description:
  */
 
@@ -74,6 +74,7 @@ export const config: FlhConfig = {
     pipeline: {
       requestParams: { maxResults: 100, fields: ['comment', 'assignee'] },
     },
+    detectSubPackages: false,
   },
   commitlint: {
     useAngularStyle: true,
