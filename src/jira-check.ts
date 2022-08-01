@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-30 13:35:23
+ * @LastEditTime: 2022-08-01 18:32:31
  * @Description:  Jira check
  */
 
@@ -366,15 +366,16 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
       }, {} as Record<number, string>);
       const jiraID = jiraIDs[0];
       const { data: info } = await this.reqeust.get<IssueItem & JiraError>(`${config.jiraHome}/rest/api/latest/issue/${jiraID}`);
-      const summary = info.fields.summary;
-
-      logger.debug(`[${jiraID}]info`, info);
-      logger.info('[JIRA信息]', color.cyanBright(jiraID), color.yellowBright(summary));
 
       if (!info.fields || info.errorMessages) {
         logger.error(info.errorMessages || `获取 ${jiraID} 信息异常`);
         return false;
       }
+
+      const summary = info.fields.summary;
+
+      logger.debug(`[${jiraID}]info`, info);
+      logger.info('[JIRA信息]', color.cyanBright(jiraID), color.yellowBright(summary));
 
       if (!info.fields.fixVersions?.length) {
         logger.error('JIRA没有挂修复版本，不允许提交');
