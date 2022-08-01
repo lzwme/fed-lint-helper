@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-08-01 18:32:31
+ * @LastEditTime: 2022-08-01 21:24:29
  * @Description:  Jira check
  */
 
@@ -16,6 +16,8 @@ import { getConfig } from './config';
 import type { JiraCheckConfig } from './types';
 import { Request } from '@lzwme/fe-utils';
 import { LintBase, type LintResult } from './LintBase';
+
+const { magenta, magentaBright, cyanBright, yellowBright, redBright, green, greenBright } = color;
 
 export interface JiraCheckResult extends LintResult {
   /** 是否检测通过 */
@@ -228,7 +230,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
     }
 
     logger.info('[检查信息]', query);
-    logger.info('[检查信息]', `提取的JIRA(${color.magentaBright(info.total)}):`, info.issues.map(item => item.key).join(', '));
+    logger.info('[检查信息]', `提取的JIRA(${magentaBright(info.total)}):`, info.issues.map(item => item.key).join(', '));
     logger.info('-'.repeat(80));
 
     for (const item of info.issues) {
@@ -299,7 +301,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
           `[${++stats.failedFilesNum}] 指派给`,
           fields.assignee.displayName.split('（')[0],
           `http://jira.gf.com.cn/browse/${item.key}`,
-          color.redBright(errmsg)
+          redBright(errmsg)
         );
         logger.info('-'.repeat(80));
       }
@@ -343,7 +345,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
     const jiraIDs = commitMessage.match(jiraIDReg);
 
     logger.info('='.repeat(40));
-    logger.info(`[COMMIT-MSG] ${color.yellowBright(commitMessage)}`);
+    logger.info(`[COMMIT-MSG] ${yellowBright(commitMessage)}`);
     logger.info('='.repeat(40));
 
     if (jiraIDs) {
@@ -375,7 +377,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
       const summary = info.fields.summary;
 
       logger.debug(`[${jiraID}]info`, info);
-      logger.info('[JIRA信息]', color.cyanBright(jiraID), color.yellowBright(summary));
+      logger.info('[JIRA信息]', cyanBright(jiraID), yellowBright(summary));
 
       if (!info.fields.fixVersions?.length) {
         logger.error('JIRA没有挂修复版本，不允许提交');
@@ -383,14 +385,12 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
       }
 
       // 修复版本可能同时存在多个
-      if (!config.ignoreVersion && !info.fields.fixVersions.some(item => allowedFixVersions.includes(item.name))) {
-        if (
-          Array.isArray(config.allowedFixVersions) &&
-          info.fields.fixVersions.some(item => config.allowedFixVersions.includes(item.name))
-        ) {
-          logger.warn('修复版本与当前本地分支不一致，但在允许跳过检查的列表中', info.fields.fixVersions, config.allowedFixVersions);
+      const fixVersions = info.fields.fixVersions.map(d => d.name);
+      if (!config.ignoreVersion && !fixVersions.some(d => allowedFixVersions.includes(d))) {
+        if (Array.isArray(config.allowedFixVersions) && fixVersions.some(d => config.allowedFixVersions.includes(d))) {
+          logger.warn('修复版本与当前本地分支不一致，但在允许跳过检查的列表中', fixVersions, config.allowedFixVersions);
         } else {
-          logger.error('修复版本与当前本地分支不一致，不允许提交');
+          logger.error(`修复版本[${magenta(fixVersions.join(','))}]与当前本地分支[${magentaBright(sprintVersion)}]不一致，不允许提交`);
           return false;
         }
       }
@@ -415,17 +415,17 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
         // 如果用户需要手动填入commit信息
         const message = commitMessage.match(smartRegWithMessage)[1].trim();
         smartCommit = `${config.commitMsgPrefix}[${versionName}][${issueText}][${jiraID}] ${message}`;
-        logger.info(`[智能修改commit]: ${color.greenBright(smartCommit)} \n`);
+        logger.info(`[智能修改commit]: ${greenBright(smartCommit)} \n`);
       } else if (smartRegWithJIRA.test(commitMessage)) {
         // 如果只匹配到JIRA号
         smartCommit = `${config.commitMsgPrefix}[${versionName}][${issueText}][${jiraID}] ${summary}`;
-        logger.info(`[智能修改commit]: ${color.greenBright(smartCommit)} \n`);
+        logger.info(`[智能修改commit]: ${greenBright(smartCommit)} \n`);
       } else if (!reg.test(commitMessage)) {
         // 如果都是自己填的
         logger.debug(reg, commitMessage, reg.test(commitMessage));
         logger.error('commit 格式校验不通过，请参考正确提交格式');
         logger.log('===================  Example  ===================');
-        logger.log(color.greenBright(`${config.commitMsgPrefix}[${versionName}][${issueText}][${jiraID}] 描述问题或改进`));
+        logger.log(greenBright(`${config.commitMsgPrefix}[${versionName}][${issueText}][${jiraID}] 描述问题或改进`));
         logger.log('===================  Example  ===================');
         return false;
       }
@@ -433,7 +433,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
       writeFileSync(gitPath, smartCommit, { encoding: 'utf8' });
 
       if (isSeal && stats.isPassed) {
-        logger.info(color.magentaBright(versionName), color.yellowBright('已经封版'));
+        logger.info(magentaBright(versionName), yellowBright('已经封版'));
         // 查找由产品指派给当前用户的jira，备注了 [必须修复] 文案提交
         const comment = info.fields.comment.comments.find(comment => {
           return comment.body.includes('[必须修复]') && config.sealedCommentAuthors.includes(comment.author.name);
@@ -450,7 +450,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
         return false;
       } else if (!ignoredCommitList.some(reg => reg.test(commitMessage))) {
         logger.error(`提交代码信息不符合规范，信息中应包含字符"${issuePrefix}XXXX".`);
-        logger.error('例如：', color.cyanBright(`${issuePrefix}9171 【两融篮子】多组合卖出，指令预览只显示一个组合。\n`));
+        logger.error('例如：', cyanBright(`${issuePrefix}9171 【两融篮子】多组合卖出，指令预览只显示一个组合。\n`));
         return false;
       }
     }
@@ -462,7 +462,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
   }
   protected async check() {
     const stats = this.getInitStats();
-    this.logger.info(color.green(`start checking`));
+    this.logger.info(green(`start checking`));
 
     try {
       stats.isPassed = this.config.type === 'commit' ? await this.commitMsgCheck() : await this.pipelineCheck();
