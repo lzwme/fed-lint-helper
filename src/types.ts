@@ -17,6 +17,8 @@ export interface CommConfig {
   silent?: boolean;
   /** 是否打印异常详情。默认为 true */
   printDetail?: boolean;
+  /** 执行成功时是否打印详情（[eslint]主要为在白名单中的异常信息，CI 中可设置为 false）。CI 中默认为 false */
+  printDetialOnSuccessed?: boolean;
   /** 要执行 lint 的源码目录，默认为 ['src'] */
   src?: string[];
   /** 要检测的文件列表。主要用于指定仅检测发生变更的文件 */

@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-21 22:21:23
+ * @LastEditTime: 2022-08-01 14:56:13
  * @Description:  eslint check
  */
 
@@ -258,7 +258,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
       }
 
       if (stats.isPassed && (stats.errorCount || stats.warningCount)) {
-        if (config.printDetail !== false) {
+        if (config.printDetail !== false && config.printDetialOnSuccessed !== false) {
           const resultText = formatter.format(waringReults);
           this.logger.info(`\n ${resultText}\n`);
         }

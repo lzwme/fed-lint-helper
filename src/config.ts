@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-30 14:46:34
+ * @LastEditTime: 2022-08-01 14:59:49
  * @Description:
  */
 
@@ -132,6 +132,10 @@ export function getConfig(options?: FlhConfig, useCache = isInited) {
   if (config.debug) {
     config.silent = false;
     logger.updateOptions({ levelType: 'debug' });
+  }
+
+  if (!('printDetialOnSuccessed' in config)) {
+    commConfig.printDetialOnSuccessed = config.printDetialOnSuccessed = config.ci !== true;
   }
 
   // 公共通用配置
