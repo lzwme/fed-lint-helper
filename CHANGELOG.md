@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.12.0](https://github.com/lzwme/fed-lint-helper/compare/v1.11.1...v1.12.0) (2022-08-02)
+
+
+### Features
+
+* 扩展 flh init 命令，增加 eslint、jest、prettier、tsconfig、stylelint、vscode、editorconfig、husky 等的配置初始化支持 ([9742526](https://github.com/lzwme/fed-lint-helper/commit/97425266fdb58faa5ccbdc5e3a05f1778a7f8032))
+* 新增 git commit lint 对提交者邮件规范的验证 ([5697e1e](https://github.com/lzwme/fed-lint-helper/commit/5697e1ecb585bfa46c01048f1d64cfd30f035c18))
+* 新增 printDetialOnSuccessed 参数，可配置 ci 中执行成功时，是否需要打印异常详情(白名单中的异常) ([2739297](https://github.com/lzwme/fed-lint-helper/commit/2739297b9d77980bd9d5c8a1bf1f495f1adb9210))
+
+
+### Bug Fixes
+
+* 修复 jira 获取信息失败时会抛异常的问题 ([b621c13](https://github.com/lzwme/fed-lint-helper/commit/b621c131373035d9cda08b559d22545569c98930))
+* 修复 jira-check 当未匹配到 issues prefix 时提示信息包含 undefined 的问题 ([0d84dfb](https://github.com/lzwme/fed-lint-helper/commit/0d84dfb52630a68ff68bf3cf09dda126f48a7fab))
+* jira commit lint 默认禁止子包检测与执行； 新增 ignoreVersion 参数，允许配置忽略 jira 版本匹配检测约束 ([e7a0429](https://github.com/lzwme/fed-lint-helper/commit/e7a042901db00df42768a7d78749e0d265cfe49a))
+
 ### [1.11.1](https://github.com/lzwme/fed-lint-helper/compare/v1.11.0...v1.11.1) (2022-07-21)
 
 
