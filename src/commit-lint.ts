@@ -65,8 +65,11 @@ export function commitMessageVerify(options?: CommitLintOptions) {
       options.useAngularStyle = true;
     }
 
-    const commitRE =
-      /^(((\uD83C[\uDF00-\uDFFF])|(\uD83D[\uDC00-\uDE4F\uDE80-\uDEFF])|[\u2600-\u2B55]) )?(revert: )?(feat|fix|docs|UI|refactor|perf|workflow|build|ci|typos|chore|test|types|wip|release|dep|locale｜example｜Merge|style)(\(.+\))?: .{1,100}/;
+    const types = [...new Set([...Object.keys(helpTips), 'Merge', 'UI'])].join('|');
+
+    const commitRE = new RegExp(
+      `^(((\uD83C[\uDF00-\uDFFF])|(\uD83D[\uDC00-\uDE4F\uDE80-\uDEFF])|[\u2600-\u2B55]) )?(revert: )?(${types})(.+))?: .{1,100}`
+    );
 
     if (isPass && options.useAngularStyle && !commitRE.test(message)) {
       isPass = false;
@@ -75,7 +78,7 @@ export function commitMessageVerify(options?: CommitLintOptions) {
           // color.red(`Invalid commit message format.\n`),
           // color.red(`  Proper commit message format is required for automated changelog generation. Examples:\n`),
           color.red(`提交日志不符合规范。\n`),
-          color.red(`  合法的提交日志格式如下(emoji 和 scope 可选填)：\n`),
+          color.magentaBright(`  合法的提交日志格式如下(emoji 和 scope 可选填)：\n`),
           color.green(`  [(emoji)?] [revert: ?]<type>[(scope)?]: <message>\n`),
           color.green(`    💥 feat(compiler): add 'comments' option`),
           color.green(`    🐛 fix(v-model): handle events on blur (close #28)\n\n`),

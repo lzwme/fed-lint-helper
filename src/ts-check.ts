@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-28 09:20:19
+ * @LastEditTime: 2022-08-05 08:52:14
  * @Description: typescript Diagnostics report
  */
 
@@ -232,13 +232,13 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
         const fileList = temporaryDiagnostics.filter(d => d.file).map(d => d.file.fileName);
 
         if (fileList.length > 0) {
-          this.logger.info(
-            bold(yellowBright(`Diagnostics in whitelist[${redBright(fileList.length)}`)),
-            bold(yellowBright(`files]:\n`)),
-            config.printDetail
-              ? TS.formatDiagnosticsWithColorAndContext(temporaryDiagnostics, host)
-              : `\n - ` + fileList.join('\n - ') + '\n'
-          );
+          this.logger.info(bold(yellowBright(`Diagnostics in whitelist[${redBright(fileList.length)}`)));
+
+          if (config.printDetail && !config.printDetialOnSuccessed) {
+            this.logger.info('\n', TS.formatDiagnosticsWithColorAndContext(temporaryDiagnostics, host));
+          }
+
+          this.logger.info(bold(yellowBright(`files]:\n`)), `\n - ` + fileList.join('\n - ') + '\n');
         }
       }
     }
