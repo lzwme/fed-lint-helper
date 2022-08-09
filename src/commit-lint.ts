@@ -68,7 +68,7 @@ export function commitMessageVerify(options?: CommitLintOptions) {
     const types = [...new Set([...Object.keys(helpTips), 'Merge', 'UI'])].join('|');
 
     const commitRE = new RegExp(
-      `^(((\uD83C[\uDF00-\uDFFF])|(\uD83D[\uDC00-\uDE4F\uDE80-\uDEFF])|[\u2600-\u2B55]) )?(revert: )?(${types})(.+))?: .{1,100}`
+      `^(((\uD83C[\uDF00-\uDFFF])|(\uD83D[\uDC00-\uDE4F\uDE80-\uDEFF])|[\u2600-\u2B55]) )?(revert: )?(${types})((.+))?: .{1,100}`
     );
 
     if (isPass && options.useAngularStyle && !commitRE.test(message)) {
