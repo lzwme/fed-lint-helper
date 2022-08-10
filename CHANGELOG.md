@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.12.2](https://github.com/lzwme/fed-lint-helper/compare/v1.12.1...v1.12.2) (2022-08-10)
+
+
+### Bug Fixes
+
+* 修复 tscheck 处理 printDetialOnSuccessed 参数逻辑错误的问题 ([dee9c4d](https://github.com/lzwme/fed-lint-helper/commit/dee9c4dc0abf2013714e776293b07544e3b07639))
+
 ### [1.12.1](https://github.com/lzwme/fed-lint-helper/compare/v1.12.0...v1.12.1) (2022-08-09)
 
 ## [1.12.0](https://github.com/lzwme/fed-lint-helper/compare/v1.11.1...v1.12.0) (2022-08-02)
