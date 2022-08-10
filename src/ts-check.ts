@@ -234,7 +234,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
         if (fileList.length > 0) {
           this.logger.info(bold(yellowBright(`Diagnostics in whitelist[${redBright(fileList.length)}`)));
 
-          if (config.printDetail && !config.printDetialOnSuccessed) {
+          if (config.printDetail && config.printDetialOnSuccessed) {
             this.logger.info('\n', TS.formatDiagnosticsWithColorAndContext(temporaryDiagnostics, host));
           }
 
