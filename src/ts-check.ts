@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-08-05 08:52:14
+ * @LastEditTime: 2022-08-10 10:31:12
  * @Description: typescript Diagnostics report
  */
 
@@ -30,7 +30,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
   private whiteList = {} as Record<string, keyof typeof DiagnosticCategory>; // DiagnosticCategory
   private cache: {
     /** 检测到异常且需要 report 的文件列表 */
-    allDiagnosticsFileMap: { [file: string]: Diagnostic };
+    allDiagnosticsFileMap: { [file: string]: Diagnostic[] };
     /** 要缓存到 cacheFilePath 的信息 */
     tsCache: {
       /** 已经检测且无异常的文件列表 */
@@ -114,16 +114,16 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
 
   /** ts 编译 */
   private async compile(sourceFiles: string[], subDirection: string) {
+    const { config, stats, logger } = this;
     const total = sourceFiles.length;
-    const { config, stats } = this;
     const { tsCheckFilesPassed } = this.cache.tsCache;
     const TS = await import('typescript');
 
     this.stats.totalFilesNum += total;
 
     console.log();
-    this.logger.info(bold(cyanBright('Checking')), subDirection);
-    this.logger.info(' - Total Files:', cyanBright(total));
+    logger.info(bold(cyanBright('Checking')), subDirection);
+    logger.info(' - Total Files:', cyanBright(total));
 
     /** 缓存命中数量 */
     let cacheHits = 0;
@@ -152,8 +152,8 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
       return true;
     });
 
-    if (cacheHits) this.logger.info(` - Cache hits:`, cacheHits);
-    if (whiteListHits) this.logger.info(` - WhiteList hits:`, whiteListHits);
+    if (cacheHits) logger.info(` - Cache hits:`, cacheHits);
+    if (whiteListHits) logger.info(` - WhiteList hits:`, whiteListHits);
 
     if (sourceFiles.length === 0) return;
 
@@ -203,7 +203,8 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
         const shortpath = item.file.moduleName || fixToshortPath(normalize(item.file.fileName));
 
         if (!this.whiteList[shortpath]) {
-          this.cache.allDiagnosticsFileMap[shortpath] = item;
+          if (!this.cache.allDiagnosticsFileMap[shortpath]) this.cache.allDiagnosticsFileMap[shortpath] = [];
+          this.cache.allDiagnosticsFileMap[shortpath].push(item);
           errorDiagnostics.push(item);
         }
 
@@ -220,25 +221,23 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
       }
 
       if (errorDiagnostics.length > 0) {
-        let fileList = errorDiagnostics.filter(d => d.file).map(d => d.file.fileName);
-        // 去重
-        fileList = [...new Set(fileList)];
+        const fileList = [...new Set(errorDiagnostics.filter(d => d.file).map(d => fixToshortPath(d.file.fileName)))];
 
-        this.logger.info(
+        logger.info(
           bold(redBright(`Diagnostics of need repair(not in whitelist)[${fileList.length} files]:\n`)),
           config.printDetail ? TS.formatDiagnosticsWithColorAndContext(errorDiagnostics, host) : `\n - ` + fileList.join('\n - ') + '\n'
         );
       } else {
-        const fileList = temporaryDiagnostics.filter(d => d.file).map(d => d.file.fileName);
+        const fileList = [...new Set(temporaryDiagnostics.filter(d => d.file).map(d => fixToshortPath(d.file.fileName)))];
 
         if (fileList.length > 0) {
-          this.logger.info(bold(yellowBright(`Diagnostics in whitelist[${redBright(fileList.length)}`)));
+          logger.info(bold(yellowBright(`Diagnostics in whitelist[${redBright(fileList.length)}`)));
 
           if (config.printDetail && config.printDetialOnSuccessed) {
-            this.logger.info('\n', TS.formatDiagnosticsWithColorAndContext(temporaryDiagnostics, host));
+            logger.info('\n', TS.formatDiagnosticsWithColorAndContext(temporaryDiagnostics, host));
           }
 
-          this.logger.info(bold(yellowBright(`files]:\n`)), `\n - ` + fileList.join('\n - ') + '\n');
+          logger.info(bold(yellowBright(`files]:\n`)), `\n - ` + fileList.join('\n - ') + '\n');
         }
       }
     }
@@ -293,24 +292,24 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
   public async check(fileList = this.config.fileList) {
     this.init();
 
+    const { config, stats, logger } = this;
     const TS = await import('typescript');
-    const { config, stats } = this;
     const directionMap = {
       // 没有 tsconfig.json 独立配置文件的子目录文件，也将全部放到这里一起编译
       [config.rootDir]: fileList || [],
     };
 
-    this.logger.debug('config:', config);
+    logger.debug('config:', config);
 
     // 没有指定 fileList 文件列表，才按 src 指定规则匹配
     if (directionMap[config.rootDir].length === 0) {
       const directories = this.getCheckProjectDirs(config.src);
       if (!directories) {
-        this.logger.info('No files or directories to process\n');
+        logger.info('No files or directories to process\n');
         return { isPassed: true } as TsCheckResult;
       }
 
-      this.logger.debug('本次检测的子目录包括：', directories);
+      logger.debug('本次检测的子目录包括：', directories);
       const allTsFiles = await Promise.all(directories.map(d => this.getTsFiles(d)));
       for (const info of allTsFiles) {
         if (!info || info.fileList.length === 0) continue;
@@ -329,19 +328,19 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
 
     if (config.toWhiteList) {
       this.saveCache(config.whiteListFilePath, this.whiteList);
-      this.logger.info(
+      logger.info(
         `[ADD]write to whitelist(${Object.keys(this.whiteList).length}):`,
         cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir))
       );
       execSync(`git add ${config.whiteListFilePath}`, void 0, config.rootDir, !config.silent);
     } else {
       if (removeFromWhiteList.length > 0) {
-        this.logger.info(
+        logger.info(
           `[REMOVE]write to whitelist(${Object.keys(this.whiteList).length}):`,
           cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir))
         );
         this.saveCache(config.whiteListFilePath, this.whiteList);
-        this.logger.info(`remove from whilelist(${removeFromWhiteList.length}):\n` + removeFromWhiteList.join('\n'));
+        logger.info(`remove from whilelist(${removeFromWhiteList.length}):\n` + removeFromWhiteList.join('\n'));
         execSync(`git add ${config.whiteListFilePath}`, void 0, config.rootDir, !config.silent);
       }
     }
@@ -353,18 +352,20 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     stats.isPassed = stats.failedFilesNum === 0;
 
     if (!stats.isPassed && config.printDetail) {
-      this.logger.error(red('Failed Files:'), `\n - ${errorFileList.join('\n - ')}\n`);
+      logger.error(red('Failed Files:'), `\n - ${errorFileList.join('\n - ')}\n`);
     }
 
     // 异常类型统计
     if (!stats.isPassed) {
       for (const filepath of errorFileList) {
         const d = this.cache.allDiagnosticsFileMap[filepath];
-        const cateString = TS.DiagnosticCategory[d.category] as keyof typeof DiagnosticCategory;
-        stats.diagnosticsCategory[cateString] = (stats.diagnosticsCategory[cateString] || 0) + 1;
+        d.forEach(item => {
+          const cateString = TS.DiagnosticCategory[item.category] as keyof typeof DiagnosticCategory;
+          stats.diagnosticsCategory[cateString] = (stats.diagnosticsCategory[cateString] || 0) + 1;
+        });
       }
       for (const keyString of Object.keys(stats.diagnosticsCategory)) {
-        this.logger.info(bold(cyan(` -- ${keyString} Count：`)), bold(yellowBright(stats.diagnosticsCategory[keyString as never])));
+        logger.info(bold(cyan(` -- ${keyString} Count：`)), bold(yellowBright(stats.diagnosticsCategory[keyString as never])));
       }
     }
 
