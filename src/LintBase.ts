@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-30 14:46:51
+ * @LastEditTime: 2022-08-10 14:28:40
  * @Description:  jest check
  */
 
@@ -32,6 +32,10 @@ export interface LintResult {
   failedFilesNum?: number;
   /** 缓存命中的数量 */
   cacheHits?: number;
+  /** 缓存文件与对应的缓存信息。放在最后汇总并写入文件 */
+  cacheFiles?: {
+    [filepath: string]: Record<string, unknown>;
+  };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -76,6 +80,7 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
       failedFilesNum: 0,
       errorCount: 0,
       cacheHits: 0,
+      cacheFiles: {},
     };
 
     return stats as R;
@@ -233,6 +238,9 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
         if (stats.passedFilesNum) logger.info(cyan(' - Passed:\t'), bold(greenBright(stats.passedFilesNum)));
         logger.info(cyan(' - Total :\t'), stats.totalFilesNum);
       }
+
+      for (const [filepath, info] of Object.entries(stats.cacheFiles)) this.saveCache(filepath, info, true);
+
       logger.info(getTimeCost(stats.startTime));
       if (!stats.isPassed && config.exitOnError) exit(stats.errorCount || stats.failedFilesNum || -1, this.tag);
     }

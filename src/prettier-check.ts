@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-28 09:20:57
+ * @LastEditTime: 2022-08-10 14:31:53
  * @Description:  prettier check
  */
 
@@ -139,7 +139,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
   protected async check(fileList = this.config.fileList): Promise<PrettierCheckResult> {
     this.init();
 
-    const { logger, stats, config, cacheFilePath } = this;
+    const { logger, stats, config } = this;
 
     logger.debug('[options]:', config, fileList);
     fileList = await this.getFileList(fileList);
@@ -231,7 +231,8 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
         }
       }
 
-      this.saveCache(cacheFilePath, this.cacheInfo);
+      // this.saveCache(cacheFilePath, this.cacheInfo);
+      this.stats.cacheFiles[this.cacheFilePath] = this.cacheInfo;
       if (baseConfig.fix && stats.fixedFileList.length > 0) {
         logger.info(`fixed files(${stats.fixedFileList.length}):\n`, stats.fixedFileList.map(d => ` - ${d}\n`).join(''));
       }

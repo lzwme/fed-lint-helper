@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-08-01 14:56:13
+ * @LastEditTime: 2022-08-10 14:10:07
  * @Description:  eslint check
  */
 
@@ -76,12 +76,14 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
     return this.config;
   }
   protected init() {
-    const config = this.config;
-
+    // do nothing
+    // this.initWhiteList();
+  }
+  private initWhiteList() {
     // 读取白名单列表
-    if (existsSync(config.whiteListFilePath)) {
+    if (existsSync(this.config.whiteListFilePath)) {
       // && !config.toWhiteList
-      this.whiteList = JSON.parse(readFileSync(config.whiteListFilePath, { encoding: 'utf8' }));
+      this.whiteList = JSON.parse(readFileSync(this.config.whiteListFilePath, { encoding: 'utf8' }));
     }
   }
   /**
@@ -145,6 +147,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
     /** 在白名单列表中但本次检测无异常的文件列表（将从白名单列表中移除） */
     const removeFromWhiteList: string[] = [];
 
+    this.initWhiteList(); // 执行完毕后实时读取
     // eslint-disable-next-line unicorn/no-array-for-each
     results.forEach(result => {
       const filePath = fixToshortPath(result.filePath, config.rootDir);
@@ -207,13 +210,15 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
           this.logger.info(`\n ${resultText}`);
         }
         this.logger.info('[ADD]write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
-        this.saveCache(config.whiteListFilePath, this.whiteList);
+        // this.saveCache(config.whiteListFilePath, this.whiteList);
+        this.stats.cacheFiles[config.whiteListFilePath] = this.whiteList;
         execSync(`git add ${config.whiteListFilePath}`, void 0, config.rootDir, !config.silent);
       }
     } else {
       if (removeFromWhiteList.length > 0) {
         this.logger.info(' [REMOVE]write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
-        this.saveCache(config.whiteListFilePath, this.whiteList);
+        // this.saveCache(config.whiteListFilePath, this.whiteList, true);
+        this.stats.cacheFiles[config.whiteListFilePath] = this.whiteList;
         this.logger.info(' remove from whilelist:\n' + removeFromWhiteList.join('\n'));
         execSync(`git add ${config.whiteListFilePath}`, void 0, config.rootDir, !config.silent);
       }

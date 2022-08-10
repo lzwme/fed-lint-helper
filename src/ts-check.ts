@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-08-10 10:58:24
+ * @LastEditTime: 2022-08-10 14:09:55
  * @Description: typescript Diagnostics report
  */
 
@@ -281,7 +281,8 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     }
 
     if (this.cache.tsCheckFilesPassedChanged) {
-      this.saveCache(this.cacheFilePath, this.cache.tsCache);
+      // this.saveCache(this.cacheFilePath, this.cache.tsCache, removeFromWhiteList.length > 0);
+      this.stats.cacheFiles[this.cacheFilePath] = this.cache.tsCache;
       this.logger.info(
         `update cache(${this.cache.tsCheckFilesPassedChanged}):`,
         cyanBright(fixToshortPath(this.cacheFilePath, config.rootDir))
@@ -329,7 +330,8 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     const { removeFromWhiteList } = this.updateCache();
 
     if (config.toWhiteList) {
-      this.saveCache(config.whiteListFilePath, this.whiteList);
+      // this.saveCache(config.whiteListFilePath, this.whiteList);
+      this.stats.cacheFiles[config.whiteListFilePath] = this.whiteList;
       logger.info(
         `[ADD]write to whitelist(${Object.keys(this.whiteList).length}):`,
         cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir))
@@ -341,7 +343,8 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
           `[REMOVE]write to whitelist(${Object.keys(this.whiteList).length}):`,
           cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir))
         );
-        this.saveCache(config.whiteListFilePath, this.whiteList);
+        // this.saveCache(config.whiteListFilePath, this.whiteList, false);
+        this.stats.cacheFiles[config.whiteListFilePath] = this.whiteList;
         logger.info(`remove from whilelist(${removeFromWhiteList.length}):\n` + removeFromWhiteList.join('\n'));
         execSync(`git add ${config.whiteListFilePath}`, void 0, config.rootDir, !config.silent);
       }
