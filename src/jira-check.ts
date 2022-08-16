@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-08-01 21:24:29
+ * @LastEditTime: 2022-08-16 15:39:45
  * @Description:  Jira check
  */
 
@@ -196,7 +196,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
       const url = `${this.config.jiraHome}/rest/api/2/issuetype`;
       const result = await this.reqeust.get<typeof issueTypeList>(url);
       if (!Array.isArray(result.data)) {
-        this.logger.warn('获取 issuetype 列表异常：', result);
+        this.logger.warn('获取 issuetype 列表异常：', result.data || result.headers);
         return [];
       }
 
@@ -224,7 +224,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
 
     logger.debug('url:', url, info);
     if (!info.issues) {
-      logger.error(info.errorMessages);
+      logger.error(info.errorMessages || info);
       stats.failedFilesNum = -1;
       return false;
     }
