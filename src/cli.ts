@@ -2,9 +2,11 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-28 14:45:17
+ * @LastEditTime: 2022-08-19 16:55:59
  * @Description: cli 工具
  */
+import { resolve } from 'path';
+import { existsSync } from 'fs';
 import { Option, program } from 'commander';
 import { color } from 'console-log-colors';
 import { getHeadDiffFileList } from '@lzwme/fe-utils';
@@ -118,7 +120,11 @@ program
 
     const baseConfig = getConfig(mergeCommConfig(config, false));
     let hasAction = false;
-    const changeFiles: string[] = options.onlyChanges ? getHeadDiffFileList() : null;
+    let changeFiles: string[] = options.onlyChanges ? getHeadDiffFileList(0, baseConfig.rootDir) : null;
+
+    if (changeFiles) {
+      changeFiles = changeFiles.filter(d => existsSync(resolve(baseConfig.rootDir, d)));
+    }
 
     logger.debug(options, baseConfig);
     if (options.onlyChanges) logger.debug('changeFiles:', changeFiles);
