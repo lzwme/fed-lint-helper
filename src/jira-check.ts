@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-08-16 15:39:45
+ * @LastEditTime: 2022-08-22 10:05:07
  * @Description:  Jira check
  */
 
@@ -408,7 +408,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
 
       const issueText = issueTypeToDesc[issuetype] || 'feature'; // 如果是其他类型，默认feature
       const reg = new RegExp(`^${config.commitMsgPrefix.replace(/([.[-])/g, '\\$1')}\\[${versionName}]\\[${issueText}]\\[${jiraID}]`);
-      let smartCommit = '';
+      let smartCommit = commitMessage;
 
       // 如果匹配到commit中包含中文，则保留提交信息
       if (smartRegWithMessage.test(commitMessage)) {
