@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.12.4](https://github.com/lzwme/fed-lint-helper/compare/v1.12.3...v1.12.4) (2022-08-22)
+
+
+### Bug Fixes
+
+* 修复 jira 未登录成功时 logger 异常的问题 ([ee83568](https://github.com/lzwme/fed-lint-helper/commit/ee835686cbf65136269a9f551488cebfe99fdc3e))
+* 修复 jira commit 输入内容符合要求的格式时无法提交的问题 ([c958e50](https://github.com/lzwme/fed-lint-helper/commit/c958e500238b6e8b341eed6a05a3aab47b64835a))
+* 修复 onlyChanges 包含已删除文件，导致 prettier 异常的问题 ([4d9980d](https://github.com/lzwme/fed-lint-helper/commit/4d9980d1151744087e53c1f9864f4919177b4050))
+* 修复自动从白名单移除无异常文件失效的问题 ([cdf6007](https://github.com/lzwme/fed-lint-helper/commit/cdf60073044fcbc30b4695dfca37a8cc4607a9ee))
+
 ### [1.12.3](https://github.com/lzwme/fed-lint-helper/compare/v1.12.2...v1.12.3) (2022-08-10)
 
 
