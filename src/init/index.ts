@@ -177,7 +177,7 @@ export async function flhInit(options: Record<string, string | boolean>, package
       }
 
       mkdirp(dirname(item.configFile));
-      writeFileSync(item.configFile, cfgInfo, 'utf8');
+      writeFileSync(item.configFile, cfgInfo, { mode: type === 'husky' ? '0777' : null, encoding: 'utf8' });
       logger.log(`已在当前目录下生成配置文件：`, color.magentaBright(item.configFile));
     }
 
@@ -189,7 +189,7 @@ export async function flhInit(options: Record<string, string | boolean>, package
           return;
         }
         mkdirp(dirname(dest));
-        writeFileSync(dest, readFileSync(tplFile));
+        writeFileSync(dest, readFileSync(tplFile), { mode: type === 'husky' ? '0777' : null });
         logger.log(`已在当前目录下生成配置文件：`, color.magentaBright(dest));
       });
     }
