@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-02 17:31:52
+ * @LastEditTime: 2022-09-02 18:01:59
  * @Description:  jest check
  */
 
@@ -12,7 +12,7 @@ import { existsSync, statSync, readFileSync } from 'fs';
 import { color } from 'console-log-colors';
 import glob from 'fast-glob';
 import type { Config } from '@jest/types';
-import { fixToshortPath, md5, assign, execSync } from './utils';
+import { fixToshortPath, md5, execSync, assign } from '@lzwme/fe-utils';
 import { getConfig } from './config';
 import type { JestCheckConfig } from './types';
 import { LintBase, LintResult } from './LintBase';

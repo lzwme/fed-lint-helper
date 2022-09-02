@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-02 17:31:31
+ * @LastEditTime: 2022-09-02 18:02:56
  * @Description:  prettier check
  */
 
@@ -11,8 +11,7 @@ import { existsSync, statSync, readFileSync, writeFileSync } from 'fs';
 import { color } from 'console-log-colors';
 import glob from 'fast-glob';
 import { isMatch } from 'micromatch';
-import { md5, assign, execSync } from '@lzwme/fe-utils';
-import { fixToshortPath } from '@lzwme/fe-utils/cjs/node/path';
+import { md5, assign, execSync, fixToshortPath } from '@lzwme/fe-utils';
 import { getConfig } from './config';
 import type { PrettierCheckConfig } from './types';
 import { LintBase, type LintResult } from './LintBase';

@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-08-01 14:59:49
+ * @LastEditTime: 2022-09-02 18:07:23
  * @Description:
  */
 
@@ -11,9 +11,9 @@ import { sync } from 'fast-glob';
 import { existsSync, mkdirSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { env } from 'process';
+import { assign, isEmptyObject } from '@lzwme/fe-utils';
 import { CommConfig, FlhConfig, LintTypes } from './types';
-import { assign, formatWxWorkKeys, getLogger } from './utils';
-import { isEmptyObject } from './utils/is';
+import { formatWxWorkKeys, getLogger } from './utils';
 
 const commConfig: CommConfig = {
   rootDir: process.cwd(),

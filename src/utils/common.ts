@@ -37,3 +37,15 @@ export function formatWxWorkKeys(keys: string | string[]) {
   if (!Array.isArray(keys)) keys = [keys];
   return keys.filter(d => /[\da-z]{8}(-?[\da-z]{4}){3}-?[\da-z]{12}/i.test(d)).map(d => toUuidFormat(d));
 }
+
+export function arrayToObject<V = number>(arr: string[], value?: V) {
+  const o: Record<string, V> = {};
+
+  // @ts-ignore
+  if (value == null) value = 1;
+
+  arr.forEach(key => {
+    if (key != null) o[key] = value;
+  });
+  return o;
+}

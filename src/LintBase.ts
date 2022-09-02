@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-02 17:25:44
+ * @LastEditTime: 2022-09-02 17:54:03
  * @Description:  jest check
  */
 
@@ -36,7 +36,7 @@ export interface LintResult {
   cacheFiles?: {
     [filepath: string]: {
       updated: Record<string, unknown>;
-      deleted?: string[];
+      deleted?: Record<string, unknown>;
     };
   };
 }
@@ -249,7 +249,7 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
         const allInfo = info.updated; // info.all
 
         if (info.deleted) {
-          info.deleted.forEach(filepath => {
+          Object.keys(info.deleted).forEach(filepath => {
             if (allInfo[filepath]) delete allInfo[filepath];
           });
         }

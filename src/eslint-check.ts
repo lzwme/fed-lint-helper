@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-02 17:23:18
+ * @LastEditTime: 2022-09-02 18:01:31
  * @Description:  eslint check
  */
 
@@ -10,7 +10,8 @@ import { color } from 'console-log-colors';
 import type { ESLint } from 'eslint';
 import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
-import { fixToshortPath, assign } from './utils';
+import { assign } from '@lzwme/fe-utils';
+import { fixToshortPath, arrayToObject } from './utils';
 import { getConfig } from './config';
 import { LintBase, type LintResult } from './LintBase';
 import type { ESLintCheckConfig } from './types';
@@ -213,7 +214,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
         // this.saveCache(config.whiteListFilePath, this.whiteList);
         this.stats.cacheFiles[config.whiteListFilePath] = {
           updated: this.whiteList,
-          deleted: [],
+          deleted: {},
         };
       }
     } else {
@@ -222,7 +223,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
         // this.saveCache(config.whiteListFilePath, this.whiteList, true);
         this.stats.cacheFiles[config.whiteListFilePath] = {
           updated: this.whiteList,
-          deleted: removeFromWhiteList,
+          deleted: arrayToObject(removeFromWhiteList),
         };
         this.logger.info(' remove from whilelist:\n' + removeFromWhiteList.join('\n'));
       }

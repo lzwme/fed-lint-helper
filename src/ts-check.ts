@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-02 17:30:48
+ * @LastEditTime: 2022-09-02 17:59:59
  * @Description: typescript Diagnostics report
  */
 
@@ -12,11 +12,11 @@ import { color } from 'console-log-colors';
 import type { Diagnostic, DiagnosticCategory, CompilerOptions } from 'typescript';
 import glob from 'fast-glob';
 import { isMatch } from 'micromatch';
-import { md5, assign } from '@lzwme/fe-utils';
-import { fixToshortPath } from '@lzwme/fe-utils/cjs/node/path';
+import { md5, assign, fixToshortPath } from '@lzwme/fe-utils';
 import { getConfig, VERSION } from './config';
 import type { TsCheckConfig } from './types';
 import { LintBase, LintResult } from './LintBase';
+import { arrayToObject } from './utils/common';
 
 const { bold, redBright, yellowBright, cyanBright, red, cyan } = color;
 export interface TsCheckResult extends LintResult {
@@ -289,7 +289,6 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
       // this.saveCache(this.cacheFilePath, this.cache.tsCache, removeFromWhiteList.length > 0);
       this.stats.cacheFiles[this.cacheFilePath] = {
         updated: this.cache.tsCache,
-        deleted: [],
       };
       this.logger.info(
         `update cache(${this.cache.tsCheckFilesPassedChanged}):`,
@@ -341,7 +340,6 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
       // this.saveCache(config.whiteListFilePath, this.whiteList);
       this.stats.cacheFiles[config.whiteListFilePath] = {
         updated: this.whiteList,
-        deleted: [],
       };
       logger.info(
         `[ADD]write to whitelist(${Object.keys(this.whiteList).length}):`,
@@ -356,7 +354,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
         // this.saveCache(config.whiteListFilePath, this.whiteList, false);
         this.stats.cacheFiles[config.whiteListFilePath] = {
           updated: this.whiteList,
-          deleted: removeFromWhiteList,
+          deleted: arrayToObject(removeFromWhiteList),
         };
         logger.info(`remove from whilelist(${removeFromWhiteList.length}):\n` + removeFromWhiteList.join('\n'));
       }
