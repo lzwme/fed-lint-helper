@@ -4,7 +4,7 @@
 
 [![NPM version][npm-badge]][npm-url]
 [![node version][node-badge]][node-url]
-![license MIT](https://img.shields.io/github/license/lzwme/asmd-calc)
+![license MIT](https://img.shields.io/github/license/lzwme/fed-lint-helper)
 
 [![build status](https://github.com/lzwme/fed-lint-helper/actions/workflows/node-ci.yml/badge.svg)](https://github.com/lzwme/fed-lint-helper/actions/workflows/node-ci.yml)
 [![npm download][download-badge]][download-url]

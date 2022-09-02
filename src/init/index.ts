@@ -62,9 +62,9 @@ function getCfgInfo() {
   };
 
   Object.values(info).forEach(value => {
-    value.exist = existsSync(value.configFile);
     if (!value.configFile) value.configFile = value.tpl.replace('.tpl.', '.');
     if (!value.devDeps) value.devDeps = [];
+    value.exist = existsSync(value.configFile);
   });
 
   info.eslint.exist = ['', '.js', '.json', '.ts'].some(d => {
@@ -129,8 +129,8 @@ export async function flhInit(options: Record<string, string | boolean>, package
 
       return {
         name: key,
-        message: `[${color.magentaBright(key)}] ${item.exist ? `已存在配置文件` : `是否初始化配置文件？`}`,
-        hint: color.cyanBright(item.configFile),
+        message: `[${color.magentaBright(key)}] ${item.exist ? color.gray(`已存在配置文件`) : `是否初始化配置文件？`}`,
+        hint: color[item.exist ? 'cyan' : 'cyanBright'](item.configFile),
         disabled: item.exist,
       };
     })
@@ -229,7 +229,7 @@ export async function flhInit(options: Record<string, string | boolean>, package
   if (anwsers.flh.includes('stylelint')) {
     if (deps.has('prettier') || pkgAllDeps.prettier) deps.add('stylelint-config-prettier');
 
-    if (pkgAllDeps.scss) deps.add('stylelint-scss');
+    if (pkgAllDeps.sass || pkgAllDeps['node-sass']) deps.add('stylelint-scss');
   }
 
   if (anwsers.flh.includes('jest')) {
