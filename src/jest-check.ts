@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-08-10 14:10:58
+ * @LastEditTime: 2022-09-02 17:31:52
  * @Description:  jest check
  */
 
@@ -206,7 +206,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
       }
 
       // this.saveCache(this.cacheFilePath, this.cacheInfo);
-      this.stats.cacheFiles[this.cacheFilePath] = this.cacheInfo;
+      this.stats.cacheFiles[this.cacheFilePath] = { updated: this.cacheInfo };
       stats.errorCount = data.results.numFailedTestSuites;
       stats.isPassed = stats.failedFilesNum === 0; // data.results.success && !data.results.numFailedTestSuites;
       logger.debug('result use runCLI:\n', data);

@@ -2,14 +2,14 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-08-10 14:28:40
+ * @LastEditTime: 2022-09-02 17:25:44
  * @Description:  jest check
  */
 
 import { existsSync, unlinkSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { color } from 'console-log-colors';
-import { assign, getObjectKeysUnsafe } from '@lzwme/fe-utils';
+import { assign, getObjectKeysUnsafe, execSync } from '@lzwme/fe-utils';
 import { getTimeCost } from './utils/common';
 import { getLogger } from './utils/get-logger';
 import { createForkThread } from './worker/fork';
@@ -34,7 +34,10 @@ export interface LintResult {
   cacheHits?: number;
   /** 缓存文件与对应的缓存信息。放在最后汇总并写入文件 */
   cacheFiles?: {
-    [filepath: string]: Record<string, unknown>;
+    [filepath: string]: {
+      updated: Record<string, unknown>;
+      deleted?: string[];
+    };
   };
 }
 
@@ -128,6 +131,9 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
     if (!existsSync(pDir)) mkdirSync(pDir, { recursive: true });
 
     writeFileSync(filepath, JSON.stringify(info, null, 2), { encoding: 'utf8' });
+    if (!filepath.includes('node_modules')) {
+      execSync(`git add ${filepath}`, void 0, this.config.rootDir, !this.config.silent);
+    }
   }
   protected async checkForPackages() {
     const { config } = this;
@@ -239,7 +245,17 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
         logger.info(cyan(' - Total :\t'), stats.totalFilesNum);
       }
 
-      for (const [filepath, info] of Object.entries(stats.cacheFiles)) this.saveCache(filepath, info, true);
+      for (const [filepath, info] of Object.entries(stats.cacheFiles)) {
+        const allInfo = info.updated; // info.all
+
+        if (info.deleted) {
+          info.deleted.forEach(filepath => {
+            if (allInfo[filepath]) delete allInfo[filepath];
+          });
+        }
+
+        this.saveCache(filepath, allInfo, true);
+      }
 
       logger.info(getTimeCost(stats.startTime));
       if (!stats.isPassed && config.exitOnError) exit(stats.errorCount || stats.failedFilesNum || -1, this.tag);

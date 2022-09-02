@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-08-10 14:09:55
+ * @LastEditTime: 2022-09-02 17:30:48
  * @Description: typescript Diagnostics report
  */
 
@@ -12,7 +12,7 @@ import { color } from 'console-log-colors';
 import type { Diagnostic, DiagnosticCategory, CompilerOptions } from 'typescript';
 import glob from 'fast-glob';
 import { isMatch } from 'micromatch';
-import { md5, assign, execSync } from '@lzwme/fe-utils';
+import { md5, assign } from '@lzwme/fe-utils';
 import { fixToshortPath } from '@lzwme/fe-utils/cjs/node/path';
 import { getConfig, VERSION } from './config';
 import type { TsCheckConfig } from './types';
@@ -94,13 +94,18 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     }
 
     // 读取白名单列表
-    if (!this.config.toWhiteList && existsSync(whiteListFilePath)) {
-      try {
-        this.whiteList = JSON.parse(readFileSync(whiteListFilePath, { encoding: 'utf8' }));
-        // @ts-ignore
-      } catch (error: Error) {
-        this.logger.error(error.message || error.stack || error);
+    try {
+      if (existsSync(whiteListFilePath)) {
+        if (this.config.toWhiteList) {
+          // 追加模式，不删除旧文件
+          // unlinkSync(whiteListFilePath);
+        } else {
+          this.whiteList = JSON.parse(readFileSync(whiteListFilePath, { encoding: 'utf8' }));
+        }
       }
+      // @ts-ignore
+    } catch (error: Error) {
+      this.logger.error(error.message || error.stack || error);
     }
   }
   /** 返回可检测的子项目路径 */
@@ -282,7 +287,10 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
 
     if (this.cache.tsCheckFilesPassedChanged) {
       // this.saveCache(this.cacheFilePath, this.cache.tsCache, removeFromWhiteList.length > 0);
-      this.stats.cacheFiles[this.cacheFilePath] = this.cache.tsCache;
+      this.stats.cacheFiles[this.cacheFilePath] = {
+        updated: this.cache.tsCache,
+        deleted: [],
+      };
       this.logger.info(
         `update cache(${this.cache.tsCheckFilesPassedChanged}):`,
         cyanBright(fixToshortPath(this.cacheFilePath, config.rootDir))
@@ -331,12 +339,14 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
 
     if (config.toWhiteList) {
       // this.saveCache(config.whiteListFilePath, this.whiteList);
-      this.stats.cacheFiles[config.whiteListFilePath] = this.whiteList;
+      this.stats.cacheFiles[config.whiteListFilePath] = {
+        updated: this.whiteList,
+        deleted: [],
+      };
       logger.info(
         `[ADD]write to whitelist(${Object.keys(this.whiteList).length}):`,
         cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir))
       );
-      execSync(`git add ${config.whiteListFilePath}`, void 0, config.rootDir, !config.silent);
     } else {
       if (removeFromWhiteList.length > 0) {
         logger.info(
@@ -344,9 +354,11 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
           cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir))
         );
         // this.saveCache(config.whiteListFilePath, this.whiteList, false);
-        this.stats.cacheFiles[config.whiteListFilePath] = this.whiteList;
+        this.stats.cacheFiles[config.whiteListFilePath] = {
+          updated: this.whiteList,
+          deleted: removeFromWhiteList,
+        };
         logger.info(`remove from whilelist(${removeFromWhiteList.length}):\n` + removeFromWhiteList.join('\n'));
-        execSync(`git add ${config.whiteListFilePath}`, void 0, config.rootDir, !config.silent);
       }
     }
 
