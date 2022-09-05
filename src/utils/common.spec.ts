@@ -5,11 +5,6 @@ describe('utils/common', () => {
   console.log = jest.fn();
   console.error = jest.fn();
 
-  it('fixToshortPath', () => {
-    expect(comm.fixToshortPath()).toBe('');
-    expect(comm.fixToshortPath('./abc\\d.ts')).toBe('abc/d.ts');
-  });
-
   it('logTimeCost', () => {
     comm.logTimeCost(Date.now());
     expect(1).toBeTruthy();

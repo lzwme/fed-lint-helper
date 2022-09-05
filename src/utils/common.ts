@@ -8,7 +8,6 @@ export type PlainObject = Record<string, any>;
 export type ValueOf<T> = T[keyof T];
 
 export { md5 } from '@lzwme/fe-utils';
-export { fixToshortPath } from '@lzwme/fe-utils/cjs/node/path';
 
 export function getTimeCost(startTime: number, withTip = true) {
   let timeCost = formatTimeCost(startTime); // (Date.now() - startTime) / 1000 + 's';

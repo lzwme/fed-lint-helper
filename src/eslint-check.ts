@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-02 18:01:31
+ * @LastEditTime: 2022-09-05 08:54:45
  * @Description:  eslint check
  */
 
@@ -10,8 +10,8 @@ import { color } from 'console-log-colors';
 import type { ESLint } from 'eslint';
 import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
-import { assign } from '@lzwme/fe-utils';
-import { fixToshortPath, arrayToObject } from './utils';
+import { assign, fixToshortPath } from '@lzwme/fe-utils';
+import { arrayToObject } from './utils';
 import { getConfig } from './config';
 import { LintBase, type LintResult } from './LintBase';
 import type { ESLintCheckConfig } from './types';
