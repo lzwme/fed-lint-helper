@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-02 17:59:59
+ * @LastEditTime: 2022-09-05 09:20:41
  * @Description: typescript Diagnostics report
  */
 
@@ -389,8 +389,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
   beforeStart(): boolean {
     this.config.fileList = this.config.fileList.filter(filepath => {
       // 过滤 .d.ts 文件，且必须以 .tsx? 结尾
-      if (filepath.endsWith('.d.ts') || !/\.tsx?$/i.test(filepath)) return false;
-      return true;
+      return /\.tsx?$/i.test(filepath) && !filepath.endsWith('.d.ts');
     });
     return this.config.fileList.length > 0;
   }

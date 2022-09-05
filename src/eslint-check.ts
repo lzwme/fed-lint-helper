@@ -2,14 +2,14 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-05 08:54:45
+ * @LastEditTime: 2022-09-05 09:17:48
  * @Description:  eslint check
  */
 
 import { color } from 'console-log-colors';
 import type { ESLint } from 'eslint';
-import { existsSync, readFileSync } from 'fs';
-import { resolve } from 'path';
+import { existsSync, readFileSync, statSync } from 'fs';
+import { extname, resolve } from 'path';
 import { assign, fixToshortPath } from '@lzwme/fe-utils';
 import { arrayToObject } from './utils';
 import { getConfig } from './config';
@@ -294,7 +294,14 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
     return this.stats;
   }
   protected beforeStart(): boolean {
-    this.config.fileList = this.config.fileList.filter(filepath => !filepath.includes('.') || /\.(js|ts)x?$/i.test(filepath));
+    const extentions = new Set(['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs']);
+
+    this.config.fileList = this.config.fileList.filter(filepath => {
+      if (extentions.has(extname(filepath))) return true;
+
+      const fullPath = resolve(this.config.rootDir, filepath);
+      return existsSync(fullPath) && statSync(fullPath).isFile();
+    });
     return this.config.fileList.length > 0;
   }
 }
