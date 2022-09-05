@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-05 09:17:48
+ * @LastEditTime: 2022-09-05 09:46:12
  * @Description:  eslint check
  */
 
@@ -300,7 +300,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
       if (extentions.has(extname(filepath))) return true;
 
       const fullPath = resolve(this.config.rootDir, filepath);
-      return existsSync(fullPath) && statSync(fullPath).isFile();
+      return existsSync(fullPath) && statSync(fullPath).isDirectory();
     });
     return this.config.fileList.length > 0;
   }
