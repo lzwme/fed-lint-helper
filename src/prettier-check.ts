@@ -2,11 +2,11 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-02 18:02:56
+ * @LastEditTime: 2022-09-05 10:00:02
  * @Description:  prettier check
  */
 
-import { resolve } from 'path';
+import { resolve, extname } from 'path';
 import { existsSync, statSync, readFileSync, writeFileSync } from 'fs';
 import { color } from 'console-log-colors';
 import glob from 'fast-glob';
@@ -254,8 +254,11 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
     if (!fileList) fileList = [];
     if (fileList.length === 0 || (!isFilterByExt && !this.config.exclude?.length)) return fileList;
 
-    const exts = this.config.extentions?.length ? this.config.extentions : ['ts,js,tsx,jsx,json,md,mjs'];
-    const extGlobPattern = `**/*.{${exts.map(d => d.replace(/^\./, '')).join(',')}}`;
+    if (!this.config.extentions?.length) {
+      this.config.extentions = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.json', '.less', '.scss', '.md'];
+    }
+
+    const extentions = new Set(this.config.extentions);
 
     fileList = fileList.filter(filepath => {
       if (this.config.exclude?.length) {
@@ -265,10 +268,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
         }
       }
 
-      if (isFilterByExt) {
-        const shortpath = fixToshortPath(filepath, this.config.rootDir);
-        return isMatch(shortpath, extGlobPattern);
-      }
+      if (isFilterByExt) return extentions.has(extname(filepath));
 
       return true;
     });
