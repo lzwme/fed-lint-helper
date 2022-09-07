@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-07 11:19:39
+ * @LastEditTime: 2022-09-07 15:24:31
  * @Description:  prettier check
  */
 
@@ -10,7 +10,6 @@ import { resolve } from 'path';
 import { existsSync, statSync, readFileSync, writeFileSync } from 'fs';
 import { color } from 'console-log-colors';
 import glob from 'fast-glob';
-import { isMatch } from 'micromatch';
 import { md5, assign, execSync, fixToshortPath } from '@lzwme/fe-utils';
 import { getConfig } from './config';
 import type { PrettierCheckConfig } from './types';
@@ -172,15 +171,11 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
           .slice(1, -1)
           .filter(line => {
             if (!line.startsWith('[') || line.includes(' | ')) return false;
-            line = fixToshortPath(line.replace(/^\[.+]/, '').trim());
-            if (config.exclude?.length > 0) {
-              for (const p of config.exclude) {
-                if (line.includes(p)) return false;
-                if (isMatch(line, p)) return false;
-              }
-            }
             return true;
-          });
+          })
+          .map(line => fixToshortPath(line.replace(/^\[.+]/, '').trim()));
+
+        stats.failedFiles = this.filesFilter(stats.failedFiles);
       }
     } else {
       const prettier = await import('prettier');

@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-07 11:13:31
+ * @LastEditTime: 2022-09-07 15:22:33
  * @Description:  jest check
  */
 
@@ -10,13 +10,13 @@ import { existsSync, unlinkSync, readFileSync, writeFileSync, mkdirSync } from '
 import { resolve, dirname } from 'path';
 import { color } from 'console-log-colors';
 import { assign, getObjectKeysUnsafe, execSync } from '@lzwme/fe-utils';
-import { getTimeCost } from './utils/common';
+import { getTimeCost, globMatcher } from './utils/common';
+import { createFilePathFilter } from './utils/createFilePathFilter';
 import { getLogger } from './utils/get-logger';
 import { createForkThread } from './worker/fork';
 import { getConfig } from './config';
 import type { CommConfig, ILintTypes } from './types';
 import { exit } from './exit';
-import { createFilter } from './utils/createFilter';
 
 export interface LintResult {
   /** 是否检测通过 */
@@ -97,10 +97,12 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
   protected filesFilter(fileList: string[], isFilterByExt = true) {
     if (!fileList) fileList = [];
 
-    const filter = createFilter({
+    const filter = createFilePathFilter({
       include: this.config.include,
       exclude: this.config.exclude,
       extensions: isFilterByExt && Array.isArray(this.config.extensions) ? this.config.extensions : [],
+      globMatcher,
+      // resolve: this.config.rootDir,
     });
 
     return fileList.filter(d => filter(d));

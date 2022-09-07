@@ -50,6 +50,6 @@ export function arrayToObject<V = number>(arr: string[], value?: V) {
   return o;
 }
 
-export function globMatcher(pathId: string, ruleId: string, ruleIdNormalized?: string) {
+export function globMatcher(pathId: string, ruleIdNormalized: string, ruleId: string) {
   return isMatch(pathId, ruleIdNormalized, { dot: true }) || isMatch(pathId, ruleId, { dot: true });
 }
