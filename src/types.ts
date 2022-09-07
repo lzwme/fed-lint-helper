@@ -13,6 +13,12 @@ export interface CommConfig {
   rootDir?: string;
   /** 是否打印调试信息 */
   debug?: boolean;
+  /** 文件排除列表，用于过滤一些不需要检测的文件。glob 规则，如： ['builder/**'] */
+  exclude?: string[];
+  /** 文件后缀。若设置，则文件过滤时，先以 extensions 预处理 */
+  extensions?: string[];
+  /** 文件包含列表。glob 规则，如： `['src\**\*.{ts,tsx,js,jsx}']` */
+  include?: string[];
   /** 静默模式。不打印任何信息，一般用于接口调用 */
   silent?: boolean;
   /** 是否打印异常详情。默认为 true */
@@ -51,8 +57,6 @@ export interface TsCheckConfig extends CommConfig {
   src?: string[];
   /** ts 文件列表。当设置并存在内容时，只对该列表中的文件进行检测。主要用于 git hook 获取 commit 文件列表的场景 */
   fileList?: string[];
-  /** 文件排除列表，用于过滤一些不需要检测的文件。glob 规则，如： ['builder/**'] */
-  exclude?: string[];
   /** 白名单列表文件保存的路径，用于过滤允许出错的历史文件。默认为 `<config.rootDir>/tsCheckWhiteList.json` 文件 */
   whiteListFilePath?: string;
   /** tsconfig 配置文件的文件名。默认为 tsconfig.json */
@@ -76,6 +80,8 @@ export interface TsCheckConfig extends CommConfig {
 }
 
 export interface ESLintCheckConfig extends CommConfig, Pick<TsCheckConfig, 'toWhiteList'> {
+  /** 指定处理的文件类型。默认为： ['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs'] */
+  extensions?: string[];
   /** 是否自动修正可修复的 eslint 错误，同 ESLint.Option。默认 false。建议不设置为 true，手动逐个文件处理以避免造成大量不可控的业务代码变动 */
   fix?: boolean;
   /** 白名单列表文件保存的路径，用于过滤允许出错的历史文件。默认为 `<config.rootDir>/eslintWhitelist.json` 文件 */
@@ -154,10 +160,8 @@ export interface PrettierCheckConfig extends CommConfig {
   prettierConfig?: PrettierConfig;
   /** 是否使用 spawn/exec 执行 prettier cli 的方式执行（全量执行时默认为 true，速度更快） */
   useCli?: boolean;
-  /** 文件排除列表，用于过滤一些不需要检测的文件。glob 规则，如： ['builder/**'] */
-  exclude?: string[];
-  /** 指定处理的文件类型。默认为： ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.json', '.less', '.scss', '.md'] */
-  extentions?: string[];
+  /** 指定处理的文件类型。默认为： ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.json', '.less', '.scss', '.md'] */
+  extensions?: string[];
 }
 
 export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {

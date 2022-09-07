@@ -2,11 +2,11 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-05 10:00:02
+ * @LastEditTime: 2022-09-07 11:19:39
  * @Description:  prettier check
  */
 
-import { resolve, extname } from 'path';
+import { resolve } from 'path';
 import { existsSync, statSync, readFileSync, writeFileSync } from 'fs';
 import { color } from 'console-log-colors';
 import glob from 'fast-glob';
@@ -52,6 +52,9 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
 
     if (config !== this.config) config = assign<PrettierCheckConfig>({}, this.config, config);
     this.config = assign<PrettierCheckConfig>({}, baseConfig.prettier, config);
+    if (!this.config.extensions?.length) {
+      this.config.extensions = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.json', '.less', '.scss', '.md'];
+    }
 
     return this.config;
   }
@@ -250,34 +253,8 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
 
     return stats;
   }
-  private filesFilter(fileList: string[], isFilterByExt = true) {
-    if (!fileList) fileList = [];
-    if (fileList.length === 0 || (!isFilterByExt && !this.config.exclude?.length)) return fileList;
-
-    if (!this.config.extentions?.length) {
-      this.config.extentions = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.json', '.less', '.scss', '.md'];
-    }
-
-    const extentions = new Set(this.config.extentions);
-
-    fileList = fileList.filter(filepath => {
-      if (this.config.exclude?.length) {
-        for (const p of this.config.exclude) {
-          if (filepath.includes(p)) return false;
-          if (isMatch(filepath, p)) return false;
-        }
-      }
-
-      if (isFilterByExt) return extentions.has(extname(filepath));
-
-      return true;
-    });
-
-    return fileList;
-  }
   protected beforeStart(): boolean {
     if (this.isCheckAll) return this.config.src.length > 0;
-    this.config.fileList = this.filesFilter(this.config.fileList);
     return this.config.fileList.length > 0;
   }
 }

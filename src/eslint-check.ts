@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-05 09:46:12
+ * @LastEditTime: 2022-09-07 11:28:55
  * @Description:  eslint check
  */
 
@@ -73,6 +73,8 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
     if (config !== this.config) config = assign<ESLintCheckConfig>({}, this.config, config);
     this.config = assign<ESLintCheckConfig>({ fix: baseConfig.fix }, baseConfig.eslint, config);
     this.config.whiteListFilePath = resolve(this.config.rootDir, this.config.whiteListFilePath);
+    const extensions = this.config.extensions || this.config.eslintOptions.extensions || ['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs'];
+    this.config.extensions = extensions;
 
     return this.config;
   }
@@ -294,10 +296,10 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
     return this.stats;
   }
   protected beforeStart(): boolean {
-    const extentions = new Set(['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs']);
+    const extensions = new Set(['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs']);
 
     this.config.fileList = this.config.fileList.filter(filepath => {
-      if (extentions.has(extname(filepath))) return true;
+      if (extensions.has(extname(filepath))) return true;
 
       const fullPath = resolve(this.config.rootDir, filepath);
       return existsSync(fullPath) && statSync(fullPath).isDirectory();

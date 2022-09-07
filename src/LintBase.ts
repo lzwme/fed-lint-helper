@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-02 17:54:03
+ * @LastEditTime: 2022-09-07 11:13:31
  * @Description:  jest check
  */
 
@@ -16,6 +16,7 @@ import { createForkThread } from './worker/fork';
 import { getConfig } from './config';
 import type { CommConfig, ILintTypes } from './types';
 import { exit } from './exit';
+import { createFilter } from './utils/createFilter';
 
 export interface LintResult {
   /** 是否检测通过 */
@@ -91,6 +92,18 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
   /** 返回执行结果统计信息 */
   public get statsInfo() {
     return this.stats;
+  }
+  /** 通用文件过滤，基于 include、exclude 和 extensions */
+  protected filesFilter(fileList: string[], isFilterByExt = true) {
+    if (!fileList) fileList = [];
+
+    const filter = createFilter({
+      include: this.config.include,
+      exclude: this.config.exclude,
+      extensions: isFilterByExt && Array.isArray(this.config.extensions) ? this.config.extensions : [],
+    });
+
+    return fileList.filter(d => filter(d));
   }
   /**
    * 在 fork 子进程中执行
@@ -216,6 +229,10 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
     if (fileList !== config.fileList) config.fileList = fileList;
 
     this.isCheckAll = !(config.onlyChanges || fileList.length > 0);
+
+    if (!this.isCheckAll && config.fileList.length > 0) {
+      config.fileList = this.filesFilter(config.fileList);
+    }
 
     const isNoFiles = this.isCheckAll ? config.src.length === 0 : !(await this.beforeStart(config.fileList));
     if (isNoFiles) {

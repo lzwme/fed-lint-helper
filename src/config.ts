@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-02 18:07:23
+ * @LastEditTime: 2022-09-07 11:31:59
  * @Description:
  */
 
@@ -50,7 +50,7 @@ export const config: FlhConfig = {
     warningTip: `[errors-必须修复；warnings-历史文件选择性处理(对于历史文件慎重修改 == 类问题)]`,
     mode: 'proc',
     eslintOptions: {
-      extensions: ['ts', 'tsx'],
+      extensions: ['ts', 'tsx', 'js', 'jsx'],
       errorOnUnmatchedPattern: false,
     },
   },
@@ -82,7 +82,7 @@ export const config: FlhConfig = {
   prettier: {
     mode: 'current',
     exclude: ['**/node_modules/**', '**/dist/**'],
-    extentions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.json', '.less', '.scss', '.md'],
+    extensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.json', '.less', '.scss', '.md'],
     detectSubPackages: false,
   },
 };

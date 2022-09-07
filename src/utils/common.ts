@@ -1,6 +1,7 @@
 import { color } from 'console-log-colors';
 import { formatTimeCost } from '@lzwme/fe-utils';
 import { Logger } from '../lib/Logger';
+import { isMatch } from 'micromatch';
 
 /** @deprecated */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -47,4 +48,8 @@ export function arrayToObject<V = number>(arr: string[], value?: V) {
     if (key != null) o[key] = value;
   });
   return o;
+}
+
+export function globMatcher(pathId: string, ruleId: string, ruleIdNormalized?: string) {
+  return isMatch(pathId, ruleIdNormalized, { dot: true }) || isMatch(pathId, ruleId, { dot: true });
 }
