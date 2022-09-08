@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-08 13:55:25
+ * @LastEditTime: 2022-09-08 19:48:13
  * @Description:  jest check
  */
 
@@ -92,19 +92,23 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
   public get statsInfo() {
     return this.stats;
   }
+  private filePathFiler: ReturnType<typeof createFilePathFilter>;
   /** 通用文件过滤，基于 include、exclude 和 extensions */
-  protected filesFilter(fileList: string[], isFilterByExt = true) {
+  protected filesFilter(fileList: string | string[], isFilterByExt = true, cacheFilter = true) {
     if (!fileList) fileList = [];
+    if (typeof fileList === 'string') fileList = [fileList];
 
-    const filter = createFilePathFilter({
-      include: this.config.include,
-      exclude: this.config.exclude,
-      extensions: isFilterByExt && Array.isArray(this.config.extensions) ? this.config.extensions : [],
-      globMatcher,
-      // resolve: this.config.rootDir,
-    });
+    if (!this.filePathFiler || !cacheFilter) {
+      this.filePathFiler = createFilePathFilter({
+        include: this.config.include,
+        exclude: this.config.exclude,
+        extensions: isFilterByExt && Array.isArray(this.config.extensions) ? this.config.extensions : [],
+        globMatcher,
+        // resolve: this.config.rootDir,
+      });
+    }
 
-    return fileList.filter(d => filter(d));
+    return fileList.filter(d => this.filePathFiler(d));
   }
   /**
    * 在 fork 子进程中执行

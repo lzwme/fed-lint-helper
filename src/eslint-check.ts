@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-07 11:28:55
+ * @LastEditTime: 2022-09-08 19:45:34
  * @Description:  eslint check
  */
 
@@ -165,7 +165,8 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
         return;
       }
 
-      // todo: 文件路径过滤
+      // 文件路径过滤
+      if (this.filesFilter(filePath).length === 0) return;
 
       if (Array.isArray(result.messages)) {
         for (const d of result.messages) {
