@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.0.0](https://github.com/lzwme/fed-lint-helper/compare/v1.12.4...v2.0.0) (2022-09-08)
+
+
+### Bug Fixes
+
+* 更新 init 初始化配置逻辑 ([75dd9ea](https://github.com/lzwme/fed-lint-helper/commit/75dd9eab55d2a850a4e9e9652dc1754b0de374a6))
+* 添加 husky tpl 文件 ([c098072](https://github.com/lzwme/fed-lint-helper/commit/c098072cdb8933a1c7868a7db56b8ea91f1a76fc))
+* 修复 eslint check 未过滤无后缀文件导致的异常 ([0183316](https://github.com/lzwme/fed-lint-helper/commit/01833164ecda76c6e2334a74af760ad2b235b710))
+* 修复 eslint check 未过滤无后缀文件导致的异常 ([6951ea7](https://github.com/lzwme/fed-lint-helper/commit/6951ea7793e16a97d03d40fe3117d853d0d1cf59))
+* 修复 mode 参数默认值覆盖的优先级问题 ([994388e](https://github.com/lzwme/fed-lint-helper/commit/994388ee49c7a8728c0cc1c4c4880d58e9085c14))
+
 ### [1.12.4](https://github.com/lzwme/fed-lint-helper/compare/v1.12.3...v1.12.4) (2022-08-22)
 
 
