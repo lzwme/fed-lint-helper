@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-08 10:14:37
+ * @LastEditTime: 2022-09-08 15:44:24
  * @Description:  prettier check
  */
 
@@ -88,7 +88,11 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
 
       for (const d of this.config.src) {
         const p = resolve(config.rootDir, d);
-        if (!existsSync(p) || !statSync(p).isDirectory()) continue;
+        if (!existsSync(p)) continue;
+        if (!statSync(p).isDirectory()) {
+          fileList.push(p);
+          continue;
+        }
 
         const files = await glob(extGlobPattern, { cwd: p, absolute: true });
         fileList.push(...files);

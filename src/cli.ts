@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2022-08-19 16:55:59
+ * @LastEditTime: 2022-09-08 15:50:26
  * @Description: cli 工具
  */
 import { resolve } from 'node:path';
@@ -88,35 +88,30 @@ program
       checkOnInit: false,
       silent: !options.debug && options.silent,
       printDetail: options.printDetail !== false,
-      mode: options.mode || 'proc',
       tscheck: {
         toWhiteList: options.toWhiteList,
-        mode: options.mode || 'thread',
       },
       eslint: {
         // tsConfigFileName: 'tsconfig.eslint.json',
         toWhiteList: options.toWhiteList,
-        mode: options.mode || 'proc',
       },
-      jest: {
-        mode: options.mode || 'proc',
-      },
+      jest: {},
       jira: {
         type: options.jiraType === 'pipeline' ? 'pipeline' : 'commit',
-        mode: options.mode || 'current',
       },
       prettier: {},
     };
+
+    for (const key of ['src', 'fix', 'wxWorkKeys', 'debug', 'cache', 'removeCache', 'onlyChanges', 'mode'] as const) {
+      if (options[key] != null) config[key] = options[key] as never;
+    }
 
     if (options.jiraHome) config.jira.jiraHome = options.jiraHome;
     if (options.projectName) config.jira.projectName = options.projectName;
     if (options.commitEdit) config.jira.COMMIT_EDITMSG = options.commitEdit;
     if ('useJestCli' in options) config.jest.useJestCli = Boolean(+options.useJestCli);
     if ('usePrettierCli' in options) config.prettier.useCli = Boolean(+options.usePrettierCli);
-
-    for (const key of ['src', 'fix', 'wxWorkKeys', 'debug', 'cache', 'removeCache', 'onlyChanges'] as const) {
-      if (options[key] != null) config[key] = options[key] as never;
-    }
+    if ('fix' in options) config.fix = config.eslint.fix = Boolean(options.fix);
 
     const baseConfig = getConfig(mergeCommConfig(config, false));
     let hasAction = false;

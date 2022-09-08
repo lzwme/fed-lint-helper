@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-08 10:07:20
+ * @LastEditTime: 2022-09-08 15:36:21
  * @Description:
  */
 
@@ -109,8 +109,8 @@ export function mergeCommConfig(options: FlhConfig, useDefault = true) {
 /**
  * 获取配置信息
  */
-export function getConfig(options?: FlhConfig, useCache = isInited) {
-  if (useCache && !options) return config;
+export function getConfig(options?: FlhConfig, useCache = true) {
+  if (isInited && useCache && !options) return config;
   const logger = getLogger();
 
   if (options && options.configPath) config.configPath = options.configPath;
