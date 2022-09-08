@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-08 10:16:08
+ * @LastEditTime: 2022-09-08 13:55:25
  * @Description:  jest check
  */
 
@@ -10,7 +10,7 @@ import { existsSync, unlinkSync, readFileSync, writeFileSync, mkdirSync } from '
 import { resolve, dirname } from 'node:path';
 import { color } from 'console-log-colors';
 import { assign, getObjectKeysUnsafe, execSync, createFilePathFilter } from '@lzwme/fe-utils';
-import { getTimeCost, globMatcher, isGitRepo } from './utils/common';
+import { getIndentSize, getTimeCost, globMatcher, isGitRepo } from './utils/common';
 import { getLogger } from './utils/get-logger';
 import { createForkThread } from './worker/fork';
 import { getConfig } from './config';
@@ -144,7 +144,7 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
     const pDir = dirname(filepath);
     if (!existsSync(pDir)) mkdirSync(pDir, { recursive: true });
 
-    writeFileSync(filepath, JSON.stringify(info, null, 2), { encoding: 'utf8' });
+    writeFileSync(filepath, JSON.stringify(info, null, getIndentSize(this.config.rootDir)), { encoding: 'utf8' });
     if (!filepath.includes('node_modules') && isGitRepo(this.config.rootDir)) {
       execSync(`git add ${filepath}`, void 0, this.config.rootDir, !this.config.silent);
     }

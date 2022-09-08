@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { color } from 'console-log-colors';
 import { formatTimeCost, execSync } from '@lzwme/fe-utils';
@@ -66,4 +66,23 @@ export function isGitRepo(rootDir = process.cwd(), useCache = true): boolean {
   }
   // @ts-ignore
   return isGitRepo[rootDir];
+}
+
+/**
+ * 获取 indent-size。默认为 2
+ * @todo 根据 ext 文件类型区分
+ */
+export function getIndentSize(rootDir = process.cwd()): number {
+  const cfgList = ['.editorconfig', '.prettierrc', '.prettierrc.js', '.prettierrc.json'];
+
+  for (const filename of cfgList) {
+    const filepath = resolve(rootDir, filename);
+    if (existsSync(filepath)) {
+      const content = readFileSync(filepath, 'utf8');
+      const matchResult = content.match(/(indent_size|tabWidth)\D+(\d+)/m);
+      if (matchResult && +matchResult[2]) return +matchResult[2];
+    }
+  }
+
+  return 2;
 }
