@@ -17,10 +17,12 @@
 <h4>Hierarchy</h4>
 <ul class="tsd-hierarchy">
 <li><span class="tsd-signature-type">LintResult</span>
+<section class="tsd-panel tsd-hierarchy">
+<h4>Hierarchy</h4>
 <ul class="tsd-hierarchy">
-<li><span class="target">JestCheckResult</span></li></ul></li></ul></section><aside class="tsd-sources">
+<li><span class="target">JestCheckResult</span></li></ul></section></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/49c2a52/src/jest-check.ts#L20">src/jest-check.ts:20</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/77d28e0/src/jest-check.ts#L20">src/jest-check.ts:20</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-index-accordion" open><summary class="tsd-accordion-summary tsd-index-summary">
@@ -41,17 +43,22 @@
 <h2>Properties</h2>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="cacheFiles" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>cache<wbr/>Files</span><a href="#cacheFiles" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" id="icon-anchor-a"></path><path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" id="icon-anchor-b"></path><path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" id="icon-anchor-c"></path></svg></a></h3>
-<div class="tsd-signature">cache<wbr/>Files<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-symbol">{ </span>[filepath: <span class="tsd-signature-type">string</span>]<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> }</span></div>
+<div class="tsd-signature">cache<wbr/>Files<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-symbol">{ </span>[filepath: <span class="tsd-signature-type">string</span>]<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span>deleted<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>updated<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol"> }</span></div>
 <div class="tsd-comment tsd-typography"><p>缓存文件与对应的缓存信息。放在最后汇总并写入文件</p>
 </div>
 <div class="tsd-type-declaration">
 <h4>Type declaration</h4>
 <ul class="tsd-parameters">
 <li class="tsd-parameter-index-signature">
-<h5><span class="tsd-signature-symbol">[</span>filepath: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">]: </span><span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span></h5></li></ul></div><aside class="tsd-sources">
+<h5><span class="tsd-signature-symbol">[</span>filepath: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">]: </span><span class="tsd-signature-symbol">{ </span>deleted<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>updated<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> }</span></h5>
+<ul class="tsd-parameters">
+<li class="tsd-parameter">
+<h5><code class="tsd-tag ts-flagOptional">Optional</code> deleted<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span></h5></li>
+<li class="tsd-parameter">
+<h5>updated<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span></h5></li></ul></li></ul></div><aside class="tsd-sources">
 <p>Inherited from LintResult.cacheFiles</p>
 <ul>
-<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/49c2a52/src/LintBase.ts#L36">src/LintBase.ts:36</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/77d28e0/src/LintBase.ts#L36">src/LintBase.ts:36</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="cacheHits" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>cache<wbr/>Hits</span><a href="#cacheHits" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">cache<wbr/>Hits<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span></div>
@@ -59,7 +66,7 @@
 </div><aside class="tsd-sources">
 <p>Inherited from LintResult.cacheHits</p>
 <ul>
-<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/49c2a52/src/LintBase.ts#L34">src/LintBase.ts:34</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/77d28e0/src/LintBase.ts#L34">src/LintBase.ts:34</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="errorCount" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>error<wbr/>Count</span><a href="#errorCount" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">error<wbr/>Count<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span></div>
@@ -67,7 +74,7 @@
 </div><aside class="tsd-sources">
 <p>Inherited from LintResult.errorCount</p>
 <ul>
-<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/49c2a52/src/LintBase.ts#L28">src/LintBase.ts:28</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/77d28e0/src/LintBase.ts#L28">src/LintBase.ts:28</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="failedFilesNum" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>failed<wbr/>Files<wbr/>Num</span><a href="#failedFilesNum" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">failed<wbr/>Files<wbr/>Num<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span></div>
@@ -75,7 +82,7 @@
 </div><aside class="tsd-sources">
 <p>Inherited from LintResult.failedFilesNum</p>
 <ul>
-<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/49c2a52/src/LintBase.ts#L32">src/LintBase.ts:32</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/77d28e0/src/LintBase.ts#L32">src/LintBase.ts:32</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface"><a id="isPassed" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>is<wbr/>Passed</span><a href="#isPassed" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">is<wbr/>Passed<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
@@ -83,7 +90,7 @@
 </div><aside class="tsd-sources">
 <p>Overrides LintResult.isPassed</p>
 <ul>
-<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/49c2a52/src/jest-check.ts#L22">src/jest-check.ts:22</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/77d28e0/src/jest-check.ts#L22">src/jest-check.ts:22</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="passedFilesNum" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>passed<wbr/>Files<wbr/>Num</span><a href="#passedFilesNum" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">passed<wbr/>Files<wbr/>Num<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span></div>
@@ -91,7 +98,7 @@
 </div><aside class="tsd-sources">
 <p>Inherited from LintResult.passedFilesNum</p>
 <ul>
-<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/49c2a52/src/LintBase.ts#L30">src/LintBase.ts:30</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/77d28e0/src/LintBase.ts#L30">src/LintBase.ts:30</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="startTime" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>start<wbr/>Time</span><a href="#startTime" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">start<wbr/>Time<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span></div>
@@ -99,7 +106,7 @@
 </div><aside class="tsd-sources">
 <p>Inherited from LintResult.startTime</p>
 <ul>
-<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/49c2a52/src/LintBase.ts#L24">src/LintBase.ts:24</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/77d28e0/src/LintBase.ts#L24">src/LintBase.ts:24</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="totalFilesNum" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>total<wbr/>Files<wbr/>Num</span><a href="#totalFilesNum" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">total<wbr/>Files<wbr/>Num<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span></div>
@@ -107,7 +114,7 @@
 </div><aside class="tsd-sources">
 <p>Inherited from LintResult.totalFilesNum</p>
 <ul>
-<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/49c2a52/src/LintBase.ts#L26">src/LintBase.ts:26</a></li></ul></aside></section></section></div>
+<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/77d28e0/src/LintBase.ts#L26">src/LintBase.ts:26</a></li></ul></aside></section></section></div>
 <div class="col-4 col-menu menu-sticky-wrap menu-highlight">
 <div class="tsd-navigation settings">
 <details class="tsd-index-accordion"><summary class="tsd-accordion-summary">
