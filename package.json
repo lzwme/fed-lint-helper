@@ -51,7 +51,7 @@
     "clean": "ts-node src/rmdir.ts ./cjs ./esm ./docs"
   },
   "engines": {
-    "node": ">=10"
+    "node": ">=14.18"
   },
   "publishConfig": {
     "access": "public",
