@@ -6,9 +6,9 @@
  * @Description:  jest check
  */
 
-import { extname, resolve } from 'path';
+import { extname, resolve } from 'node:path';
 import { cpus } from 'os';
-import { existsSync, statSync, readFileSync } from 'fs';
+import { existsSync, statSync, readFileSync } from 'node:fs';
 import { color } from 'console-log-colors';
 import glob from 'fast-glob';
 import type { Config } from '@jest/types';

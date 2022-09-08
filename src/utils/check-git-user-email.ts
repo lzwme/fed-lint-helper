@@ -1,11 +1,12 @@
 import { color } from 'console-log-colors';
-import { existsSync, writeFileSync } from 'fs';
-import { resolve } from 'path';
+import { existsSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { execSync } from '@lzwme/fe-utils';
+import { isGitRepo } from './common';
 
 export const checkUserEmial = (regRule: string | RegExp, exitOnError = true, rootDir = process.cwd()) => {
   let errmsg = '';
-  if (regRule == null || !existsSync(resolve(rootDir, './.git'))) return errmsg;
+  if (regRule == null || !isGitRepo(rootDir)) return errmsg;
 
   const cacheFile = resolve(rootDir, './.git/useremail');
   if (existsSync(cacheFile)) return errmsg;

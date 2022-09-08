@@ -2,13 +2,13 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-02 18:02:23
+ * @LastEditTime: 2022-09-08 10:12:38
  * @Description:  Jira check
  */
 
-import { resolve, join } from 'path';
-import { existsSync, writeFileSync, readFileSync } from 'fs';
-import type { IncomingHttpHeaders } from 'http';
+import { resolve, join } from 'node:path';
+import { existsSync, writeFileSync, readFileSync } from 'node:fs';
+import type { IncomingHttpHeaders } from 'node:http';
 import { color } from 'console-log-colors';
 import { assign, getHeadBranch } from '@lzwme/fe-utils';
 import { type PlainObject, getLogger, checkUserEmial } from './utils';

@@ -1,6 +1,6 @@
 // @see https://github.com/umijs/umi-next/blob/master/scripts/verifyCommit.ts
 
-import { readFileSync } from 'fs';
+import { readFileSync } from 'node:fs';
 import { color } from 'console-log-colors';
 import { config } from './config';
 import { getLogger } from './utils/get-logger';

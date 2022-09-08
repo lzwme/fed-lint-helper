@@ -1,8 +1,8 @@
 import type { ESLint } from 'eslint';
 import type { Config } from '@jest/types';
-import { Config as PrettierConfig } from 'prettier';
+import type { Config as PrettierConfig } from 'prettier';
 import type { IncomingHttpHeaders } from 'http';
-import { type WxWorkReqParams } from '@lzwme/fe-utils/cjs/node/lib/WXWork';
+import type { WxWorkReqParams } from '@lzwme/fe-utils';
 
 export const LintTypes = ['eslint', 'tscheck', 'jest', 'jira', 'prettier'] as const;
 export type ArrayLikeArgs<T> = T extends ArrayLike<infer U> ? U : T;

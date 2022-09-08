@@ -6,8 +6,8 @@
  * @Description: typescript Diagnostics report
  */
 
-import { resolve, dirname, normalize } from 'path';
-import { existsSync, unlinkSync, readFileSync, statSync } from 'fs';
+import { resolve, dirname, normalize } from 'node:path';
+import { existsSync, unlinkSync, readFileSync, statSync } from 'node:fs';
 import { color } from 'console-log-colors';
 import type { Diagnostic, DiagnosticCategory, CompilerOptions } from 'typescript';
 import glob from 'fast-glob';

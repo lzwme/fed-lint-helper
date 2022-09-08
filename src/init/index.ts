@@ -1,5 +1,5 @@
-import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { resolve, dirname } from 'path';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
 import { color } from 'console-log-colors';
 import { getObjectKeysUnsafe, type PackageJson, execSync, mkdirp } from '@lzwme/fe-utils';
 import { prompt } from 'enquirer';

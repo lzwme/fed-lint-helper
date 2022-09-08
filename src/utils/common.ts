@@ -1,5 +1,7 @@
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { color } from 'console-log-colors';
-import { formatTimeCost } from '@lzwme/fe-utils';
+import { formatTimeCost, execSync } from '@lzwme/fe-utils';
 import { Logger } from '../lib/Logger';
 import { isMatch } from 'micromatch';
 
@@ -52,4 +54,16 @@ export function arrayToObject<V = number>(arr: string[], value?: V) {
 
 export function globMatcher(pathId: string, ruleIdNormalized: string, ruleId: string) {
   return isMatch(pathId, ruleIdNormalized, { dot: true }) || isMatch(pathId, ruleId, { dot: true });
+}
+
+/** 判断给定的目录是否为一个 git 仓库 */
+export function isGitRepo(rootDir = process.cwd(), useCache = true): boolean {
+  // @ts-ignore
+  if (isGitRepo[rootDir] == null || !useCache) {
+    // @ts-ignore
+    isGitRepo[rootDir] =
+      existsSync(resolve(rootDir, '.git/config')) || execSync('git branch --show-current', 'pipe', rootDir).error == null;
+  }
+  // @ts-ignore
+  return isGitRepo[rootDir];
 }

@@ -2,18 +2,19 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-07 15:24:31
+ * @LastEditTime: 2022-09-08 10:14:37
  * @Description:  prettier check
  */
 
-import { resolve } from 'path';
-import { existsSync, statSync, readFileSync, writeFileSync } from 'fs';
+import { resolve } from 'node:path';
+import { existsSync, statSync, readFileSync, writeFileSync } from 'node:fs';
 import { color } from 'console-log-colors';
 import glob from 'fast-glob';
 import { md5, assign, execSync, fixToshortPath } from '@lzwme/fe-utils';
 import { getConfig } from './config';
 import type { PrettierCheckConfig } from './types';
 import { LintBase, type LintResult } from './LintBase';
+import { isGitRepo } from './utils/common';
 
 export interface PrettierCheckResult extends LintResult {
   /** fix 修正过的文件路径列表 */
@@ -158,12 +159,13 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
         baseConfig.fix && config.cache ? `--cache` : null,
         baseConfig.fix ? `--write` : `-c`, // `-l`
         config.silent ? `--loglevel=silent` : null,
+        '--ignore-unknown',
       ]
         .filter(Boolean)
         .join(' ');
 
-      const res = execSync(cmd, 'pipe', config.rootDir);
-      this.logger.debug(cmd, res);
+      const res = execSync(cmd, 'pipe', config.rootDir, config.debug);
+      this.logger.debug('result:\n', res);
       if (res.stderr) {
         stats.failedFiles = res.stderr
           .trim()
@@ -232,6 +234,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
       this.stats.cacheFiles[this.cacheFilePath] = { updated: this.cacheInfo };
       if (baseConfig.fix && stats.fixedFileList.length > 0) {
         logger.info(`fixed files(${stats.fixedFileList.length}):\n`, stats.fixedFileList.map(d => ` - ${d}\n`).join(''));
+        if (isGitRepo(baseConfig.rootDir)) execSync(`git add --update`);
       }
     }
 

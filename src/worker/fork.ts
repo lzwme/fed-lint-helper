@@ -7,7 +7,7 @@
  */
 
 import { fork } from 'child_process';
-import { resolve } from 'path';
+import { resolve } from 'node:path';
 import type { ILintTypes } from '../types';
 
 export interface CreateThreadOptions<C = unknown> {

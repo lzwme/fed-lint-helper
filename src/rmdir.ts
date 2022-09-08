@@ -1,4 +1,4 @@
-import { statSync, existsSync } from 'fs';
+import { statSync, existsSync } from 'node:fs';
 import { color } from 'console-log-colors';
 import glob from 'fast-glob';
 import { rmrfAsync, readSyncByRl } from '@lzwme/fe-utils';

@@ -8,8 +8,8 @@
 
 import { color } from 'console-log-colors';
 import type { ESLint } from 'eslint';
-import { existsSync, readFileSync, statSync } from 'fs';
-import { extname, resolve } from 'path';
+import { existsSync, readFileSync, statSync } from 'node:fs';
+import { extname, resolve } from 'node:path';
 import { assign, fixToshortPath } from '@lzwme/fe-utils';
 import { arrayToObject } from './utils';
 import { getConfig } from './config';

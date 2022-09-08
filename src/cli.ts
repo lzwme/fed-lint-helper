@@ -5,8 +5,8 @@
  * @LastEditTime: 2022-08-19 16:55:59
  * @Description: cli 工具
  */
-import { resolve } from 'path';
-import { existsSync } from 'fs';
+import { resolve } from 'node:path';
+import { existsSync } from 'node:fs';
 import { Option, program } from 'commander';
 import { color } from 'console-log-colors';
 import { getHeadDiffFileList } from '@lzwme/fe-utils';
