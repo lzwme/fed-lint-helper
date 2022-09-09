@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-08 15:44:24
+ * @LastEditTime: 2022-09-09 16:31:49
  * @Description:  prettier check
  */
 
@@ -80,7 +80,6 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
   }
   protected async getFileList(fileList: string[]) {
     const config = this.config;
-    const passedFiles = this.cacheInfo.passed;
 
     if (this.isCheckAll) {
       const extGlobPattern = `**/*.{ts,js,tsx,jsx,json,md,mjs}`;
@@ -107,6 +106,8 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
 
     if (fileList.length > 0 && config.cache && existsSync(this.cacheFilePath)) {
       assign(this.cacheInfo, JSON.parse(readFileSync(this.cacheFilePath, 'utf8')));
+
+      const passedFiles = this.cacheInfo.passed;
 
       fileList = fileList.filter(filepath => {
         const shortpath = fixToshortPath(filepath, config.rootDir);
