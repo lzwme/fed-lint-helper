@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-08 15:50:26
+ * @LastEditTime: 2022-09-09 16:36:10
  * @Description: cli 工具
  */
 import { resolve } from 'node:path';
@@ -78,9 +78,9 @@ program
   .addOption(new Option('--jira-type <type>', `执行 jira 检查的类型。可选值：`).choices(['commit', 'pipeline']))
   .option('--projectName', `指定 git 仓库项目名（用于 jira check）`)
   .option('--jest', `执行 jest 单元测试`)
-  .option('--use-jest-cli [value]', `使用 jest-cli 执行单元测试。1 是(默认)，0 否`)
+  .option('--use-jest-cli [value]', `执行单元测试时是否使用 jest-cli 模式。1 是(默认)，0 否`)
   .option('--prettier', `执行 prettier 编码风格检查`)
-  .option('--use-prettier-cli [value]', `使用 jest-cli 执行单元测试。1 是，0 否(默认)`)
+  .option('--use-prettier-cli [value]', `执行代码风格检查时是否使用 prettier cli 模式。1 是，0 否(默认)`)
   .action(() => {
     const options = getProgramOptions();
     const config: FlhConfig = {
