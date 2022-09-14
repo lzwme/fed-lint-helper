@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.0.1](https://github.com/lzwme/fed-lint-helper/compare/v2.0.0...v2.0.1) (2022-09-14)
+
+
+### Bug Fixes
+
+* 修复 prettier cache 匹配未生效的问题 ([fab940b](https://github.com/lzwme/fed-lint-helper/commit/fab940b217ea392598606c5dfa0b72f3a4b57742))
+* 修复命令行参数 ci 无效问题；优化 prettier check 逻辑 ([eca85c6](https://github.com/lzwme/fed-lint-helper/commit/eca85c66aca95b397ea6aad3d6a564724b486ff7))
+* 修正 prettier cli 参数描述错误 ([b0d7966](https://github.com/lzwme/fed-lint-helper/commit/b0d796689dd9a860597008773ed4c1743e88839c))
+
 ## [2.0.0](https://github.com/lzwme/fed-lint-helper/compare/v1.12.4...v2.0.0) (2022-09-08)
 
 
