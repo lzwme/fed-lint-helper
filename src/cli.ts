@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-09 16:36:10
+ * @LastEditTime: 2022-09-13 16:29:33
  * @Description: cli 工具
  */
 import { resolve } from 'node:path';
@@ -27,7 +27,18 @@ interface POptions
     Pick<JiraCheckConfig, 'jiraHome' | 'projectName'>,
     Pick<
       FlhConfig,
-      'configPath' | 'debug' | 'silent' | 'printDetail' | 'cache' | 'removeCache' | 'exitOnError' | 'src' | 'mode' | 'fix' | 'wxWorkKeys'
+      | 'cache'
+      | 'ci'
+      | 'configPath'
+      | 'debug'
+      | 'exitOnError'
+      | 'fix'
+      | 'mode'
+      | 'printDetail'
+      | 'removeCache'
+      | 'silent'
+      | 'src'
+      | 'wxWorkKeys'
     > {
   /** 是否仅检测 git 变化的文件 */
   onlyChanges?: boolean;
@@ -102,7 +113,7 @@ program
       prettier: {},
     };
 
-    for (const key of ['src', 'fix', 'wxWorkKeys', 'debug', 'cache', 'removeCache', 'onlyChanges', 'mode'] as const) {
+    for (const key of ['src', 'fix', 'wxWorkKeys', 'debug', 'cache', 'removeCache', 'onlyChanges', 'mode', 'ci'] as const) {
       if (options[key] != null) config[key] = options[key] as never;
     }
 
