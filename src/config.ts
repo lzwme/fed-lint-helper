@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-08 15:36:21
+ * @LastEditTime: 2022-10-27 14:24:27
  * @Description:
  */
 
@@ -28,6 +28,7 @@ const commConfig: CommConfig = {
   cache: true,
   removeCache: false,
   mode: 'proc',
+  fix: false,
 };
 
 export const config: FlhConfig = {
@@ -40,13 +41,11 @@ export const config: FlhConfig = {
   tscheck: {
     mode: 'thread',
     exclude: ['**/*.test.{ts,tsx}', '**/*/*.mock.{ts,tsx}', '**/*/*.d.ts'],
-    whiteListFilePath: 'config/tsCheckWhiteList.json',
     tsConfigFileName: 'tsconfig.json',
     tsCodeCheck: [],
     tsCodeIgnore: [],
   },
   eslint: {
-    whiteListFilePath: 'config/eslintWhitelist.json',
     warningTip: `[errors-必须修复；warnings-历史文件选择性处理(对于历史文件慎重修改 == 类问题)]`,
     mode: 'proc',
     eslintOptions: {
@@ -55,7 +54,6 @@ export const config: FlhConfig = {
     },
   },
   jest: {
-    // whiteListFilePath: 'jestWhitelist.json',
     jestOptions: {
       config: 'jest.config.js',
       coverageReporters: ['text-summary', 'html'],

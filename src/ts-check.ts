@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-07 10:36:58
+ * @LastEditTime: 2022-10-27 15:54:24
  * @Description: typescript Diagnostics report
  */
 
@@ -12,8 +12,8 @@ import { color } from 'console-log-colors';
 import type { Diagnostic, DiagnosticCategory, CompilerOptions } from 'typescript';
 import glob from 'fast-glob';
 import { isMatch } from 'micromatch';
-import { md5, assign, fixToshortPath } from '@lzwme/fe-utils';
-import { getConfig, VERSION } from './config';
+import { md5, fixToshortPath } from '@lzwme/fe-utils';
+import { VERSION } from './config';
 import type { TsCheckConfig } from './types';
 import { LintBase, LintResult } from './LintBase';
 import { arrayToObject } from './utils/common';
@@ -26,8 +26,7 @@ export interface TsCheckResult extends LintResult {
   totalDiagnostics: 0;
 }
 export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
-  /** 白名单列表 */
-  private whiteList = {} as Record<string, keyof typeof DiagnosticCategory>; // DiagnosticCategory
+  protected override whiteList: Record<string, keyof typeof DiagnosticCategory> = {};
   private cache: {
     /** 检测到异常且需要 report 的文件列表 */
     allDiagnosticsFileMap: { [file: string]: Diagnostic[] };
@@ -66,46 +65,14 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
 
     return stats;
   }
-  /** 配置参数格式化 */
-  public parseConfig(config: TsCheckConfig) {
-    const baseConfig = getConfig({ tscheck: config }, false);
-
-    this.config = assign<TsCheckConfig>({}, baseConfig.tscheck);
-    this.config.whiteListFilePath = resolve(this.config.rootDir, this.config.whiteListFilePath);
-
-    return this.config;
-  }
-  protected init() {
-    const { whiteListFilePath, removeCache } = this.config;
+  protected override init() {
+    super.init();
 
     if (existsSync(this.cacheFilePath)) {
-      try {
-        if (removeCache) {
-          unlinkSync(this.cacheFilePath);
-        } else {
-          const cacheInfo = JSON.parse(readFileSync(this.cacheFilePath, { encoding: 'utf8' }));
-          if (cacheInfo.version !== VERSION) unlinkSync(this.cacheFilePath);
-          else if (cacheInfo.tsCheckFilesPassed) this.cache.tsCache = cacheInfo;
-        }
-        // @ts-ignore
-      } catch (error: Error) {
-        this.logger.error(error.message || error.stack || error);
-      }
-    }
-
-    // 读取白名单列表
-    try {
-      if (existsSync(whiteListFilePath)) {
-        if (this.config.toWhiteList) {
-          // 追加模式，不删除旧文件
-          // unlinkSync(whiteListFilePath);
-        } else {
-          this.whiteList = JSON.parse(readFileSync(whiteListFilePath, { encoding: 'utf8' }));
-        }
-      }
-      // @ts-ignore
-    } catch (error: Error) {
-      this.logger.error(error.message || error.stack || error);
+      const cacheInfo = JSON.parse(readFileSync(this.cacheFilePath, { encoding: 'utf8' }));
+      // todo: 版本比较为通用逻辑
+      if (cacheInfo.version !== VERSION) unlinkSync(this.cacheFilePath);
+      else if (cacheInfo.tsCheckFilesPassed) this.cache.tsCache = cacheInfo;
     }
   }
   /** 返回可检测的子项目路径 */
@@ -259,7 +226,6 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
       absolute: true,
     });
 
-    // checkUnUse(fileList);
     return { fileList, subDirection };
   }
   private updateCache() {

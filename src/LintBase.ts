@@ -2,14 +2,14 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-08 19:48:13
+ * @LastEditTime: 2022-10-27 18:24:35
  * @Description:  jest check
  */
 
-import { existsSync, unlinkSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { existsSync, unlinkSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { color } from 'console-log-colors';
-import { assign, getObjectKeysUnsafe, execSync, createFilePathFilter } from '@lzwme/fe-utils';
+import { assign, getObjectKeysUnsafe, execSync, createFilePathFilter, mkdirp } from '@lzwme/fe-utils';
 import { getIndentSize, getTimeCost, globMatcher, isGitRepo } from './utils/common';
 import { getLogger } from './utils/get-logger';
 import { createForkThread } from './worker/fork';
@@ -37,6 +37,7 @@ export interface LintResult {
     [filepath: string]: {
       updated: Record<string, unknown>;
       deleted?: Record<string, unknown>;
+      type?: string; // todo: 用于区分 jsonFile 结构
     };
   };
 }
@@ -45,33 +46,42 @@ export interface LintResult {
 export abstract class LintBase<C extends CommConfig & Record<string, any>, R extends LintResult = LintResult> {
   /** 统计信息 */
   protected stats = this.getInitStats() as R;
-  /**
-   * 检测缓存文件的路径。不应提交至 git 仓库
-   */
+  /** 检测缓存文件的路径。不应提交至 git 仓库 */
   protected cacheFilePath = '';
   protected isCheckAll = false;
   protected logger: ReturnType<typeof getLogger>;
-
-  /** 配置参数格式化 */
-  public abstract parseConfig(config: C): C;
+  protected whiteList: Record<string, unknown> = {};
   /** start 之前调用。返回 false 则终止继续执行 */
   protected abstract beforeStart(fileList?: string[]): boolean | Promise<boolean>;
-  /** 执行校验 */
+  /** 执行检测 */
   protected abstract check(fileList?: string[]): Promise<R>;
-  protected abstract init(): void;
 
   constructor(protected tag: ILintTypes, protected config?: C) {
-    this.config = assign({} as C, this.parseConfig(config));
-    const baseConfig = getConfig();
+    const baseConfig = getConfig({ [tag]: config || {} }, false);
+    this.config = assign({ whiteListFilePath: `config/whitelist-${tag}.json` } as C, baseConfig[tag]);
+    this.parseConfig(this.config);
 
+    // 若没有自定义 logger
     if (!this.logger) {
       const level = this.config.silent ? 'silent' : this.config.debug ? 'debug' : 'log';
-      this.logger = getLogger(`[${this.tag}]`, level);
+      this.logger = getLogger(`[${this.tag}]`, level, baseConfig.logDir);
     }
-    this.logger.debug('config', this.config);
 
+    this.config.whiteListFilePath = resolve(this.config.rootDir, this.config.whiteListFilePath);
     this.cacheFilePath = resolve(this.config.rootDir, baseConfig.cacheLocation, `${tag}Cache.json`);
+
+    this.logger.debug('config', this.config);
     if (this.config.checkOnInit) this.start();
+  }
+  protected init(): void {
+    if (existsSync(this.config.whiteListFilePath)) {
+      if (!this.config.toWhiteList) {
+        this.whiteList = JSON.parse(readFileSync(this.config.whiteListFilePath, 'utf8'));
+      } else {
+        // 追加模式，不删除旧文件
+        // unlinkSync(whiteListFilePath);
+      }
+    }
   }
   /** 获取初始化的统计信息 */
   protected getInitStats(): R {
@@ -145,9 +155,7 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
       info = assign(JSON.parse(readFileSync(filepath, 'utf8')), info);
     }
 
-    const pDir = dirname(filepath);
-    if (!existsSync(pDir)) mkdirSync(pDir, { recursive: true });
-
+    mkdirp(dirname(filepath));
     writeFileSync(filepath, JSON.stringify(info, null, getIndentSize(this.config.rootDir)), { encoding: 'utf8' });
     if (!filepath.includes('node_modules') && isGitRepo(this.config.rootDir)) {
       execSync(`git add ${filepath}`, void 0, this.config.rootDir, !this.config.silent);
@@ -235,9 +243,7 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
 
     this.isCheckAll = !(config.onlyChanges || fileList.length > 0);
 
-    if (!this.isCheckAll && config.fileList.length > 0) {
-      config.fileList = this.filesFilter(config.fileList);
-    }
+    if (!this.isCheckAll && config.fileList.length > 0) config.fileList = this.filesFilter(config.fileList);
 
     const isNoFiles = this.isCheckAll ? config.src.length === 0 : !(await this.beforeStart(config.fileList));
     if (isNoFiles) {
@@ -284,5 +290,10 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
     }
 
     return stats;
+  }
+  /** 配置参数格式化 */
+  public parseConfig(config: C): C {
+    if (config && config !== this.config) config = assign<C>(this.config, config);
+    return this.config;
   }
 }

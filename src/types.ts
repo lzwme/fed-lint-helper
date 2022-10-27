@@ -17,6 +17,8 @@ export interface CommConfig {
   exclude?: string[];
   /** 文件后缀。若设置，则文件过滤时，先以 extensions 预处理 */
   extensions?: string[];
+  /** 是否尝试修正可自动修正的异常 */
+  fix?: boolean;
   /** 文件包含列表。glob 规则，如： `['src\**\*.{ts,tsx,js,jsx}']` */
   include?: string[];
   /** 静默模式。不打印任何信息，一般用于接口调用 */
@@ -37,10 +39,16 @@ export interface CommConfig {
   exitOnError?: boolean;
   /** 本次 check 是否使用缓存。为 false 则进行全量文件检测，否则不检测已缓存通过的文件。默认为 true。当依赖升级、规则变更、CI 执行 MR 时建议设置为 false */
   cache?: boolean;
-  /** 缓存文件保存的目录路径。默认为： `<config.rootDir>/node_modules/.cache/flh/` */
-  cacheLocation?: string;
   /** 是否移除缓存文件。设置为 true 将移除缓存并生成新的。默认 false */
   removeCache?: boolean;
+  /** 白名单列表文件保存的路径，用于过滤允许出错的历史文件。默认为 `<config.rootDir>/config/whitelist-<lintType>.json` */
+  whiteListFilePath?: string;
+  /**
+   * 是否将异常文件输出至白名单列表文件中。默认为 false。注意：
+   * - 追加模式，如需全新生成，应先删除白名单文件。
+   * - 初始化、规则变更、版本升级导致新增异常，但又不能立即修复的情况下，可设置为 true 执行一次
+   */
+  toWhiteList?: boolean;
   /** 是否探测子项目并在子项目中分别执行 lint。默认为 true */
   detectSubPackages?: boolean;
   /**
@@ -57,8 +65,6 @@ export interface TsCheckConfig extends CommConfig {
   src?: string[];
   /** ts 文件列表。当设置并存在内容时，只对该列表中的文件进行检测。主要用于 git hook 获取 commit 文件列表的场景 */
   fileList?: string[];
-  /** 白名单列表文件保存的路径，用于过滤允许出错的历史文件。默认为 `<config.rootDir>/tsCheckWhiteList.json` 文件 */
-  whiteListFilePath?: string;
   /** tsconfig 配置文件的文件名。默认为 tsconfig.json */
   tsConfigFileName?: string;
   /**
@@ -71,21 +77,13 @@ export interface TsCheckConfig extends CommConfig {
    * @see https://www.tslang.cn/docs/handbook/error.html
    */
   tsCodeIgnore?: number[];
-  /**
-   * 是否将异常文件输出至白名单列表文件中。默认为 false。注意：
-   * - 追加模式，如需全新生成，应先删除白名单文件。
-   * - 初始化、规则变更、版本升级导致新增异常，但又不能立即修复的情况下，可设置为 true 执行一次
-   */
-  toWhiteList?: boolean;
 }
 
-export interface ESLintCheckConfig extends CommConfig, Pick<TsCheckConfig, 'toWhiteList'> {
+export interface ESLintCheckConfig extends CommConfig {
   /** 指定处理的文件类型。默认为： ['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs'] */
   extensions?: string[];
   /** 是否自动修正可修复的 eslint 错误，同 ESLint.Option。默认 false。建议不设置为 true，手动逐个文件处理以避免造成大量不可控的业务代码变动 */
   fix?: boolean;
-  /** 白名单列表文件保存的路径，用于过滤允许出错的历史文件。默认为 `<config.rootDir>/eslintWhitelist.json` 文件 */
-  whiteListFilePath?: string;
   /** 警告提示附加信息 */
   warningTip?: string;
   /** 是否允许 Error 类型也可通过白名单过滤。默认为 false */
@@ -171,8 +169,10 @@ export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {
   configPath?: string;
   /** 根目录，默认为当前执行目录 */
   rootDir?: string;
-  /** 日志存放目录 */
+  /** 日志存放目录。默认为 `node_modules/.cache/flh/log` */
   logDir?: string;
+  /** 缓存文件保存的目录路径。默认为： `<config.rootDir>/node_modules/.cache/flh/` */
+  cacheLocation?: string;
   /** 是否开启调试模式(打印更多的细节) */
   debug?: boolean;
   /** 是否运行为持续集成模式 */
@@ -185,8 +185,6 @@ export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {
   wxWorkMessageFormat?: (type: string) => string | WxWorkReqParams;
   /** 自定义出错退出前执行的回调方法 */
   beforeExitOnError?: (code: number, msg?: string) => void;
-  /** 是否尝试修正可自动修正的异常 */
-  fix?: boolean;
   commitlint?: CommitLintOptions;
   eslint?: ESLintCheckConfig;
   jest?: JestCheckConfig;

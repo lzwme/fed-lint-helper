@@ -2,17 +2,16 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-08 19:45:34
+ * @LastEditTime: 2022-10-27 15:38:08
  * @Description:  eslint check
  */
 
 import { color } from 'console-log-colors';
 import type { ESLint } from 'eslint';
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { extname, resolve } from 'node:path';
-import { assign, fixToshortPath } from '@lzwme/fe-utils';
+import { fixToshortPath } from '@lzwme/fe-utils';
 import { arrayToObject } from './utils';
-import { getConfig } from './config';
 import { LintBase, type LintResult } from './LintBase';
 import type { ESLintCheckConfig } from './types';
 
@@ -37,15 +36,9 @@ export interface ESLintCheckResult extends LintResult {
   warningFiles: string[];
   /** 规则报告异常的数量统计。以 ruleId 为 key */
   rules: Record<string, number>;
-  // newErrCount: newErrorReults.length,
-  // newWarningCount: newWaringReults.length,
-  // /** LintResult，用于 API 调用自行处理相关逻辑 */
-  // results,
 }
 export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> {
-  /** 白名单列表 */
-  private whiteList = {} as { [filepath: string]: 'e' | 'w' }; // ts.DiagnosticCategory
-
+  protected override whiteList: { [filepath: string]: 'e' | 'w' } = {};
   constructor(config: ESLintCheckConfig = {}) {
     super('eslint', config);
   }
@@ -67,27 +60,11 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
     return stats;
   }
   /** 配置参数格式化 */
-  public parseConfig(config: ESLintCheckConfig) {
-    const baseConfig = getConfig();
-
-    if (config !== this.config) config = assign<ESLintCheckConfig>({}, this.config, config);
-    this.config = assign<ESLintCheckConfig>({ fix: baseConfig.fix }, baseConfig.eslint, config);
-    this.config.whiteListFilePath = resolve(this.config.rootDir, this.config.whiteListFilePath);
-    const extensions = this.config.extensions || this.config.eslintOptions.extensions || ['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs'];
-    this.config.extensions = extensions;
+  public override parseConfig(config: ESLintCheckConfig) {
+    config = super.parseConfig(config);
+    this.config.extensions = config.extensions || config.eslintOptions.extensions || ['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs'];
 
     return this.config;
-  }
-  protected init() {
-    // do nothing
-    // this.initWhiteList();
-  }
-  private initWhiteList() {
-    // 读取白名单列表
-    if (existsSync(this.config.whiteListFilePath)) {
-      // && !config.toWhiteList
-      this.whiteList = JSON.parse(readFileSync(this.config.whiteListFilePath, { encoding: 'utf8' }));
-    }
   }
   /**
    * 获取 ESLint Options
@@ -150,7 +127,6 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
     /** 在白名单列表中但本次检测无异常的文件列表（将从白名单列表中移除） */
     const removeFromWhiteList: string[] = [];
 
-    this.initWhiteList(); // 执行完毕后实时读取
     // eslint-disable-next-line unicorn/no-array-for-each
     results.forEach(result => {
       const filePath = fixToshortPath(result.filePath, config.rootDir);

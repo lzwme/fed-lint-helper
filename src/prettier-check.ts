@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-13 16:26:39
+ * @LastEditTime: 2022-10-27 15:32:37
  * @Description:  prettier check
  */
 
@@ -47,18 +47,16 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
     return stats;
   }
   /** 配置参数格式化 */
-  public parseConfig(config: PrettierCheckConfig) {
-    const baseConfig = getConfig();
-
-    if (config !== this.config) config = assign<PrettierCheckConfig>({}, this.config, config);
-    this.config = assign<PrettierCheckConfig>({}, baseConfig.prettier, config);
+  public override parseConfig(config: PrettierCheckConfig) {
+    super.parseConfig(config);
     if (!this.config.extensions?.length) {
       this.config.extensions = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.json', '.less', '.scss', '.md'];
     }
 
     return this.config;
   }
-  protected init() {
+  protected override init() {
+    super.init();
     this.cacheInfo = { passed: {} };
   }
   protected async getOptions(_fileList: string[]) {

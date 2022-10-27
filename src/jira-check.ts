@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-08 10:12:38
+ * @LastEditTime: 2022-10-27 15:33:14
  * @Description:  Jira check
  */
 
@@ -105,12 +105,10 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
     super('jira', config);
   }
   /** 配置参数格式化 */
-  public parseConfig(config: JiraCheckConfig) {
+  public override parseConfig(config: JiraCheckConfig) {
     const baseConfig = getConfig();
+    config = baseConfig.jira = super.parseConfig(config);
 
-    if (config !== this.config) config = assign<JiraCheckConfig>({}, this.config, config);
-    config = assign<JiraCheckConfig>({ commitMsgPrefix: '[ET]' }, baseConfig.jira, config);
-    baseConfig.jira = config;
     if (!config.issuePrefix) config.issuePrefix = [];
     if (!Array.isArray(config.issuePrefix)) config.issuePrefix = [config.issuePrefix];
 
@@ -457,8 +455,9 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
 
     return true;
   }
-  protected init() {
-    return this.initRequest();
+  protected override init() {
+    super.init();
+    this.initRequest();
   }
   protected async check() {
     const stats = this.getInitStats();
