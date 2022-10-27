@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2022-09-13 16:29:33
+ * @LastEditTime: 2022-10-27 22:15:47
  * @Description: cli 工具
  */
 import { resolve } from 'node:path';
@@ -12,7 +12,7 @@ import { color } from 'console-log-colors';
 import { getHeadDiffFileList } from '@lzwme/fe-utils';
 import { FlhConfig, TsCheckConfig, JiraCheckConfig, CommitLintOptions, LintTypes } from './types';
 import { formatWxWorkKeys } from './utils';
-import { getConfig, mergeCommConfig } from './config';
+import { commConfig, getConfig, mergeCommConfig } from './config';
 import { rmdir } from './rmdir';
 import { getLogger } from './utils';
 import { lintStartAsync } from './worker/lintStartAsync';
@@ -99,13 +99,8 @@ program
       checkOnInit: false,
       silent: !options.debug && options.silent,
       printDetail: options.printDetail !== false,
-      tscheck: {
-        toWhiteList: options.toWhiteList,
-      },
-      eslint: {
-        // tsConfigFileName: 'tsconfig.eslint.json',
-        toWhiteList: options.toWhiteList,
-      },
+      tscheck: {},
+      eslint: {},
       jest: {},
       jira: {
         type: options.jiraType === 'pipeline' ? 'pipeline' : 'commit',
@@ -113,7 +108,10 @@ program
       prettier: {},
     };
 
-    for (const key of ['src', 'fix', 'wxWorkKeys', 'debug', 'cache', 'removeCache', 'onlyChanges', 'mode', 'ci'] as const) {
+    const commKeys = ['wxWorkKeys', 'ci', ...(Object.keys(commConfig) as (keyof typeof commConfig)[])] as const;
+
+    for (const key of commKeys) {
+      // @ts-ignore
       if (options[key] != null) config[key] = options[key] as never;
     }
 

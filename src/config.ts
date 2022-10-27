@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-10-27 14:24:27
+ * @LastEditTime: 2022-10-27 22:14:42
  * @Description:
  */
 
@@ -15,20 +15,21 @@ import { assign, isEmptyObject } from '@lzwme/fe-utils';
 import { CommConfig, FlhConfig, LintTypes } from './types';
 import { formatWxWorkKeys, getLogger } from './utils';
 
-const commConfig: CommConfig = {
-  rootDir: process.cwd(),
-  debug: !!process.env.DEBUG,
-  silent: false,
-  printDetail: true,
-  src: ['src'],
-  fileList: [],
-  onlyChanges: false,
-  checkOnInit: false,
-  exitOnError: true,
+export const commConfig: CommConfig = {
   cache: true,
-  removeCache: false,
-  mode: 'proc',
+  checkOnInit: false,
+  debug: !!process.env.DEBUG,
+  exitOnError: true,
+  fileList: [],
   fix: false,
+  mode: 'proc',
+  onlyChanges: false,
+  printDetail: true,
+  removeCache: false,
+  rootDir: process.cwd(),
+  silent: false,
+  src: ['src'],
+  toWhiteList: false,
 };
 
 export const config: FlhConfig = {
@@ -57,7 +58,6 @@ export const config: FlhConfig = {
     jestOptions: {
       config: 'jest.config.js',
       coverageReporters: ['text-summary', 'html'],
-      forceExit: false,
       detectOpenHandles: true,
     },
   },
