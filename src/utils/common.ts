@@ -86,3 +86,8 @@ export function getIndentSize(rootDir = process.cwd()): number {
 
   return 2;
 }
+
+/** 将给定文件列表格式化为用于打印至控制台的字符串 */
+export function fileListToString(fileList: string[]) {
+  return `\n - ${fileList.join('\n -')}\n`;
+}

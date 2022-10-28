@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-10-27 15:54:24
+ * @LastEditTime: 2022-10-28 15:53:53
  * @Description: typescript Diagnostics report
  */
 
@@ -16,7 +16,7 @@ import { md5, fixToshortPath } from '@lzwme/fe-utils';
 import { VERSION } from './config';
 import type { TsCheckConfig } from './types';
 import { LintBase, LintResult } from './LintBase';
-import { arrayToObject } from './utils/common';
+import { arrayToObject, fileListToString } from './utils/common';
 
 const { bold, redBright, yellowBright, cyanBright, red, cyan } = color;
 export interface TsCheckResult extends LintResult {
@@ -197,7 +197,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
 
         logger.info(
           bold(redBright(`Diagnostics of need repair(not in whitelist)[${fileList.length} files]:\n`)),
-          config.printDetail ? TS.formatDiagnosticsWithColorAndContext(errorDiagnostics, host) : `\n - ` + fileList.join('\n - ') + '\n'
+          config.printDetail ? TS.formatDiagnosticsWithColorAndContext(errorDiagnostics, host) : fileListToString(fileList)
         );
       } else {
         const fileList = [...new Set(temporaryDiagnostics.filter(d => d.file).map(d => fixToshortPath(d.file.fileName)))];
@@ -206,7 +206,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
           logger.info(
             bold(yellowBright(`Diagnostics in whitelist[${redBright(fileList.length)}`)),
             bold(yellowBright(`files]:\n`)),
-            `\n - ` + fileList.join('\n - ') + '\n'
+            fileListToString(fileList)
           );
 
           if (config.printDetail && config.printDetialOnSuccessed) {
@@ -322,7 +322,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
           updated: this.whiteList,
           deleted: arrayToObject(removeFromWhiteList),
         };
-        logger.info(`remove from whilelist(${removeFromWhiteList.length}):\n` + removeFromWhiteList.join('\n'));
+        logger.info(`remove from whilelist(${removeFromWhiteList.length}):${fileListToString(removeFromWhiteList)}`);
       }
     }
 
@@ -333,7 +333,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     stats.isPassed = stats.failedFilesNum === 0;
 
     if (!stats.isPassed && config.printDetail) {
-      logger.error(red('Failed Files:'), `\n - ${errorFileList.join('\n - ')}\n`);
+      logger.error(red('Failed Files:'), fileListToString(errorFileList));
     }
 
     // 异常类型统计

@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-10-27 15:38:08
+ * @LastEditTime: 2022-10-28 15:55:26
  * @Description:  eslint check
  */
 
@@ -11,7 +11,7 @@ import type { ESLint } from 'eslint';
 import { existsSync, statSync } from 'node:fs';
 import { extname, resolve } from 'node:path';
 import { fixToshortPath } from '@lzwme/fe-utils';
-import { arrayToObject } from './utils';
+import { arrayToObject, fileListToString } from './utils';
 import { LintBase, type LintResult } from './LintBase';
 import type { ESLintCheckConfig } from './types';
 
@@ -204,7 +204,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
           updated: this.whiteList,
           deleted: arrayToObject(removeFromWhiteList),
         };
-        this.logger.info(' remove from whilelist:\n' + removeFromWhiteList.join('\n'));
+        this.logger.info(' remove from whilelist:', fileListToString(removeFromWhiteList));
       }
 
       const tips = config.warningTip || '';
@@ -241,7 +241,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
           this.logger.info(
             bold(red(`[Warning]Verification failed![${newWaringReults.length} files]`)),
             yellowBright(tips),
-            `\n` + newWaringReults.map(d => fixToshortPath(d.filePath, config.rootDir)).join('\n')
+            fileListToString(newWaringReults.map(d => fixToshortPath(d.filePath, config.rootDir)))
           );
         }
       }
@@ -254,7 +254,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
 
         this.logger.info(
           `[注意] 以下文件在白名单中，但存在异常信息[TOTAL: ${bold(yellowBright(waringReults.length))} files]${tips}：`,
-          '\n' + waringReults.map(d => fixToshortPath(d.filePath, config.rootDir)).join('\n'),
+          fileListToString(waringReults.map(d => fixToshortPath(d.filePath, config.rootDir))),
           '\n'
         );
       }

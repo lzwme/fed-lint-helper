@@ -2,28 +2,24 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-10-28 11:48:45
+ * @LastEditTime: 2022-10-28 15:56:45
  * @Description:  jest check
  */
 
 import { extname, resolve } from 'node:path';
-import { cpus } from 'os';
 import { existsSync, statSync, readFileSync } from 'node:fs';
 import { color } from 'console-log-colors';
 import glob from 'fast-glob';
 import type { Config } from '@jest/types';
-import type { FormattedTestResults } from '@jest/test-result';
-import { fixToshortPath, md5, execSync, rmrf } from '@lzwme/fe-utils';
+import type { FormattedTestResults, formatTestResults } from '@jest/test-result';
+import { fixToshortPath, md5, execSync, rmrf, isEmptyObject } from '@lzwme/fe-utils';
 import { getConfig } from './config';
 import type { JestCheckConfig } from './types';
 import { LintBase, LintResult } from './LintBase';
+import { fileListToString } from './utils';
 
-export interface JestCheckResult extends LintResult {
-  /** 是否检测通过 */
-  isPassed: boolean;
-  // fileList: string[];
-  // errorFiles: string[];
-}
+export type JestCheckResult = LintResult;
+
 export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
   protected override whiteList: { [filepath: string]: number } = {};
   protected override stats = this.getInitStats();
@@ -47,6 +43,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
   protected getJestOptions(specFileList: string[]) {
     const baseConfig = getConfig();
     const config = this.config;
+    const outputJsonFile = resolve(config.rootDir, 'node_modules/.cache/flh/jest-result.json');
     const option: Config.Argv = {
       ...config.jestOptions,
       $0: '',
@@ -54,18 +51,32 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
       runTestsByPath: config.cache,
       nonFlagArgs: specFileList,
       cache: config.cache,
-      cacheDirectory: baseConfig.cacheLocation,
+      cacheDirectory: resolve(baseConfig.cacheLocation, 'jest'),
       clearCache: config.removeCache,
       silent: config.silent,
       debug: config.debug,
       onlyChanged: config.cache,
       forceExit: config.exitOnError,
       verbose: config.debug,
-      maxWorkers: cpus.length * 2,
       ci: baseConfig.ci,
+      outputFile: outputJsonFile,
+      'unhandled-rejections': 'strict',
     };
 
     return option;
+  }
+  private jestOptionToArgv(options: Record<string, unknown>) {
+    const args: string[] = [];
+    const ignoredKeys = new Set(['_', '$0', 'runTestsByPath', 'nonFlagArgs']);
+
+    Object.keys(options).forEach(key => {
+      let val = options[key];
+      if (ignoredKeys.has(key) || !val || Array.isArray(val)) return;
+      if (typeof val === 'boolean') val = val ? '' : '0';
+      args.push(`--${key}` + (val ? `="${val}"` : ''));
+    });
+
+    return args.join(' ');
   }
   protected async getSpecFileList(specFileList: string[]) {
     const config = this.config;
@@ -97,34 +108,32 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
         .filter(Boolean);
     }
 
-    if (specFileList.length === 0) return specFileList;
-
     const totalFiles = specFileList.length;
     let cacheHits = 0;
 
-    this.logger.info('Total Test Files:', color.magentaBright(specFileList.length));
+    if (totalFiles) {
+      this.logger.info('Total Test Files:', color.magentaBright(totalFiles));
 
-    if (config.cache && existsSync(this.cacheFilePath)) {
-      Object.assign(jestPassedFiles, JSON.parse(readFileSync(this.cacheFilePath, 'utf8')));
+      if (config.cache && existsSync(this.cacheFilePath)) {
+        Object.assign(jestPassedFiles, JSON.parse(readFileSync(this.cacheFilePath, 'utf8')));
 
-      specFileList = specFileList.filter(filepath => {
-        filepath = fixToshortPath(filepath, config.rootDir);
+        specFileList = specFileList.filter(filepath => {
+          filepath = fixToshortPath(filepath, config.rootDir);
 
-        const item = jestPassedFiles[filepath];
-        if (!item) return true;
+          const item = jestPassedFiles[filepath];
+          if (!item) return true;
 
-        const tsFilePath = filepath.replace(/\.(spec|test)\./, '.');
-        // 同名业务文件 md5 发生改变
-        if (existsSync(tsFilePath) && item.md5 && md5(tsFilePath, true) !== item.md5) {
-          return true;
-        }
+          const tsFilePath = filepath.replace(/\.(spec|test)\./, '.');
+          // 同名业务文件 md5 发生改变
+          if (existsSync(tsFilePath) && item.md5 && md5(tsFilePath, true) !== item.md5) return true;
 
-        return md5(filepath, true) !== item.specMd5;
-      });
+          return md5(filepath, true) !== item.specMd5;
+        });
 
-      cacheHits = totalFiles - specFileList.length;
+        cacheHits = totalFiles - specFileList.length;
 
-      if (cacheHits) this.logger.info(` - Cache hits:`, cacheHits);
+        if (cacheHits) this.logger.info(` - Cache hits:`, cacheHits);
+      }
     }
 
     this.stats.totalFilesNum = totalFiles;
@@ -152,55 +161,41 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
 
     if (specFileList.length === 0) return stats;
 
+    const options = this.getJestOptions(specFileList);
+    const outputJsonFile = options.outputFile;
     let results: FormattedTestResults;
 
+    if (existsSync(outputJsonFile)) rmrf(outputJsonFile);
+
     if (config.silent || config.useJestCli) {
-      const baseConfig = getConfig();
-      const files = this.isCheckAll ? config.src : specFileList;
-      const resultJsonFile = resolve(config.rootDir, 'node_modules/.cache/flh/jest-result.json');
-      const cmd = [
-        // `${baseConfig.pmcheck || 'npm'} exec jest`,
-        `node --max_old_space_size=8192 ./node_modules/jest/bin/jest.js`,
-        `--unhandled-rejections=strict`,
-        `--forceExit --onlyChanged`,
-        `--json --outputFile "${resultJsonFile}"`,
-        // isCheckAll ? null : `--onlyChanged`,
-        config.cache ? `--cache` : null,
-        config.cache && baseConfig.cacheLocation ? `--cacheDirectory "${resolve(baseConfig.cacheLocation, 'jest')}"` : null,
-        config.removeCache ? `--clearCache` : null,
-        config.silent ? ` --silent` : null,
-        baseConfig.ci ? `--ci` : null,
-        files.map(f => fixToshortPath(f, config.rootDir)).join(' '),
-      ]
-        .filter(Boolean)
-        .join(' ');
+      const files = (this.isCheckAll ? config.src : specFileList).map(f => fixToshortPath(f, config.rootDir));
+      const argv = this.jestOptionToArgv({ ...options, json: true, 'unhandled-rejections': 'strict' });
+      const cmd = [`node --max_old_space_size=8192 ./node_modules/jest/bin/jest.js`, argv, files.join(' ')].join(' ');
 
-      if (existsSync(resultJsonFile)) rmrf(resultJsonFile);
-
+      this.logger.debug('[jest-cli][cmd]', color.cyanBright(cmd));
       const res = execSync(cmd, config.silent ? 'pipe' : 'inherit', config.rootDir, config.debug);
-      this.logger.debug(cmd, res);
-      if (existsSync(resultJsonFile)) {
-        results = JSON.parse(readFileSync(resultJsonFile, 'utf8')) as FormattedTestResults;
+      this.logger.debug('result:\n', res);
+
+      if (existsSync(outputJsonFile)) {
+        results = JSON.parse(readFileSync(outputJsonFile, 'utf8')) as FormattedTestResults;
       } else {
         stats.isPassed = !res.stderr;
       }
     } else {
-      const options = this.getJestOptions(specFileList);
       const { runCLI } = await import('@jest/core');
-      const getFTR = async () => {
+      const getFTR: () => Promise<typeof formatTestResults> = async () => {
         try {
           const { formatTestResults } = await import('@jest/test-result');
           return formatTestResults;
         } catch {
-          // for pnpm
           const entry = require.resolve('@jest/test-result', { paths: [require.resolve('jest')] });
           // eslint-disable-next-line @typescript-eslint/no-var-requires
           return require(entry).formatTestResults;
         }
       };
-      const formatTestResults = await getFTR();
+      const ftr = await getFTR();
       const data = await runCLI(options, ['.']);
-      results = formatTestResults(data.results);
+      results = ftr(data.results);
     }
 
     if (results) {
@@ -220,6 +215,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
 
       for (const d of results.testResults) {
         const testFilePath = fixToshortPath(d.name, config.rootDir);
+
         if (d.status === 'failed') {
           if (cacheInfo.passed[testFilePath]) {
             cacheInfo.deleted[testFilePath] = cacheInfo.passed[testFilePath];
@@ -235,6 +231,9 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
             stats.failedFilesNum++;
           }
         } else {
+          if (this.whiteList[testFilePath]) {
+            whilteListInfo.deleted[testFilePath] = 1;
+          }
           stats.passedFilesNum++;
           const tsFilePath = d.name.replace('.spec.', '.');
           cacheInfo.passed[testFilePath] = {
@@ -245,27 +244,20 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
         }
       }
 
+      const shortWhiteListFilePath = fixToshortPath(config.whiteListFilePath, config.rootDir);
       if (config.toWhiteList) {
         // this.saveCache(config.whiteListFilePath, this.whiteList);
-        stats.cacheFiles[config.whiteListFilePath] = {
-          updated: this.whiteList,
-        };
-        logger.info(
-          `[ADD]write to whitelist(${Object.keys(this.whiteList).length}):`,
-          color.cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir))
-        );
+        stats.cacheFiles[config.whiteListFilePath] = { updated: this.whiteList };
+        logger.info(`[ADD]Update whitelist(${Object.keys(this.whiteList).length}):`, color.cyanBright(shortWhiteListFilePath));
       } else {
-        if (whilteListInfo.deleted.length > 0) {
-          logger.info(
-            `[REMOVE]write to whitelist(${Object.keys(this.whiteList).length}):`,
-            color.cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir))
-          );
+        if (!isEmptyObject(whilteListInfo.deleted)) {
+          logger.info(`[REMOVE]Update whitelist(${Object.keys(this.whiteList).length}):`, color.cyanBright(shortWhiteListFilePath));
           stats.cacheFiles[config.whiteListFilePath] = {
             updated: this.whiteList,
             deleted: whilteListInfo.deleted,
           };
           const deletedList = Object.keys(whilteListInfo.deleted);
-          logger.info(`remove from whilelist(${deletedList.length}):\n` + deletedList.join('\n'));
+          logger.info(`Remove from whilelist(${deletedList.length}):${fileListToString(deletedList)}`);
         }
       }
 
@@ -276,13 +268,13 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
 
       if (whilteListInfo.failed.length > 0) {
         logger.info(
-          color.yellowBright(`Failed files in whitelist)[${whilteListInfo.failed.length} files]:\n`),
-          whilteListInfo.failed.join('\n - ') + '\n'
+          color.yellowBright(`Failed files(in whitelist)[${whilteListInfo.failed.length} files]:`),
+          fileListToString(whilteListInfo.failed)
         );
       }
 
       if (!stats.isPassed) {
-        logger.error(color.redBright('Failed Files(not in whitelist):'), `\n - ${failedFiles.join('\n - ')}\n`);
+        logger.error(color.redBright('Failed Files(not in whitelist):'), fileListToString(failedFiles));
       }
     }
 
