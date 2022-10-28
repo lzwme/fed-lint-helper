@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.0.2](https://github.com/lzwme/fed-lint-helper/compare/v2.0.1...v2.0.2) (2022-10-28)
+
+
+### Bug Fixes
+
+* 修复 jest 执行结果不会更新白名单的问题；统一文件列表打印的格式 ([c2a8bd1](https://github.com/lzwme/fed-lint-helper/commit/c2a8bd1cb517a60792f6ca3c0eb1c3c8a88bedcb))
+* 修正 cli toWhiteList 参数失效问题 ([7797140](https://github.com/lzwme/fed-lint-helper/commit/77971409be7c30f5b81c3377c1d0982d74aedfcd))
+
 ### [2.0.1](https://github.com/lzwme/fed-lint-helper/compare/v2.0.0...v2.0.1) (2022-09-14)
 
 
