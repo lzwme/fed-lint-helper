@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-10-27 18:12:53
+ * @LastEditTime: 2022-10-28 11:48:45
  * @Description:  jest check
  */
 
@@ -247,7 +247,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
 
       if (config.toWhiteList) {
         // this.saveCache(config.whiteListFilePath, this.whiteList);
-        this.stats.cacheFiles[config.whiteListFilePath] = {
+        stats.cacheFiles[config.whiteListFilePath] = {
           updated: this.whiteList,
         };
         logger.info(
@@ -260,8 +260,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
             `[REMOVE]write to whitelist(${Object.keys(this.whiteList).length}):`,
             color.cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir))
           );
-          // this.saveCache(config.whiteListFilePath, this.whiteList, false);
-          this.stats.cacheFiles[config.whiteListFilePath] = {
+          stats.cacheFiles[config.whiteListFilePath] = {
             updated: this.whiteList,
             deleted: whilteListInfo.deleted,
           };
@@ -270,13 +269,20 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
         }
       }
 
-      this.stats.cacheFiles[this.cacheFilePath] = { updated: this.cacheInfo };
+      stats.cacheFiles[this.cacheFilePath] = { updated: this.cacheInfo };
       stats.errorCount = results.numFailedTestSuites;
       stats.isPassed = failedFiles.length === 0;
       logger.debug('result use runCLI:\n', results);
 
-      if (!stats.isPassed && config.printDetail) {
-        logger.error(color.red('Failed Files:'), `\n - ${failedFiles.join('\n - ')}\n`);
+      if (whilteListInfo.failed.length > 0) {
+        logger.info(
+          color.yellowBright(`Failed files in whitelist)[${whilteListInfo.failed.length} files]:\n`),
+          whilteListInfo.failed.join('\n - ') + '\n'
+        );
+      }
+
+      if (!stats.isPassed) {
+        logger.error(color.redBright('Failed Files(not in whitelist):'), `\n - ${failedFiles.join('\n - ')}\n`);
       }
     }
 

@@ -1,5 +1,4 @@
-import { wxWorkNotify } from '@lzwme/fe-utils/cjs/node/lib/WXWork';
-import { sleep } from '@lzwme/fe-utils';
+import { wxWorkNotify, sleep } from '@lzwme/fe-utils';
 import { config } from './config';
 import { logTimeCost } from './utils/common';
 import { getLogger } from './utils/get-logger';
