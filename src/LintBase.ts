@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-10-31 17:36:16
+ * @LastEditTime: 2022-10-31 17:46:47
  * @Description:  jest check
  */
 
@@ -152,7 +152,8 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
   }
   private commitId = '';
   getCommitId() {
-    return this.commitId || getHeadCommitId();
+    if (!this.commitId && isGitRepo(this.config.rootDir)) this.commitId = getHeadCommitId();
+    return this.commitId;
   }
   protected saveCache(filepath: string, info: Record<string, unknown>, isReset = false) {
     if (!isReset && existsSync(filepath)) {
