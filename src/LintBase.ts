@@ -2,14 +2,14 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-10-31 17:46:47
+ * @LastEditTime: 2022-10-31 17:55:20
  * @Description:  jest check
  */
 
 import { existsSync, unlinkSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { color } from 'console-log-colors';
-import { assign, getObjectKeysUnsafe, execSync, createFilePathFilter, mkdirp, getHeadCommitId } from '@lzwme/fe-utils';
+import { assign, getObjectKeysUnsafe, execSync, createFilePathFilter, mkdirp, getHeadCommitId, isObject } from '@lzwme/fe-utils';
 import { getIndentSize, getTimeCost, globMatcher, isGitRepo } from './utils/common';
 import { getLogger } from './utils/get-logger';
 import { createForkThread } from './worker/fork';
@@ -155,11 +155,9 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
     if (!this.commitId && isGitRepo(this.config.rootDir)) this.commitId = getHeadCommitId();
     return this.commitId;
   }
-  protected saveCache(filepath: string, info: Record<string, unknown>, isReset = false) {
-    if (!isReset && existsSync(filepath)) {
-      info = assign(JSON.parse(readFileSync(filepath, 'utf8')), info);
-    }
-    info.$commitId = this.getCommitId();
+  protected saveCache(filepath: string, info: unknown, isReset = false) {
+    if (!isReset && existsSync(filepath)) info = assign(JSON.parse(readFileSync(filepath, 'utf8')), info);
+    if (isObject(info) && !Array.isArray(info)) (info as Record<string, unknown>).$commitId = this.getCommitId();
 
     mkdirp(dirname(filepath));
     writeFileSync(filepath, JSON.stringify(info, null, getIndentSize(this.config.rootDir)), { encoding: 'utf8' });
