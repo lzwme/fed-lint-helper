@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.0.3](https://github.com/lzwme/fed-lint-helper/compare/v2.0.2...v2.0.3) (2022-10-31)
+
+
+### Bug Fixes
+
+* 修复 jest 单测读取 cache 字段错误的问题 ([3a089b1](https://github.com/lzwme/fed-lint-helper/commit/3a089b127394ee39f1e163efe93cfcf92d635e45))
+
 ### [2.0.2](https://github.com/lzwme/fed-lint-helper/compare/v2.0.1...v2.0.2) (2022-10-28)
 
 
