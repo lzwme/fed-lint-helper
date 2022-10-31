@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-10-28 15:56:45
+ * @LastEditTime: 2022-10-31 17:37:15
  * @Description:  jest check
  */
 
@@ -79,8 +79,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
     return args.join(' ');
   }
   protected async getSpecFileList(specFileList: string[]) {
-    const config = this.config;
-    const jestPassedFiles = this.cacheInfo.passed;
+    const { config, cacheInfo } = this;
 
     if (this.isCheckAll) {
       specFileList = [];
@@ -115,12 +114,10 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
       this.logger.info('Total Test Files:', color.magentaBright(totalFiles));
 
       if (config.cache && existsSync(this.cacheFilePath)) {
-        Object.assign(jestPassedFiles, JSON.parse(readFileSync(this.cacheFilePath, 'utf8')));
-
         specFileList = specFileList.filter(filepath => {
           filepath = fixToshortPath(filepath, config.rootDir);
 
-          const item = jestPassedFiles[filepath];
+          const item = cacheInfo.passed[filepath];
           if (!item) return true;
 
           const tsFilePath = filepath.replace(/\.(spec|test)\./, '.');
@@ -145,9 +142,8 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
     super.init();
 
     // todo: 逻辑待优化，暂仅使用 jest cache 全量执行，不读取 cache 文件
-    // if (existsSync(this.cacheFilePath)) {
-    //   const cacheInfo = JSON.parse(readFileSync(this.cacheFilePath, { encoding: 'utf8' }));
-    //   if (cacheInfo.passed) this.cacheInfo = cacheInfo;
+    // if (this.config.cache && existsSync(this.cacheFilePath)) {
+    //   Object.assign(this.cacheInfo, JSON.parse(readFileSync(this.cacheFilePath, 'utf8')));
     // }
   }
   protected async check(specFileList = this.config.fileList): Promise<JestCheckResult> {

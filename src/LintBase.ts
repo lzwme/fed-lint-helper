@@ -2,14 +2,14 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-10-27 18:24:35
+ * @LastEditTime: 2022-10-31 17:36:16
  * @Description:  jest check
  */
 
 import { existsSync, unlinkSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { color } from 'console-log-colors';
-import { assign, getObjectKeysUnsafe, execSync, createFilePathFilter, mkdirp } from '@lzwme/fe-utils';
+import { assign, getObjectKeysUnsafe, execSync, createFilePathFilter, mkdirp, getHeadCommitId } from '@lzwme/fe-utils';
 import { getIndentSize, getTimeCost, globMatcher, isGitRepo } from './utils/common';
 import { getLogger } from './utils/get-logger';
 import { createForkThread } from './worker/fork';
@@ -150,10 +150,15 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
       });
     });
   }
-  protected saveCache(filepath: string, info: unknown, isReset = false) {
+  private commitId = '';
+  getCommitId() {
+    return this.commitId || getHeadCommitId();
+  }
+  protected saveCache(filepath: string, info: Record<string, unknown>, isReset = false) {
     if (!isReset && existsSync(filepath)) {
       info = assign(JSON.parse(readFileSync(filepath, 'utf8')), info);
     }
+    info.$commitId = this.getCommitId();
 
     mkdirp(dirname(filepath));
     writeFileSync(filepath, JSON.stringify(info, null, getIndentSize(this.config.rootDir)), { encoding: 'utf8' });
