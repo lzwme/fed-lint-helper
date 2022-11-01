@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-01 10:33:54
+ * @LastEditTime: 2022-11-01 14:29:21
  * @Description:  jest check
  */
 
@@ -24,9 +24,11 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
   protected override whiteList: { [filepath: string]: number } = {};
   protected override stats = this.getInitStats();
   /** 要缓存到 cacheFilePath 的信息 */
-  private cacheInfo = {
+  private cache = {
     /** 已经检测且无异常的文件列表 */
     passed: {} as { [filepath: string]: { md5: string; specMd5: string; updateTime: number } },
+    /** 缓存 getSpecFiles 返回的结果 */
+    specFiles: null as string[],
   };
 
   constructor(config: JestCheckConfig = {}) {
@@ -79,7 +81,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
     return args.join(' ');
   }
   protected async getSpecFileList(specFileList: string[]) {
-    const { config, cacheInfo } = this;
+    const { config, cache } = this;
     const specGlob = '.{spec,test}.{ts,js,tsx,jsx,mjs}';
 
     if (this.isCheckAll) {
@@ -129,7 +131,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
       specFileList = specFileList.filter(filepath => {
         filepath = fixToshortPath(filepath, config.rootDir);
 
-        const item = cacheInfo.passed[filepath];
+        const item = cache.passed[filepath];
         if (!item) return true;
 
         const tsFilePath = filepath.replace(/\.(spec|test)\./, '.');
@@ -140,8 +142,6 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
       });
 
       cacheHits = totalFiles - specFileList.length;
-
-      if (cacheHits) this.logger.info(` - Cache hits:`, cacheHits);
     }
 
     this.stats.totalFilesNum = totalFiles;
@@ -154,7 +154,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
 
     // todo: 逻辑待优化，暂仅使用 jest cache 全量执行，不读取 cache 文件
     // if (this.config.cache && existsSync(this.cacheFilePath)) {
-    //   Object.assign(this.cacheInfo, JSON.parse(readFileSync(this.cacheFilePath, 'utf8')));
+    //   Object.assign(this.cache, JSON.parse(readFileSync(this.cacheFilePath, 'utf8')));
     // }
   }
   protected async check(specFileList = this.config.fileList): Promise<JestCheckResult> {
@@ -167,7 +167,8 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
     specFileList = await this.getSpecFileList(specFileList);
 
     if (specFileList.length === 0) return stats;
-    logger.info('Total Test Files:', color.magentaBright(specFileList.length));
+    logger.info('Total Test Files:', color.magentaBright(stats.totalFilesNum));
+    if (stats.cacheHits) this.logger.info(` - Cache hits:`, stats.cacheHits);
 
     const options = this.getJestOptions(specFileList);
     const outputJsonFile = options.outputFile;
@@ -208,8 +209,10 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
 
     if (results) {
       const cacheInfo = {
-        passed: this.cacheInfo.passed,
-        deleted: {} as typeof this.cacheInfo.passed,
+        updated: {
+          passed: this.cache.passed,
+        },
+        deleted: {} as typeof this.cache.passed,
       };
       const whilteListInfo = {
         deleted: {} as Record<string, number>,
@@ -225,9 +228,9 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
         const testFilePath = fixToshortPath(d.name, config.rootDir);
 
         if (d.status === 'failed') {
-          if (cacheInfo.passed[testFilePath]) {
-            cacheInfo.deleted[testFilePath] = cacheInfo.passed[testFilePath];
-            delete cacheInfo.passed[testFilePath];
+          if (cacheInfo.updated.passed[testFilePath]) {
+            cacheInfo.deleted[testFilePath] = cacheInfo.updated.passed[testFilePath];
+            delete cacheInfo.updated.passed[testFilePath];
           }
 
           if (config.toWhiteList) {
@@ -244,7 +247,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
           }
           stats.passedFilesNum++;
           const tsFilePath = d.name.replace('.spec.', '.');
-          cacheInfo.passed[testFilePath] = {
+          cacheInfo.updated.passed[testFilePath] = {
             md5: existsSync(tsFilePath) ? md5(tsFilePath, true) : '',
             specMd5: md5(d.name, true),
             updateTime: results.startTime,
@@ -269,7 +272,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
         }
       }
 
-      stats.cacheFiles[this.cacheFilePath] = { updated: this.cacheInfo };
+      stats.cacheFiles[this.cacheFilePath] = cacheInfo;
       stats.errorCount = results.numFailedTestSuites;
       stats.isPassed = failedFiles.length === 0;
       logger.debug('result use runCLI:\n', results);
@@ -289,7 +292,9 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
     return stats;
   }
   protected async beforeStart() {
-    const fileList = await this.getSpecFileList(this.config.fileList);
-    return fileList.length > 0;
+    if (!this.cache.specFiles) {
+      this.cache.specFiles = await this.getSpecFileList(this.config.fileList);
+    }
+    return this.cache.specFiles.length > 0;
   }
 }

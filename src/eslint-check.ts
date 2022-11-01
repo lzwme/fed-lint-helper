@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-10-28 15:55:26
+ * @LastEditTime: 2022-11-01 14:15:59
  * @Description:  eslint check
  */
 
@@ -273,7 +273,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
     return this.stats;
   }
   protected beforeStart(): boolean {
-    const extensions = new Set(['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs']);
+    const extensions = new Set(this.config.extensions);
 
     this.config.fileList = this.config.fileList.filter(filepath => {
       if (extensions.has(extname(filepath))) return true;

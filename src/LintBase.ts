@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-01 10:31:02
+ * @LastEditTime: 2022-11-01 14:33:41
  * @Description:  jest check
  */
 
@@ -249,16 +249,17 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
 
     if (!this.isCheckAll && config.fileList.length > 0) config.fileList = this.filesFilter(config.fileList);
 
+    let hasFiles = this.isCheckAll ? this.config.src.length > 0 : fileList.length > 0;
+    if (hasFiles) hasFiles = await this.beforeStart(config.fileList);
+    if (!hasFiles) {
+      logger.info('No files to process\n');
+      return result;
+    }
+
     if (globalThis.isInChildProcess) {
       config.exitOnError = false;
       result = await this.startCheck();
     } else {
-      const isNoFiles = this.isCheckAll ? config.src.length === 0 : !(await this.beforeStart(config.fileList));
-      if (isNoFiles) {
-        logger.info('No files to process\n');
-        return result;
-      }
-
       if (existsSync(this.cacheFilePath) && config.removeCache) unlinkSync(this.cacheFilePath);
       result = (await this.checkForPackages()) as R;
     }
@@ -282,7 +283,9 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
 
         if (info.deleted) {
           Object.keys(info.deleted).forEach(filepath => {
-            if (allInfo[filepath]) delete allInfo[filepath];
+            if (allInfo.passed) {
+              if (allInfo.passed[filepath as never]) delete allInfo.passed[filepath as never];
+            } else if (allInfo[filepath]) delete allInfo[filepath];
           });
         }
 
