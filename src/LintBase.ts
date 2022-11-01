@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-01 20:04:37
+ * @LastEditTime: 2022-11-01 22:27:23
  * @Description:  jest check
  */
 
@@ -37,7 +37,7 @@ export interface LintResult {
     [filepath: string]: {
       updated: Record<string, unknown>;
       deleted?: Record<string, unknown>;
-      type?: string; // todo: 用于区分 jsonFile 结构
+      type?: 'cache' | 'whitelist'; // todo: 用于区分 jsonFile 结构
     };
   };
 }
@@ -86,7 +86,9 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
   protected init(): void {
     if (existsSync(this.config.whiteListFilePath)) {
       if (!this.config.toWhiteList) {
-        this.whiteList = JSON.parse(readFileSync(this.config.whiteListFilePath, 'utf8'));
+        const whiteListFilePath = resolve(this.config.rootDir, this.config.whiteListFilePath);
+        this.whiteList = JSON.parse(readFileSync(whiteListFilePath, 'utf8'));
+        this.logger.debug('load whiteList:', this.config.whiteListFilePath);
       } else {
         // 追加模式，不删除旧文件
         // unlinkSync(whiteListFilePath);
@@ -182,7 +184,9 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
   }
   protected saveCache(filepath: string, info: unknown, isReset = false) {
     if (!isReset && existsSync(filepath)) info = assign(JSON.parse(readFileSync(filepath, 'utf8')), info);
-    if (isObject(info) && !Array.isArray(info)) (info as Record<string, unknown>).$commitId = this.getCommitId();
+    if (isObject(info) && !Array.isArray(info)) {
+      Object.assign(info, { $commitId: this.getCommitId() });
+    }
 
     mkdirp(dirname(filepath));
     writeFileSync(filepath, JSON.stringify(info, null, getIndentSize(this.config.rootDir)), { encoding: 'utf8' });
@@ -306,6 +310,10 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
 
       for (const [filepath, info] of Object.entries(stats.cacheFiles)) {
         const allInfo = info.updated; // info.all
+        if (!info.type && filepath === this.cacheFilePath) {
+          info.type = 'cache';
+        }
+
         if (info.type === 'cache') {
           allInfo.success = stats.isPassed;
           allInfo.version = VERSION;

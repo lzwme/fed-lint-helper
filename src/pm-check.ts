@@ -4,10 +4,10 @@ import { getLogger } from './utils';
 export function packageManagerCheck(wantedPM = '', isDebug = false) {
   const execpath = process.env.npm_execpath || '';
 
-  if (isDebug) console.log('execpath:', execpath);
+  if (isDebug) getLogger().info('execpath:', execpath);
 
   if (wantedPM !== 'npm' && wantedPM !== 'pnpm' && wantedPM !== 'yarn') {
-    getLogger().log(
+    getLogger().error(
       `"${color.yellowBright(wantedPM)}" is not a valid package manager. Available package managers are: npm, pnpm, or yarn.`
     );
     process.exit(1);

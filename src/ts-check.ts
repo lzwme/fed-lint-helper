@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-01 20:05:28
+ * @LastEditTime: 2022-11-01 22:34:51
  * @Description: typescript Diagnostics report
  */
 
@@ -25,8 +25,9 @@ export interface TsCheckResult extends LintResult {
   totalDiagnostics: number;
   errorTSCodes: { [code: number]: number };
 }
+type TSCheckWhiteList = { [filepath: string]: { md5: string; tscodes: { [code: number]: number } } };
 export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
-  protected override whiteList: { [filepath: string]: { [code: number]: number } } = {};
+  protected override whiteList: TSCheckWhiteList = {};
   private cache: {
     /** 检测到异常且需要 report 的文件列表 */
     allDiagnosticsFileMap: { [file: string]: Diagnostic[] };
@@ -96,20 +97,34 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     let whiteListHits = 0;
 
     sourceFiles = sourceFiles.filter(filepath => {
+      const fileMd5 = md5(filepath, true);
       const shortpath = fixToshortPath(filepath, config.rootDir);
 
-      if (this.whiteList[shortpath]) {
-        whiteListHits++;
-        return false;
-      }
+      if (!config.toWhiteList && this.whiteList[shortpath]) {
+        if (this.whiteList[shortpath].md5 === fileMd5) {
+          whiteListHits++;
+          return false;
+        }
 
-      const fileMd5 = md5(filepath, true);
+        // 兼容旧格式
+        if (typeof this.whiteList[shortpath] === 'string') {
+          this.whiteList[shortpath] = { md5: fileMd5, tscodes: {} };
+        }
+
+        this.whiteList[shortpath].md5 = fileMd5;
+
+        // 白名单中的文件有修改，需要更新 whiteList
+        if (!this.stats.cacheFiles[config.whiteListFilePath]) {
+          this.stats.cacheFiles[config.whiteListFilePath] = { updated: this.whiteList };
+        }
+
+        return true;
+      }
 
       if (!passed[shortpath]) {
         // 新文件：先放到 passed 中
         passed[shortpath] = { md5: fileMd5, updateTime: null };
       } else if (config.cache && passed[shortpath].md5 === fileMd5) {
-        // 缓存过滤
         cacheHits++;
         return false;
       }
@@ -158,7 +173,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
       stats.totalDiagnostics += temporaryDiagnostics.length;
 
       const errorDiagnostics: Diagnostic[] = [];
-      const errFileCodes: { [filepath: string]: { [code: number]: number } } = {};
+      const errFileCodes: TSCheckWhiteList = {};
 
       for (const item of temporaryDiagnostics) {
         if (!item.file) {
@@ -177,9 +192,9 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
         if (!stats.errorTSCodes[item.code]) stats.errorTSCodes[item.code] = 0;
         stats.errorTSCodes[item.code]++;
 
-        if (!errFileCodes[shortpath]) errFileCodes[shortpath] = {};
-        if (!errFileCodes[shortpath][item.code]) errFileCodes[shortpath][item.code] = 0;
-        errFileCodes[shortpath][item.code]++;
+        if (!errFileCodes[shortpath]) errFileCodes[shortpath] = { md5: '', tscodes: {} };
+        if (!errFileCodes[shortpath].tscodes[item.code]) errFileCodes[shortpath].tscodes[item.code] = 0;
+        errFileCodes[shortpath].tscodes[item.code]++;
 
         if (passed[shortpath]) {
           // 从已有中移除缓存，需标记缓存有变更
@@ -265,8 +280,6 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
   }
   /** 执行 ts check */
   public async check(fileList = this.config.fileList) {
-    this.init();
-
     const { config, stats, logger } = this;
     const TS = await import('typescript');
     const directionMap = {
