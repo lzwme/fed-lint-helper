@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-25 10:12:21
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-18 19:50:47
+ * @LastEditTime: 2022-11-01 11:13:55
  * @Description: worker_threads 实现在 worker 线程中执行
  *
  * - worker_threads 比 child_process 和 cluster 更为轻量级的并行性，而且 worker_threads 可有效地共享内存
@@ -13,13 +13,7 @@ import { Worker, isMainThread, parentPort, workerData } from 'worker_threads';
 import type { ILintTypes } from '../types';
 import { getLogger } from '../utils/get-logger';
 import { lintStartAsync } from './lintStartAsync';
-
-interface CreateThreadOptions<C = unknown> {
-  debug?: boolean;
-  /** 创建线程的类型。eslint 尽量使用该模式，使用 fork 进程方式 */
-  type: ILintTypes;
-  config: C;
-}
+import { type CreateThreadOptions, handlerForCTOptions } from './utils';
 
 interface WorkerMessageBody<T = unknown> {
   type: ILintTypes;
@@ -35,7 +29,7 @@ export function createWorkerThreads<T, C = unknown>(
     if (!isMainThread) return reject(-2);
 
     const worker = new Worker(__filename, {
-      workerData: options,
+      workerData: handlerForCTOptions(options, 'send'),
       // stderr: true,
       // stdout: true,
     });
@@ -59,7 +53,7 @@ export function createWorkerThreads<T, C = unknown>(
 
 if (!isMainThread) {
   globalThis.isInChildProcess = true;
-  const options: CreateThreadOptions = workerData;
+  const options: CreateThreadOptions = handlerForCTOptions(workerData, 'receive');
   getLogger().debug('workerData:', options);
   const done = (data: unknown) => {
     const info: WorkerMessageBody = { type: options.type, data, end: true };

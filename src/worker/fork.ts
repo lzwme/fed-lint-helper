@@ -2,20 +2,14 @@
  * @Author: lzw
  * @Date: 2021-08-25 10:12:21
  * @LastEditors: lzw
- * @LastEditTime: 2022-07-07 13:49:05
+ * @LastEditTime: 2022-11-01 11:10:55
  * @Description: 在 fork 子进程中执行 Check 任务
  */
 
 import { fork } from 'child_process';
 import { resolve } from 'node:path';
 import type { ILintTypes } from '../types';
-
-export interface CreateThreadOptions<C = unknown> {
-  /** 启动的类型。eslint 存在插件报错异常，暂不支持 */
-  type: ILintTypes;
-  debug?: boolean;
-  config?: C;
-}
+import { type CreateThreadOptions, handlerForCTOptions } from './utils';
 
 export interface WorkerMessageBody<T = unknown> {
   type: ILintTypes;
@@ -29,7 +23,7 @@ export function createForkThread<T, C = unknown>(
 ): Promise<T> {
   return new Promise((rs, reject) => {
     const worker = fork(resolve(__dirname, './forked-process.js'), { silent: false });
-    worker.send(options);
+    worker.send(handlerForCTOptions(options, 'send'));
 
     worker.on('message', (info: WorkerMessageBody<T>) => {
       if (typeof info === 'string') info = JSON.parse(info);
