@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-01 18:19:08
+ * @LastEditTime: 2022-11-01 20:22:44
  * @Description:  jest check
  */
 
@@ -154,7 +154,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
 
     // todo: 逻辑待优化，暂仅使用 jest cache 全量执行，不读取 cache 文件
     // if (this.config.cache && existsSync(this.cacheFilePath)) {
-    //   Object.assign(this.cache, JSON.parse(readFileSync(this.cacheFilePath, 'utf8')));
+    //   assign(this.cache, JSON.parse(readFileSync(this.cacheFilePath, 'utf8')));
     // }
   }
   protected async check(specFileList = this.config.fileList): Promise<JestCheckResult> {

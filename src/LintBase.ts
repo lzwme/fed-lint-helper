@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-01 18:19:30
+ * @LastEditTime: 2022-11-01 20:04:37
  * @Description:  jest check
  */
 
@@ -13,7 +13,7 @@ import { assign, getObjectKeysUnsafe, execSync, createFilePathFilter, mkdirp, ge
 import { getIndentSize, getTimeCost, globMatcher, isGitRepo } from './utils/common';
 import { getLogger } from './utils/get-logger';
 import { createForkThread } from './worker/fork';
-import { getConfig } from './config';
+import { getConfig, VERSION } from './config';
 import type { CommConfig, ILintTypes } from './types';
 import { exit } from './exit';
 
@@ -40,6 +40,16 @@ export interface LintResult {
       type?: string; // todo: 用于区分 jsonFile 结构
     };
   };
+}
+
+interface LintCacheInfo {
+  passed: Record<string, unknown>;
+  /** 最近一次执行的 commitId */
+  $commitId?: string;
+  /** 最近一次执行时的 flh 版本 */
+  version?: string;
+  /** 最近一次执行是否成功 */
+  success?: boolean;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -154,6 +164,21 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
   getCommitId() {
     if (!this.commitId && isGitRepo(this.config.rootDir)) this.commitId = getHeadCommitId();
     return this.commitId;
+  }
+  protected getCacheInfo(useCache = false) {
+    let cacheInfo: LintCacheInfo;
+    if (existsSync(this.cacheFilePath)) {
+      try {
+        cacheInfo = useCache ? require(this.cacheFilePath) : JSON.parse(readFileSync(this.cacheFilePath, { encoding: 'utf8' }));
+        if (cacheInfo.version && cacheInfo.version !== VERSION) {
+          unlinkSync(this.cacheFilePath);
+          cacheInfo = null;
+        }
+      } catch (error) {
+        this.logger.error(error);
+      }
+    }
+    return cacheInfo;
   }
   protected saveCache(filepath: string, info: unknown, isReset = false) {
     if (!isReset && existsSync(filepath)) info = assign(JSON.parse(readFileSync(filepath, 'utf8')), info);
@@ -283,6 +308,7 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
         const allInfo = info.updated; // info.all
         if (info.type === 'cache') {
           allInfo.success = stats.isPassed;
+          allInfo.version = VERSION;
         }
 
         if (info.deleted) {

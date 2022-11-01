@@ -2,18 +2,17 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-01 18:18:25
+ * @LastEditTime: 2022-11-01 20:05:28
  * @Description: typescript Diagnostics report
  */
 
 import { resolve, dirname, normalize } from 'node:path';
-import { existsSync, unlinkSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { color } from 'console-log-colors';
 import type { Diagnostic, DiagnosticCategory, CompilerOptions } from 'typescript';
 import glob from 'fast-glob';
 import { isMatch } from 'micromatch';
 import { md5, fixToshortPath } from '@lzwme/fe-utils';
-import { VERSION } from './config';
 import type { TsCheckConfig } from './types';
 import { LintBase, LintResult } from './LintBase';
 import { arrayToObject, fileListToString } from './utils/common';
@@ -23,10 +22,11 @@ export interface TsCheckResult extends LintResult {
   /** 异常类型数量统计 */
   diagnosticsCategory: Partial<Record<keyof typeof DiagnosticCategory, number>>;
   /** 异常总数 */
-  totalDiagnostics: 0;
+  totalDiagnostics: number;
+  errorTSCodes: { [code: number]: number };
 }
 export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
-  protected override whiteList: Record<string, keyof typeof DiagnosticCategory> = {};
+  protected override whiteList: { [filepath: string]: { [code: number]: number } } = {};
   private cache: {
     /** 检测到异常且需要 report 的文件列表 */
     allDiagnosticsFileMap: { [file: string]: Diagnostic[] };
@@ -34,7 +34,6 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     tsCache: {
       /** 已经检测且无异常的文件列表 */
       passed: { [filepath: string]: { md5: string; updateTime: number } };
-      version: string;
     };
     /** 检测通过的文件列表是否有变动(记录变动文件数)，用于标记是否需要写回缓存 */
     passedChanged: number;
@@ -48,7 +47,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
   protected override getInitStats() {
     const stats: TsCheckResult = {
       ...super.getInitStats(),
-      /** 异常总数 */
+      errorTSCodes: {},
       totalDiagnostics: 0,
       diagnosticsCategory: {},
     };
@@ -57,7 +56,6 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
       allDiagnosticsFileMap: {},
       tsCache: {
         passed: {},
-        version: VERSION,
       },
       /** 检测通过的文件列表是否有变动(记录变动文件数)，用于标记是否需要写回缓存 */
       passedChanged: 0,
@@ -68,12 +66,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
   protected override init() {
     super.init();
 
-    if (existsSync(this.cacheFilePath)) {
-      const cacheInfo = JSON.parse(readFileSync(this.cacheFilePath, { encoding: 'utf8' }));
-      // todo: 版本比较为通用逻辑
-      if (cacheInfo.version !== VERSION) unlinkSync(this.cacheFilePath);
-      else if (cacheInfo.passed) this.cache.tsCache = cacheInfo;
-    }
+    Object.assign(this.cache.tsCache, this.getCacheInfo());
   }
   /** 返回可检测的子项目路径 */
   private getCheckProjectDirs(source = this.config.src) {
@@ -165,6 +158,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
       stats.totalDiagnostics += temporaryDiagnostics.length;
 
       const errorDiagnostics: Diagnostic[] = [];
+      const errFileCodes: { [filepath: string]: { [code: number]: number } } = {};
 
       for (const item of temporaryDiagnostics) {
         if (!item.file) {
@@ -180,10 +174,12 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
           errorDiagnostics.push(item);
         }
 
-        // // Error 级别最高，不能被覆盖
-        if (config.toWhiteList && this.whiteList[shortpath] !== 'Error') {
-          this.whiteList[shortpath] = TS.DiagnosticCategory[item.category] as never;
-        }
+        if (!stats.errorTSCodes[item.code]) stats.errorTSCodes[item.code] = 0;
+        stats.errorTSCodes[item.code]++;
+
+        if (!errFileCodes[shortpath]) errFileCodes[shortpath] = {};
+        if (!errFileCodes[shortpath][item.code]) errFileCodes[shortpath][item.code] = 0;
+        errFileCodes[shortpath][item.code]++;
 
         if (passed[shortpath]) {
           // 从已有中移除缓存，需标记缓存有变更
@@ -214,6 +210,9 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
           }
         }
       }
+
+      if (config.toWhiteList) Object.assign(this.whiteList, errFileCodes);
+      this.logger.debug('errFileCodes', errFileCodes);
     }
   }
   /** 返回指定子目录中匹配到的 ts 文件列表 */
@@ -298,7 +297,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
       }
     }
 
-    for (const d of Object.keys(directionMap)) await this.compile(directionMap[d], d);
+    for (const d of Object.entries(directionMap)) await this.compile(d[1], d[0]);
 
     const { removeFromWhiteList } = this.updateCache();
 
