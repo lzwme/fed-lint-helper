@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-01 14:29:21
+ * @LastEditTime: 2022-11-01 18:19:08
  * @Description:  jest check
  */
 
@@ -292,6 +292,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
     return stats;
   }
   protected async beforeStart() {
+    if (this.isCheckAll) return true;
     if (!this.cache.specFiles) {
       this.cache.specFiles = await this.getSpecFileList(this.config.fileList);
     }

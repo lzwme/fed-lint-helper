@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-10-27 15:32:37
+ * @LastEditTime: 2022-11-01 18:18:43
  * @Description:  prettier check
  */
 
@@ -258,7 +258,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
     return stats;
   }
   protected beforeStart(): boolean {
-    if (this.isCheckAll) return this.config.src.length > 0;
+    if (this.isCheckAll) return true;
     return this.config.fileList.length > 0;
   }
 }

@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-01 14:15:59
+ * @LastEditTime: 2022-11-01 19:01:45
  * @Description:  eslint check
  */
 
@@ -38,7 +38,7 @@ export interface ESLintCheckResult extends LintResult {
   rules: Record<string, number>;
 }
 export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> {
-  protected override whiteList: { [filepath: string]: 'e' | 'w' } = {};
+  protected override whiteList: { [filepath: string]: Record<string, number> } = {};
   constructor(config: ESLintCheckConfig = {}) {
     super('eslint', config);
   }
@@ -54,7 +54,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
       lintList: [],
       errorFiles: [],
       warningFiles: [],
-      rules: {} as Record<string, number>,
+      rules: {},
     };
     this.stats = stats;
     return stats;
@@ -126,6 +126,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
     const newWaringReults: ESLint.LintResult[] = [];
     /** 在白名单列表中但本次检测无异常的文件列表（将从白名单列表中移除） */
     const removeFromWhiteList: string[] = [];
+    const fileRules: { [filepath: string]: Record<string, number> } = {};
 
     // eslint-disable-next-line unicorn/no-array-for-each
     results.forEach(result => {
@@ -143,6 +144,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
 
       // 文件路径过滤
       if (this.filesFilter(filePath).length === 0) return;
+      if (!fileRules[filePath]) fileRules[filePath] = {};
 
       if (Array.isArray(result.messages)) {
         for (const d of result.messages) {
@@ -151,6 +153,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
             if (/ignore pattern/.test(d.message)) return;
           } else {
             stats.rules[d.ruleId] = (stats.rules[d.ruleId] || 0) + 1;
+            fileRules[filePath][d.ruleId] = (fileRules[filePath][d.ruleId] || 0) + 1;
           }
         }
       }
@@ -162,21 +165,18 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
       if (result.warningCount) {
         stats.warningCount += result.warningCount;
         if (result.messages.length > 0) waringReults.push(result);
-
-        if (config.toWhiteList) {
-          this.whiteList[filePath] = 'w';
-        } else if (!this.whiteList[filePath] && result.messages.length > 0) newWaringReults.push(result);
+        if (!config.toWhiteList && !this.whiteList[filePath] && result.messages.length > 0) newWaringReults.push(result);
       }
 
       if (result.errorCount) {
         stats.errorCount += result.errorCount;
         if (result.messages.length > 0) errorReults.push(result);
 
-        if (config.toWhiteList) {
-          this.whiteList[filePath] = 'e';
-        } else if (!this.whiteList[filePath] && result.messages.length > 0) newErrorReults.push(result);
+        if (!config.toWhiteList && !this.whiteList[filePath] && result.messages.length > 0) newErrorReults.push(result);
       }
     });
+
+    if (config.toWhiteList) this.whiteList = fileRules;
 
     const formatter = await eslint.loadFormatter('stylish');
     stats.isPassed = newWaringReults.length === 0 && newErrorReults.length === 0;
@@ -273,6 +273,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
     return this.stats;
   }
   protected beforeStart(): boolean {
+    if (this.isCheckAll) return true;
     const extensions = new Set(this.config.extensions);
 
     this.config.fileList = this.config.fileList.filter(filepath => {

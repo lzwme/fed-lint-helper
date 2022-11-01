@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-01 14:33:41
+ * @LastEditTime: 2022-11-01 18:19:30
  * @Description:  jest check
  */
 
@@ -249,7 +249,8 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
 
     if (!this.isCheckAll && config.fileList.length > 0) config.fileList = this.filesFilter(config.fileList);
 
-    let hasFiles = this.isCheckAll ? this.config.src.length > 0 : fileList.length > 0;
+    let hasFiles = this.isCheckAll ? this.config.src.length > 0 : config.fileList.length > 0;
+
     if (hasFiles) hasFiles = await this.beforeStart(config.fileList);
     if (!hasFiles) {
       logger.info('No files to process\n');
@@ -280,6 +281,9 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
 
       for (const [filepath, info] of Object.entries(stats.cacheFiles)) {
         const allInfo = info.updated; // info.all
+        if (info.type === 'cache') {
+          allInfo.success = stats.isPassed;
+        }
 
         if (info.deleted) {
           Object.keys(info.deleted).forEach(filepath => {
