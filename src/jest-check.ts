@@ -2,11 +2,11 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-10-31 17:37:15
+ * @LastEditTime: 2022-11-01 10:33:54
  * @Description:  jest check
  */
 
-import { extname, resolve } from 'node:path';
+import { basename, dirname, extname, resolve } from 'node:path';
 import { existsSync, statSync, readFileSync } from 'node:fs';
 import { color } from 'console-log-colors';
 import glob from 'fast-glob';
@@ -80,6 +80,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
   }
   protected async getSpecFileList(specFileList: string[]) {
     const { config, cacheInfo } = this;
+    const specGlob = '.{spec,test}.{ts,js,tsx,jsx,mjs}';
 
     if (this.isCheckAll) {
       specFileList = [];
@@ -88,7 +89,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
         const p = resolve(config.rootDir, d);
         if (!existsSync(p) || !statSync(p).isDirectory()) continue;
 
-        const files = await glob('**/*.{spec,test}.{ts,js,tsx,jsx}', { cwd: p, absolute: true });
+        const files = await glob('**/*' + specGlob, { cwd: p, absolute: true });
         specFileList.push(...files);
       }
     } else {
@@ -97,10 +98,24 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
           if (/\.(spec|test)\./.test(filepath)) return filepath;
 
           const ext = extname(filepath);
+
+          if (!['.js', '.jsx', '.ts', '.tsx', '.mjs', '.vue'].includes(ext)) return '';
+
           for (const testId of ['spec', 'test'] as const) {
-            filepath = filepath.replace(ext, `.${testId}${ext}`);
-            if (existsSync(filepath)) return filepath;
+            const specfile = filepath.replace(ext, `.${testId}${ext}`);
+            if (existsSync(specfile)) return specfile;
           }
+
+          const fileDir = dirname(filepath);
+          // 同目录下存在单测文件
+          let files = glob.sync('*' + specGlob, { cwd: fileDir, absolute: true });
+          if (files.length > 0) return files[0];
+
+          // 支持查找在父级目录中的同名单测文件
+          let filename = basename(filepath).replace(ext, '');
+          if (filename === 'index') filename = basename(fileDir);
+          files = glob.sync(`**/*/${filename}${specGlob}`, { cwd: dirname(fileDir), absolute: true });
+          if (files.length > 0) return files[0];
 
           return '';
         })
@@ -110,27 +125,23 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
     const totalFiles = specFileList.length;
     let cacheHits = 0;
 
-    if (totalFiles) {
-      this.logger.info('Total Test Files:', color.magentaBright(totalFiles));
+    if (totalFiles && config.cache && existsSync(this.cacheFilePath)) {
+      specFileList = specFileList.filter(filepath => {
+        filepath = fixToshortPath(filepath, config.rootDir);
 
-      if (config.cache && existsSync(this.cacheFilePath)) {
-        specFileList = specFileList.filter(filepath => {
-          filepath = fixToshortPath(filepath, config.rootDir);
+        const item = cacheInfo.passed[filepath];
+        if (!item) return true;
 
-          const item = cacheInfo.passed[filepath];
-          if (!item) return true;
+        const tsFilePath = filepath.replace(/\.(spec|test)\./, '.');
+        // 同名业务文件 md5 发生改变
+        if (existsSync(tsFilePath) && item.md5 && md5(tsFilePath, true) !== item.md5) return true;
 
-          const tsFilePath = filepath.replace(/\.(spec|test)\./, '.');
-          // 同名业务文件 md5 发生改变
-          if (existsSync(tsFilePath) && item.md5 && md5(tsFilePath, true) !== item.md5) return true;
+        return md5(filepath, true) !== item.specMd5;
+      });
 
-          return md5(filepath, true) !== item.specMd5;
-        });
+      cacheHits = totalFiles - specFileList.length;
 
-        cacheHits = totalFiles - specFileList.length;
-
-        if (cacheHits) this.logger.info(` - Cache hits:`, cacheHits);
-      }
+      if (cacheHits) this.logger.info(` - Cache hits:`, cacheHits);
     }
 
     this.stats.totalFilesNum = totalFiles;
@@ -156,6 +167,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
     specFileList = await this.getSpecFileList(specFileList);
 
     if (specFileList.length === 0) return stats;
+    logger.info('Total Test Files:', color.magentaBright(specFileList.length));
 
     const options = this.getJestOptions(specFileList);
     const outputJsonFile = options.outputFile;

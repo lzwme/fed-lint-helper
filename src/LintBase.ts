@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-10-31 17:55:20
+ * @LastEditTime: 2022-11-01 10:31:02
  * @Description:  jest check
  */
 
@@ -249,16 +249,16 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
 
     if (!this.isCheckAll && config.fileList.length > 0) config.fileList = this.filesFilter(config.fileList);
 
-    const isNoFiles = this.isCheckAll ? config.src.length === 0 : !(await this.beforeStart(config.fileList));
-    if (isNoFiles) {
-      logger.info('No files to process\n');
-      return result;
-    }
-
     if (globalThis.isInChildProcess) {
       config.exitOnError = false;
       result = await this.startCheck();
     } else {
+      const isNoFiles = this.isCheckAll ? config.src.length === 0 : !(await this.beforeStart(config.fileList));
+      if (isNoFiles) {
+        logger.info('No files to process\n');
+        return result;
+      }
+
       if (existsSync(this.cacheFilePath) && config.removeCache) unlinkSync(this.cacheFilePath);
       result = (await this.checkForPackages()) as R;
     }

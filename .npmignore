@@ -1,5 +1,5 @@
 # source
-src
+/src
 **/*.spec.*
 test
 test-cases
@@ -8,8 +8,9 @@ README_zh-CN.md
 CHANGELOG.md
 LICENSE
 benchmark
-tmp
-typings
+/tmp
+/typings
+/config
 
 # build dist
 docs

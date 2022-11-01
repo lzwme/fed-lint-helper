@@ -7,6 +7,7 @@ npm-debug.log
 /esm
 /cjs
 /docs
+/config
 tmp
 coverage
 package-lock.json
