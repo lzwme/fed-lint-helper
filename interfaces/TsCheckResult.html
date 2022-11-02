@@ -18,11 +18,11 @@
 <section class="tsd-panel tsd-hierarchy">
 <h4>Hierarchy</h4>
 <ul class="tsd-hierarchy">
-<li><span class="tsd-signature-type">LintResult</span>
+<li><a href="LintResult.html" class="tsd-signature-type" data-tsd-kind="Interface">LintResult</a>
 <ul class="tsd-hierarchy">
 <li><span class="target">TsCheckResult</span></li></ul></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/dbfff4b/src/ts-check.ts#L22">src/ts-check.ts:22</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/52d9b71/src/ts-check.ts#L21">src/ts-check.ts:21</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-index-accordion" open><summary class="tsd-accordion-summary tsd-index-summary">
@@ -34,6 +34,7 @@
 <a href="TsCheckResult.html#cacheHits" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>cache<wbr/>Hits?</span></a>
 <a href="TsCheckResult.html#diagnosticsCategory" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>diagnostics<wbr/>Category</span></a>
 <a href="TsCheckResult.html#errorCount" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>error<wbr/>Count?</span></a>
+<a href="TsCheckResult.html#errorTSCodes" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>errorTSCodes</span></a>
 <a href="TsCheckResult.html#failedFilesNum" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>failed<wbr/>Files<wbr/>Num?</span></a>
 <a href="TsCheckResult.html#isPassed" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>is<wbr/>Passed</span></a>
 <a href="TsCheckResult.html#passedFilesNum" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>passed<wbr/>Files<wbr/>Num?</span></a>
@@ -45,94 +46,104 @@
 <h2>Properties</h2>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="cacheFiles" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>cache<wbr/>Files</span><a href="#cacheFiles" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" id="icon-anchor-a"></path><path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" id="icon-anchor-b"></path><path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" id="icon-anchor-c"></path></svg></a></h3>
-<div class="tsd-signature">cache<wbr/>Files<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-symbol">{ </span><br/><span>    </span>[filepath: <span class="tsd-signature-type">string</span>]<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span><br/><span>        </span>deleted<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span><br/><span>        </span>type<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br/><span>        </span>updated<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">; </span><br/><span class="tsd-signature-symbol">}</span></div>
+<div class="tsd-signature">cache<wbr/>Files<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-symbol">{ </span><br/><span>    </span>[filepath: <span class="tsd-signature-type">string</span>]<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span><br/><span>        </span>deleted<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span><br/><span>        </span>type<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">&quot;cache&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;whitelist&quot;</span><span class="tsd-signature-symbol">; </span><br/><span>        </span>updated<span class="tsd-signature-symbol">: </span><a href="../types/AnyObject.html" class="tsd-signature-type" data-tsd-kind="Type alias">AnyObject</a><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">; </span><br/><span class="tsd-signature-symbol">}</span></div>
 <div class="tsd-comment tsd-typography"><p>缓存文件与对应的缓存信息。放在最后汇总并写入文件</p>
 </div>
 <div class="tsd-type-declaration">
 <h4>Type declaration</h4>
 <ul class="tsd-parameters">
 <li class="tsd-parameter-index-signature">
-<h5><span class="tsd-signature-symbol">[</span>filepath: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">]: </span><span class="tsd-signature-symbol">{ </span><br/><span>    </span>deleted<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span><br/><span>    </span>type<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span><br/><span>    </span>updated<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span><br/><span class="tsd-signature-symbol">}</span></h5>
+<h5><span class="tsd-signature-symbol">[</span>filepath: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">]: </span><span class="tsd-signature-symbol">{ </span><br/><span>    </span>deleted<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span><br/><span>    </span>type<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">&quot;cache&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;whitelist&quot;</span><span class="tsd-signature-symbol">; </span><br/><span>    </span>updated<span class="tsd-signature-symbol">: </span><a href="../types/AnyObject.html" class="tsd-signature-type" data-tsd-kind="Type alias">AnyObject</a><span class="tsd-signature-symbol">; </span><br/><span class="tsd-signature-symbol">}</span></h5>
 <ul class="tsd-parameters">
 <li class="tsd-parameter">
 <h5><code class="tsd-tag ts-flagOptional">Optional</code> deleted<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span></h5></li>
 <li class="tsd-parameter">
-<h5><code class="tsd-tag ts-flagOptional">Optional</code> type<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span></h5></li>
+<h5><code class="tsd-tag ts-flagOptional">Optional</code> type<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">&quot;cache&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;whitelist&quot;</span></h5></li>
 <li class="tsd-parameter">
-<h5>updated<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span></h5></li></ul></li></ul></div><aside class="tsd-sources">
-<p>Inherited from LintResult.cacheFiles</p>
+<h5>updated<span class="tsd-signature-symbol">: </span><a href="../types/AnyObject.html" class="tsd-signature-type" data-tsd-kind="Type alias">AnyObject</a></h5></li></ul></li></ul></div><aside class="tsd-sources">
+<p>Inherited from <a href="LintResult.html">LintResult</a>.<a href="LintResult.html#cacheFiles">cacheFiles</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/dbfff4b/src/LintBase.ts#L36">src/LintBase.ts:36</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/52d9b71/src/types.ts#L236">src/types.ts:236</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="cacheHits" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>cache<wbr/>Hits</span><a href="#cacheHits" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">cache<wbr/>Hits<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span></div>
 <div class="tsd-comment tsd-typography"><p>缓存命中的数量</p>
 </div><aside class="tsd-sources">
-<p>Inherited from LintResult.cacheHits</p>
+<p>Inherited from <a href="LintResult.html">LintResult</a>.<a href="LintResult.html#cacheHits">cacheHits</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/dbfff4b/src/LintBase.ts#L34">src/LintBase.ts:34</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/52d9b71/src/types.ts#L234">src/types.ts:234</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface"><a id="diagnosticsCategory" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>diagnostics<wbr/>Category</span><a href="#diagnosticsCategory" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">diagnostics<wbr/>Category<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Partial</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">&quot;Warning&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;Error&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;Suggestion&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;Message&quot;</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></div>
 <div class="tsd-comment tsd-typography"><p>异常类型数量统计</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/dbfff4b/src/ts-check.ts#L24">src/ts-check.ts:24</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/52d9b71/src/ts-check.ts#L23">src/ts-check.ts:23</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="errorCount" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>error<wbr/>Count</span><a href="#errorCount" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">error<wbr/>Count<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span></div>
 <div class="tsd-comment tsd-typography"><p>异常信息数(一个文件可能包含多个异常)</p>
 </div><aside class="tsd-sources">
-<p>Inherited from LintResult.errorCount</p>
+<p>Inherited from <a href="LintResult.html">LintResult</a>.<a href="LintResult.html#errorCount">errorCount</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/dbfff4b/src/LintBase.ts#L28">src/LintBase.ts:28</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/52d9b71/src/types.ts#L228">src/types.ts:228</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface"><a id="errorTSCodes" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><span>errorTSCodes</span><a href="#errorTSCodes" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<div class="tsd-signature">errorTSCodes<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span><br/><span>    </span>[code: <span class="tsd-signature-type">number</span>]<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span><br/><span class="tsd-signature-symbol">}</span></div>
+<div class="tsd-type-declaration">
+<h4>Type declaration</h4>
+<ul class="tsd-parameters">
+<li class="tsd-parameter-index-signature">
+<h5><span class="tsd-signature-symbol">[</span>code: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">]: </span><span class="tsd-signature-type">number</span></h5></li></ul></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/52d9b71/src/ts-check.ts#L26">src/ts-check.ts:26</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="failedFilesNum" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>failed<wbr/>Files<wbr/>Num</span><a href="#failedFilesNum" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">failed<wbr/>Files<wbr/>Num<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span></div>
 <div class="tsd-comment tsd-typography"><p>失败的文件数</p>
 </div><aside class="tsd-sources">
-<p>Inherited from LintResult.failedFilesNum</p>
+<p>Inherited from <a href="LintResult.html">LintResult</a>.<a href="LintResult.html#failedFilesNum">failedFilesNum</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/dbfff4b/src/LintBase.ts#L32">src/LintBase.ts:32</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/52d9b71/src/types.ts#L232">src/types.ts:232</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="isPassed" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>is<wbr/>Passed</span><a href="#isPassed" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">is<wbr/>Passed<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 <div class="tsd-comment tsd-typography"><p>是否检测通过</p>
 </div><aside class="tsd-sources">
-<p>Inherited from LintResult.isPassed</p>
+<p>Inherited from <a href="LintResult.html">LintResult</a>.<a href="LintResult.html#isPassed">isPassed</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/dbfff4b/src/LintBase.ts#L22">src/LintBase.ts:22</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/52d9b71/src/types.ts#L222">src/types.ts:222</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="passedFilesNum" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>passed<wbr/>Files<wbr/>Num</span><a href="#passedFilesNum" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">passed<wbr/>Files<wbr/>Num<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span></div>
 <div class="tsd-comment tsd-typography"><p>检测通过的文件数</p>
 </div><aside class="tsd-sources">
-<p>Inherited from LintResult.passedFilesNum</p>
+<p>Inherited from <a href="LintResult.html">LintResult</a>.<a href="LintResult.html#passedFilesNum">passedFilesNum</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/dbfff4b/src/LintBase.ts#L30">src/LintBase.ts:30</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/52d9b71/src/types.ts#L230">src/types.ts:230</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="startTime" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>start<wbr/>Time</span><a href="#startTime" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">start<wbr/>Time<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span></div>
 <div class="tsd-comment tsd-typography"><p>开始处理时间</p>
 </div><aside class="tsd-sources">
-<p>Inherited from LintResult.startTime</p>
+<p>Inherited from <a href="LintResult.html">LintResult</a>.<a href="LintResult.html#startTime">startTime</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/dbfff4b/src/LintBase.ts#L24">src/LintBase.ts:24</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/52d9b71/src/types.ts#L224">src/types.ts:224</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface"><a id="totalDiagnostics" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>total<wbr/>Diagnostics</span><a href="#totalDiagnostics" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">total<wbr/>Diagnostics<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">0</span></div>
+<div class="tsd-signature">total<wbr/>Diagnostics<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 <div class="tsd-comment tsd-typography"><p>异常总数</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/dbfff4b/src/ts-check.ts#L26">src/ts-check.ts:26</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/52d9b71/src/ts-check.ts#L25">src/ts-check.ts:25</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="totalFilesNum" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>total<wbr/>Files<wbr/>Num</span><a href="#totalFilesNum" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">total<wbr/>Files<wbr/>Num<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span></div>
 <div class="tsd-comment tsd-typography"><p>处理的文件总数</p>
 </div><aside class="tsd-sources">
-<p>Inherited from LintResult.totalFilesNum</p>
+<p>Inherited from <a href="LintResult.html">LintResult</a>.<a href="LintResult.html#totalFilesNum">totalFilesNum</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/dbfff4b/src/LintBase.ts#L26">src/LintBase.ts:26</a></li></ul></aside></section></section></div>
+<li>Defined in <a href="https://github.com/lzwme/fed-lint-helper/blob/52d9b71/src/types.ts#L226">src/types.ts:226</a></li></ul></aside></section></section></div>
 <div class="col-4 col-menu menu-sticky-wrap menu-highlight">
 <div class="tsd-navigation settings">
 <details class="tsd-index-accordion"><summary class="tsd-accordion-summary">
@@ -162,6 +173,7 @@
 <li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="TsCheckResult.html#cacheHits" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>cache<wbr/>Hits?</a></li>
 <li class="tsd-kind-property tsd-parent-kind-interface"><a href="TsCheckResult.html#diagnosticsCategory" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>diagnostics<wbr/>Category</a></li>
 <li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="TsCheckResult.html#errorCount" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>error<wbr/>Count?</a></li>
+<li class="tsd-kind-property tsd-parent-kind-interface"><a href="TsCheckResult.html#errorTSCodes" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>errorTSCodes</a></li>
 <li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="TsCheckResult.html#failedFilesNum" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>failed<wbr/>Files<wbr/>Num?</a></li>
 <li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="TsCheckResult.html#isPassed" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>is<wbr/>Passed</a></li>
 <li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="TsCheckResult.html#passedFilesNum" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>passed<wbr/>Files<wbr/>Num?</a></li>
