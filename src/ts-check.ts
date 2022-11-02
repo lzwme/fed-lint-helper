@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-01 23:00:23
+ * @LastEditTime: 2022-11-02 11:16:32
  * @Description: typescript Diagnostics report
  */
 
@@ -13,8 +13,8 @@ import type { Diagnostic, DiagnosticCategory, CompilerOptions } from 'typescript
 import glob from 'fast-glob';
 import { isMatch } from 'micromatch';
 import { md5, fixToshortPath } from '@lzwme/fe-utils';
-import type { TsCheckConfig } from './types';
-import { LintBase, LintResult } from './LintBase';
+import type { TsCheckConfig, LintResult, WhiteListInfo, LintCacheInfo } from './types';
+import { LintBase } from './LintBase';
 import { arrayToObject, fileListToString } from './utils/common';
 
 const { bold, redBright, yellowBright, cyanBright, red, cyan } = color;
@@ -25,17 +25,13 @@ export interface TsCheckResult extends LintResult {
   totalDiagnostics: number;
   errorTSCodes: { [code: number]: number };
 }
-type TSCheckWhiteList = { [filepath: string]: { md5: string; tscodes: { [code: number]: number } } };
+type TSCheckWhiteList = WhiteListInfo<{ md5: string; tscodes: { [code: number]: number } }>;
 export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
-  protected override whiteList: TSCheckWhiteList = {};
+  protected override whiteList: TSCheckWhiteList = { list: {} };
+  protected override cacheInfo: LintCacheInfo<{ md5: string; updateTime: number }> = { list: {} };
   private cache: {
     /** 检测到异常且需要 report 的文件列表 */
     allDiagnosticsFileMap: { [file: string]: Diagnostic[] };
-    /** 要缓存到 cacheFilePath 的信息 */
-    tsCache: {
-      /** 已经检测且无异常的文件列表 */
-      passed: { [filepath: string]: { md5: string; updateTime: number } };
-    };
     /** 检测通过的文件列表是否有变动(记录变动文件数)，用于标记是否需要写回缓存 */
     passedChanged: number;
   };
@@ -55,19 +51,17 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     this.stats = stats;
     this.cache = {
       allDiagnosticsFileMap: {},
-      tsCache: {
-        passed: {},
-      },
       /** 检测通过的文件列表是否有变动(记录变动文件数)，用于标记是否需要写回缓存 */
       passedChanged: 0,
     };
+    this.cacheInfo = { list: {} };
 
     return stats;
   }
   protected override init() {
     super.init();
 
-    Object.assign(this.cache.tsCache, this.getCacheInfo());
+    Object.assign(this.cacheInfo, this.getCacheInfo());
   }
   /** 返回可检测的子项目路径 */
   private getCheckProjectDirs(source = this.config.src) {
@@ -82,7 +76,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
   private async compile(sourceFiles: string[], subDirection: string) {
     const { config, stats, logger } = this;
     const total = sourceFiles.length;
-    const { passed } = this.cache.tsCache;
+    const passed = this.cacheInfo.list;
     const TS = await import('typescript');
 
     stats.totalFilesNum += total;
@@ -100,18 +94,18 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
       const fileMd5 = md5(filepath, true);
       const shortpath = fixToshortPath(filepath, config.rootDir);
 
-      if (!config.toWhiteList && this.whiteList[shortpath]) {
-        if (this.whiteList[shortpath].md5 === fileMd5) {
+      if (!config.toWhiteList && this.whiteList.list[shortpath]) {
+        if (this.whiteList.list[shortpath].md5 === fileMd5) {
           whiteListHits++;
           return false;
         }
 
         // 兼容旧格式
-        if (typeof this.whiteList[shortpath] === 'string') {
-          this.whiteList[shortpath] = { md5: fileMd5, tscodes: {} };
+        if (typeof this.whiteList.list[shortpath] === 'string') {
+          this.whiteList.list[shortpath] = { md5: fileMd5, tscodes: {} };
         }
 
-        this.whiteList[shortpath].md5 = fileMd5;
+        this.whiteList.list[shortpath].md5 = fileMd5;
 
         // 白名单中的文件有修改，需要更新 whiteList
         if (!stats.cacheFiles[config.whiteListFilePath]) {
@@ -174,7 +168,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
       stats.totalDiagnostics += temporaryDiagnostics.length;
 
       const errorDiagnostics: Diagnostic[] = [];
-      const errFileCodes: TSCheckWhiteList = {};
+      const errFileCodes: TSCheckWhiteList['list'] = {};
 
       for (const item of temporaryDiagnostics) {
         if (!item.file) {
@@ -184,7 +178,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
 
         const shortpath = item.file.moduleName || fixToshortPath(normalize(item.file.fileName));
 
-        if (!this.whiteList[shortpath]) {
+        if (!this.whiteList.list[shortpath]) {
           if (!this.cache.allDiagnosticsFileMap[shortpath]) this.cache.allDiagnosticsFileMap[shortpath] = [];
           this.cache.allDiagnosticsFileMap[shortpath].push(item);
           errorDiagnostics.push(item);
@@ -194,7 +188,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
         stats.errorTSCodes[item.code]++;
 
         if (!errFileCodes[shortpath]) {
-          errFileCodes[shortpath] = { md5: this.cache.tsCache.passed[shortpath]?.md5 || this.whiteList[shortpath]?.md5, tscodes: {} };
+          errFileCodes[shortpath] = { md5: this.cacheInfo.list[shortpath]?.md5 || this.whiteList.list[shortpath]?.md5, tscodes: {} };
         }
         if (!errFileCodes[shortpath].tscodes[item.code]) errFileCodes[shortpath].tscodes[item.code] = 0;
         errFileCodes[shortpath].tscodes[item.code]++;
@@ -229,7 +223,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
         }
       }
 
-      if (config.toWhiteList) Object.assign(this.whiteList, errFileCodes);
+      if (config.toWhiteList) Object.assign(this.whiteList.list, errFileCodes);
       this.logger.debug('errFileCodes', errFileCodes);
     }
   }
@@ -246,31 +240,31 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     return { fileList, subDirection };
   }
   private updateCache() {
-    const { cache, config, stats } = this;
+    const { cache, cacheInfo, config, stats } = this;
     /** 在白名单列表中但本次检测无异常的文件列表（将从白名单列表中移除） */
     const removeFromWhiteList: string[] = [];
     const deleted = {} as Record<string, unknown>;
 
-    for (const shortpath of Object.keys(cache.tsCache.passed)) {
-      const item = this.cache.tsCache.passed[shortpath];
+    for (const shortpath of Object.keys(cacheInfo.list)) {
+      const item = cacheInfo.list[shortpath];
       if (!item.updateTime) {
         item.updateTime = stats.startTime;
         cache.passedChanged++;
 
-        if (this.whiteList[shortpath]) {
-          delete this.whiteList[shortpath];
+        if (this.whiteList.list[shortpath]) {
+          delete this.whiteList.list[shortpath];
           removeFromWhiteList.push(shortpath);
         }
-      } else if (this.whiteList[shortpath]) {
+      } else if (this.whiteList.list[shortpath]) {
         // 在白名单中的旧缓存，可能有规则更新，缓存已不适用
-        delete this.cache.tsCache.passed[shortpath];
+        delete cacheInfo.list[shortpath];
         deleted[shortpath] = 1;
         cache.passedChanged++;
       }
     }
 
     if (cache.passedChanged) {
-      stats.cacheFiles[this.cacheFilePath] = { updated: this.cache.tsCache, deleted };
+      stats.cacheFiles[this.cacheFilePath] = { updated: this.cacheInfo, deleted };
       this.logger.info(`update cache(${this.cache.passedChanged}):`, cyanBright(fixToshortPath(this.cacheFilePath, config.rootDir)));
     }
 

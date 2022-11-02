@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-01 22:27:23
+ * @LastEditTime: 2022-11-02 11:37:48
  * @Description:  jest check
  */
 
@@ -14,43 +14,8 @@ import { getIndentSize, getTimeCost, globMatcher, isGitRepo } from './utils/comm
 import { getLogger } from './utils/get-logger';
 import { createForkThread } from './worker/fork';
 import { getConfig, VERSION } from './config';
-import type { CommConfig, ILintTypes } from './types';
+import type { CommConfig, ILintTypes, LintCacheInfo, LintResult, WhiteListInfo } from './types';
 import { exit } from './exit';
-
-export interface LintResult {
-  /** 是否检测通过 */
-  isPassed: boolean;
-  /** 开始处理时间 */
-  startTime?: number;
-  /** 处理的文件总数 */
-  totalFilesNum?: number;
-  /** 异常信息数(一个文件可能包含多个异常) */
-  errorCount?: number;
-  /** 检测通过的文件数 */
-  passedFilesNum?: number;
-  /** 失败的文件数 */
-  failedFilesNum?: number;
-  /** 缓存命中的数量 */
-  cacheHits?: number;
-  /** 缓存文件与对应的缓存信息。放在最后汇总并写入文件 */
-  cacheFiles?: {
-    [filepath: string]: {
-      updated: Record<string, unknown>;
-      deleted?: Record<string, unknown>;
-      type?: 'cache' | 'whitelist'; // todo: 用于区分 jsonFile 结构
-    };
-  };
-}
-
-interface LintCacheInfo {
-  passed: Record<string, unknown>;
-  /** 最近一次执行的 commitId */
-  $commitId?: string;
-  /** 最近一次执行时的 flh 版本 */
-  version?: string;
-  /** 最近一次执行是否成功 */
-  success?: boolean;
-}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export abstract class LintBase<C extends CommConfig & Record<string, any>, R extends LintResult = LintResult> {
@@ -60,7 +25,9 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
   protected cacheFilePath = '';
   protected isCheckAll = false;
   protected logger: ReturnType<typeof getLogger>;
-  protected whiteList: Record<string, unknown> = {};
+  protected whiteList: WhiteListInfo = { list: {} };
+  protected cacheInfo: LintCacheInfo = { list: {} };
+
   /** start 之前调用。返回 false 则终止继续执行 */
   protected abstract beforeStart(fileList?: string[]): boolean | Promise<boolean>;
   /** 执行检测 */
@@ -87,7 +54,8 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
     if (existsSync(this.config.whiteListFilePath)) {
       if (!this.config.toWhiteList) {
         const whiteListFilePath = resolve(this.config.rootDir, this.config.whiteListFilePath);
-        this.whiteList = JSON.parse(readFileSync(whiteListFilePath, 'utf8'));
+        const list = JSON.parse(readFileSync(whiteListFilePath, 'utf8'));
+        this.whiteList = list.list ? list : { list }; // 兼容旧格式
         this.logger.debug('load whiteList:', this.config.whiteListFilePath);
       } else {
         // 追加模式，不删除旧文件
@@ -172,9 +140,11 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
     if (existsSync(this.cacheFilePath)) {
       try {
         cacheInfo = useCache ? require(this.cacheFilePath) : JSON.parse(readFileSync(this.cacheFilePath, { encoding: 'utf8' }));
-        if (cacheInfo.version && cacheInfo.version !== VERSION) {
+        if (!cacheInfo.list || (cacheInfo.version && cacheInfo.version !== VERSION)) {
           unlinkSync(this.cacheFilePath);
           cacheInfo = null;
+        } else {
+          this.logger.debug('load cache from', this.cacheFilePath);
         }
       } catch (error) {
         this.logger.error(error);
@@ -321,8 +291,8 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
 
         if (info.deleted) {
           Object.keys(info.deleted).forEach(filepath => {
-            if (allInfo.passed) {
-              if (allInfo.passed[filepath as never]) delete allInfo.passed[filepath as never];
+            if (allInfo.list) {
+              if (allInfo.list[filepath as never]) delete allInfo.list[filepath as never];
             } else if (allInfo[filepath]) delete allInfo[filepath];
           });
         }

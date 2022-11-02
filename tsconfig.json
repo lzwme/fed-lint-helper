@@ -16,6 +16,7 @@
     "skipLibCheck": true,
     "strict": true,
     "strictNullChecks": false,
+    "resolveJsonModule": true,
 
     /* Debugging Options */
     "traceResolution": false,

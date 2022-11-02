@@ -5,11 +5,6 @@ import { formatTimeCost, execSync } from '@lzwme/fe-utils';
 import { Logger } from '../lib/Logger';
 import { isMatch } from 'micromatch';
 
-/** @deprecated */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type PlainObject = Record<string, any>;
-export type ValueOf<T> = T[keyof T];
-
 export { md5 } from '@lzwme/fe-utils';
 
 export function getTimeCost(startTime: number, withTip = true) {

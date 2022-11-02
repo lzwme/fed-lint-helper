@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-10-27 22:14:42
+ * @LastEditTime: 2022-11-02 12:05:39
  * @Description:
  */
 
@@ -58,7 +58,7 @@ export const config: FlhConfig = {
     jestOptions: {
       config: 'jest.config.js',
       coverageReporters: ['text-summary', 'html'],
-      detectOpenHandles: true,
+      // detectOpenHandles: true,
     },
   },
   jira: {

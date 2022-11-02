@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-01 19:01:45
+ * @LastEditTime: 2022-11-02 10:45:23
  * @Description:  eslint check
  */
 
@@ -12,14 +12,12 @@ import { existsSync, statSync } from 'node:fs';
 import { extname, resolve } from 'node:path';
 import { fixToshortPath } from '@lzwme/fe-utils';
 import { arrayToObject, fileListToString } from './utils';
-import { LintBase, type LintResult } from './LintBase';
-import type { ESLintCheckConfig } from './types';
+import { LintBase } from './LintBase';
+import type { ESLintCheckConfig, LintResult, WhiteListInfo } from './types';
 
 const { bold, red, redBright, yellowBright, cyanBright } = color;
 
 export interface ESLintCheckResult extends LintResult {
-  /** error 类型异常的总数量 */
-  errorCount: number;
   /** warning 类型异常的总数量 */
   warningCount: number;
   /** 可修复的 Error 类异常数量 */
@@ -38,7 +36,7 @@ export interface ESLintCheckResult extends LintResult {
   rules: Record<string, number>;
 }
 export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> {
-  protected override whiteList: { [filepath: string]: Record<string, number> } = {};
+  protected override whiteList: WhiteListInfo<Record<string, number>> = { list: {} };
   constructor(config: ESLintCheckConfig = {}) {
     super('eslint', config);
   }
@@ -118,7 +116,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
     const { ESLint } = await import('eslint');
     const eslint = new ESLint(this.getESLintOptions(lintList));
     const results = await eslint.lintFiles(lintList);
-    const errorReults: ESLint.LintResult[] = [];
+    let errorResults: ESLint.LintResult[] = [];
     /** 不在旧文件白名单中的 warning 类结果 */
     const newErrorReults: ESLint.LintResult[] = [];
     const waringReults: ESLint.LintResult[] = [];
@@ -135,8 +133,8 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
       if (!result.warningCount && !result.errorCount) {
         stats.passedFilesNum++;
         // remove passed files from old whitelist
-        if (this.whiteList[filePath]) {
-          delete this.whiteList[filePath];
+        if (this.whiteList.list[filePath]) {
+          delete this.whiteList.list[filePath];
           removeFromWhiteList.push(filePath);
         }
         return;
@@ -164,47 +162,43 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
 
       if (result.warningCount) {
         stats.warningCount += result.warningCount;
-        if (result.messages.length > 0) waringReults.push(result);
-        if (!config.toWhiteList && !this.whiteList[filePath] && result.messages.length > 0) newWaringReults.push(result);
+        if (result.messages.length > 0) {
+          waringReults.push(result);
+          if (!config.toWhiteList && !this.whiteList.list[filePath]) newWaringReults.push(result);
+        }
       }
 
       if (result.errorCount) {
         stats.errorCount += result.errorCount;
-        if (result.messages.length > 0) errorReults.push(result);
-
-        if (!config.toWhiteList && !this.whiteList[filePath] && result.messages.length > 0) newErrorReults.push(result);
+        if (result.messages.length > 0) {
+          errorResults.push(result);
+          if (!config.toWhiteList && !this.whiteList.list[filePath]) newErrorReults.push(result);
+        }
       }
     });
 
-    if (config.toWhiteList) this.whiteList = fileRules;
-
     const formatter = await eslint.loadFormatter('stylish');
-    stats.isPassed = newWaringReults.length === 0 && newErrorReults.length === 0;
+    stats.isPassed = config.toWhiteList || (newWaringReults.length === 0 && newErrorReults.length === 0);
 
     if (config.toWhiteList) {
       if (results.length === 0) {
-        this.logger.debug('no new error file');
+        logger.debug('no new error file');
       } else {
-        if (config.printDetail !== false) {
-          const resultText = formatter.format(results);
-          this.logger.info(`\n ${resultText}`);
-        }
-        this.logger.info('[ADD]write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
-        // this.saveCache(config.whiteListFilePath, this.whiteList);
-        this.stats.cacheFiles[config.whiteListFilePath] = {
-          updated: this.whiteList,
-          deleted: {},
-        };
+        this.whiteList.list = fileRules;
+
+        if (config.printDetail !== false) logger.info(`\n ${formatter.format(results)}`);
+
+        logger.info('[ADD]write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
+        this.stats.cacheFiles[config.whiteListFilePath] = { updated: this.whiteList };
       }
     } else {
       if (removeFromWhiteList.length > 0) {
-        this.logger.info(' [REMOVE]write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
-        // this.saveCache(config.whiteListFilePath, this.whiteList, true);
+        logger.info(' [REMOVE]write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
         this.stats.cacheFiles[config.whiteListFilePath] = {
           updated: this.whiteList,
           deleted: arrayToObject(removeFromWhiteList),
         };
-        this.logger.info(' remove from whilelist:', fileListToString(removeFromWhiteList));
+        logger.info(' remove from whilelist:', fileListToString(removeFromWhiteList));
       }
 
       const tips = config.warningTip || '';
@@ -213,32 +207,29 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
       if (stats.errorCount && (!config.allowErrorToWhiteList || newErrorReults.length > 0)) {
         stats.isPassed = false;
 
-        const errorResults = config.allowErrorToWhiteList ? newErrorReults : errorReults;
+        errorResults = config.allowErrorToWhiteList ? newErrorReults : errorResults;
 
-        if (config.printDetail !== false) {
-          const resultText = formatter.format(errorResults);
-          this.logger.info(`\n ${resultText}`);
-        }
-        this.logger.info(bold(redBright(`[Error]Verification failed![${errorResults.length} files]`)), yellowBright(tips), `\n`);
+        if (config.printDetail !== false) logger.info(`\n ${formatter.format(errorResults)}`);
+        logger.info(bold(redBright(`[Error]Verification failed![${errorResults.length} files]`)), yellowBright(tips), `\n`);
 
-        if (!config.fix && errorReults.length < 20 && errorResults.some(d => d.fixableErrorCount || d.fixableWarningCount)) {
+        if (!config.fix && errorResults.length < 20 && errorResults.some(d => d.fixableErrorCount || d.fixableWarningCount)) {
           // 运行此方法可以自动修复语法问题
-          this.logger.info('===================== ↓  ↓ Auto Fix Command ↓  ↓  ============================\n');
-          this.logger.info(
+          logger.info('===================== ↓  ↓ Auto Fix Command ↓  ↓  ============================\n');
+          logger.info(
             `node --max_old_space_size=4096 "%~dp0/../node_modules/eslint/bin/eslint.js" --fix ${errorResults
               .map(d => d.filePath.replace(/\\/g, '\\\\'))
               .join(' ')}\n`
           );
-          this.logger.info('===================== ↑  ↑ Auto Fix Command ↑  ↑ ============================\n');
+          logger.info('===================== ↑  ↑ Auto Fix Command ↑  ↑ ============================\n');
         }
       } else {
         // 不在白名单中的 warning
         if (newWaringReults.length > 0) {
           if (config.printDetail !== false) {
             const resultText = formatter.format(newWaringReults);
-            this.logger.info(`\n ${resultText}\n`);
+            logger.info(`\n ${resultText}\n`);
           }
-          this.logger.info(
+          logger.info(
             bold(red(`[Warning]Verification failed![${newWaringReults.length} files]`)),
             yellowBright(tips),
             fileListToString(newWaringReults.map(d => fixToshortPath(d.filePath, config.rootDir)))
@@ -248,11 +239,10 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
 
       if (stats.isPassed && (stats.errorCount || stats.warningCount)) {
         if (config.printDetail !== false && config.printDetialOnSuccessed !== false) {
-          const resultText = formatter.format(waringReults);
-          this.logger.info(`\n ${resultText}\n`);
+          logger.info(`\n ${formatter.format(waringReults)}\n`);
         }
 
-        this.logger.info(
+        logger.info(
           `[注意] 以下文件在白名单中，但存在异常信息[TOTAL: ${bold(yellowBright(waringReults.length))} files]${tips}：`,
           fileListToString(waringReults.map(d => fixToshortPath(d.filePath, config.rootDir))),
           '\n'
@@ -263,7 +253,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
       fixedCount: config.fix ? stats.fixableErrorCount + stats.fixableWarningCount : 0,
       lintList,
       totalFilesNum: results.length,
-      errorFiles: errorReults.map(d => d.filePath), // results.filter(d => d.errorCount).map(d => d.filePath),
+      errorFiles: errorResults.map(d => d.filePath), // results.filter(d => d.errorCount).map(d => d.filePath),
       warningFiles: waringReults.map(d => d.filePath), // results.filter(d => d.warningCount).map(d => d.filePath),
       // results,
       // newErrCount: newErrorReults.length,

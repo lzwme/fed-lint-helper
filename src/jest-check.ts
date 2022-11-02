@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-01 20:22:44
+ * @LastEditTime: 2022-11-02 11:51:52
  * @Description:  jest check
  */
 
@@ -14,19 +14,18 @@ import type { Config } from '@jest/types';
 import type { FormattedTestResults, formatTestResults } from '@jest/test-result';
 import { fixToshortPath, md5, execSync, rmrf, isEmptyObject } from '@lzwme/fe-utils';
 import { getConfig } from './config';
-import type { JestCheckConfig } from './types';
-import { LintBase, LintResult } from './LintBase';
+import type { JestCheckConfig, LintCacheInfo, LintResult, WhiteListInfo } from './types';
+import { LintBase } from './LintBase';
 import { fileListToString } from './utils';
 
 export type JestCheckResult = LintResult;
 
 export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
-  protected override whiteList: { [filepath: string]: number } = {};
+  protected override whiteList: WhiteListInfo<number> = { list: {} };
   protected override stats = this.getInitStats();
+  protected override cacheInfo: LintCacheInfo<{ md5: string; specMd5: string; updateTime: number }> = { list: {} };
   /** 要缓存到 cacheFilePath 的信息 */
   private cache = {
-    /** 已经检测且无异常的文件列表 */
-    passed: {} as { [filepath: string]: { md5: string; specMd5: string; updateTime: number } },
     /** 缓存 getSpecFiles 返回的结果 */
     specFiles: null as string[],
   };
@@ -53,7 +52,6 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
       runTestsByPath: config.cache,
       nonFlagArgs: specFileList,
       cache: config.cache,
-      cacheDirectory: resolve(baseConfig.cacheLocation, 'jest'),
       clearCache: config.removeCache,
       silent: config.silent,
       debug: config.debug,
@@ -68,20 +66,19 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
     return option;
   }
   private jestOptionToArgv(options: Record<string, unknown>) {
-    const args: string[] = [];
     const ignoredKeys = new Set(['_', '$0', 'runTestsByPath', 'nonFlagArgs']);
 
-    Object.keys(options).forEach(key => {
-      let val = options[key];
-      if (ignoredKeys.has(key) || !val || Array.isArray(val)) return;
-      if (typeof val === 'boolean') val = val ? '' : '0';
-      args.push(`--${key}` + (val ? `="${val}"` : ''));
-    });
-
-    return args.join(' ');
+    return Object.entries(options)
+      .map(([key, val]) => {
+        if (ignoredKeys.has(key) || !val || Array.isArray(val)) return '';
+        if (typeof val === 'boolean') val = val ? '' : '0';
+        return `--${key}` + (val ? `="${val}"` : '');
+      })
+      .filter(Boolean)
+      .join(' ');
   }
   protected async getSpecFileList(specFileList: string[]) {
-    const { config, cache } = this;
+    const { config, cacheInfo } = this;
     const specGlob = '.{spec,test}.{ts,js,tsx,jsx,mjs}';
 
     if (this.isCheckAll) {
@@ -131,7 +128,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
       specFileList = specFileList.filter(filepath => {
         filepath = fixToshortPath(filepath, config.rootDir);
 
-        const item = cache.passed[filepath];
+        const item = cacheInfo.list[filepath];
         if (!item) return true;
 
         const tsFilePath = filepath.replace(/\.(spec|test)\./, '.');
@@ -151,14 +148,13 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
   }
   protected override init(): void {
     super.init();
-
     // todo: 逻辑待优化，暂仅使用 jest cache 全量执行，不读取 cache 文件
     // if (this.config.cache && existsSync(this.cacheFilePath)) {
-    //   assign(this.cache, JSON.parse(readFileSync(this.cacheFilePath, 'utf8')));
+    //   assign(this.cacheInfo, JSON.parse(readFileSync(this.cacheFilePath, 'utf8')));
     // }
   }
   protected async check(specFileList = this.config.fileList): Promise<JestCheckResult> {
-    const { logger, stats, config } = this;
+    const { logger, stats, config, cacheInfo } = this;
 
     // 全量检测默认使用 jest-cli
     if (this.isCheckAll && config.useJestCli == null) this.config.useJestCli = true;
@@ -208,15 +204,9 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
     }
 
     if (results) {
-      const cacheInfo = {
-        updated: {
-          passed: this.cache.passed,
-        },
-        deleted: {} as typeof this.cache.passed,
-      };
+      const cacheDeleted = {} as typeof cacheInfo.list;
       const whilteListInfo = {
         deleted: {} as Record<string, number>,
-        updated: this.whiteList,
         failed: [] as string[],
       };
       // 不在白名单中的失败文件列表
@@ -228,26 +218,26 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
         const testFilePath = fixToshortPath(d.name, config.rootDir);
 
         if (d.status === 'failed') {
-          if (cacheInfo.updated.passed[testFilePath]) {
-            cacheInfo.deleted[testFilePath] = cacheInfo.updated.passed[testFilePath];
-            delete cacheInfo.updated.passed[testFilePath];
+          if (cacheInfo.list[testFilePath]) {
+            cacheDeleted[testFilePath] = cacheInfo.list[testFilePath];
+            delete cacheInfo.list[testFilePath];
           }
 
           if (config.toWhiteList) {
-            this.whiteList[testFilePath] = 1;
-          } else if (this.whiteList[testFilePath]) {
+            this.whiteList.list[testFilePath] = 1;
+          } else if (this.whiteList.list[testFilePath]) {
             whilteListInfo.failed.push(testFilePath);
           } else {
             failedFiles.push(testFilePath);
             stats.failedFilesNum++;
           }
         } else {
-          if (this.whiteList[testFilePath]) {
+          if (this.whiteList.list[testFilePath]) {
             whilteListInfo.deleted[testFilePath] = 1;
           }
           stats.passedFilesNum++;
           const tsFilePath = d.name.replace('.spec.', '.');
-          cacheInfo.updated.passed[testFilePath] = {
+          this.cacheInfo.list[testFilePath] = {
             md5: existsSync(tsFilePath) ? md5(tsFilePath, true) : '',
             specMd5: md5(d.name, true),
             updateTime: results.startTime,
@@ -257,7 +247,6 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
 
       const shortWhiteListFilePath = fixToshortPath(config.whiteListFilePath, config.rootDir);
       if (config.toWhiteList) {
-        // this.saveCache(config.whiteListFilePath, this.whiteList);
         stats.cacheFiles[config.whiteListFilePath] = { updated: this.whiteList };
         logger.info(`[ADD]Update whitelist(${Object.keys(this.whiteList).length}):`, color.cyanBright(shortWhiteListFilePath));
       } else {
@@ -272,7 +261,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
         }
       }
 
-      stats.cacheFiles[this.cacheFilePath] = cacheInfo;
+      stats.cacheFiles[this.cacheFilePath] = { updated: this.cacheInfo, deleted: cacheDeleted };
       stats.errorCount = results.numFailedTestSuites;
       stats.isPassed = failedFiles.length === 0;
       logger.debug('result use runCLI:\n', results);
@@ -284,18 +273,14 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
         );
       }
 
-      if (!stats.isPassed) {
-        logger.error(color.redBright('Failed Files(not in whitelist):'), fileListToString(failedFiles));
-      }
+      if (!stats.isPassed) logger.error(color.redBright('Failed Files(not in whitelist):'), fileListToString(failedFiles));
     }
 
     return stats;
   }
   protected async beforeStart() {
     if (this.isCheckAll) return true;
-    if (!this.cache.specFiles) {
-      this.cache.specFiles = await this.getSpecFileList(this.config.fileList);
-    }
+    if (!this.cache.specFiles) this.cache.specFiles = await this.getSpecFileList(this.config.fileList);
     return this.cache.specFiles.length > 0;
   }
 }

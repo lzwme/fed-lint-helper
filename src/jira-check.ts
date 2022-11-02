@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-10-27 15:33:14
+ * @LastEditTime: 2022-11-02 10:21:46
  * @Description:  Jira check
  */
 
@@ -10,12 +10,11 @@ import { resolve, join } from 'node:path';
 import { existsSync, writeFileSync, readFileSync } from 'node:fs';
 import type { IncomingHttpHeaders } from 'node:http';
 import { color } from 'console-log-colors';
-import { assign, getHeadBranch } from '@lzwme/fe-utils';
-import { type PlainObject, getLogger, checkUserEmial } from './utils';
+import { assign, getHeadBranch, Request } from '@lzwme/fe-utils';
+import { getLogger, checkUserEmial } from './utils';
 import { getConfig } from './config';
-import type { JiraCheckConfig } from './types';
-import { Request } from '@lzwme/fe-utils';
-import { LintBase, type LintResult } from './LintBase';
+import type { AnyObject, JiraCheckConfig, LintResult } from './types';
+import { LintBase } from './LintBase';
 
 const { magenta, magentaBright, cyanBright, yellowBright, redBright, green, greenBright } = color;
 
@@ -26,7 +25,7 @@ export interface JiraCheckResult extends LintResult {
 
 interface JiraError {
   errorMessages?: string[];
-  errors?: PlainObject;
+  errors?: AnyObject;
 }
 
 interface IssueItem {
@@ -141,7 +140,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
 
     if (jiraPath) {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const jiraConfig: PlainObject = require(jiraPath);
+      const jiraConfig: AnyObject = require(jiraPath);
 
       if (jiraConfig.cookie) headers.cookie = jiraConfig.cookie;
 
@@ -216,7 +215,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
       config.projectName ? ` AND comment ~ "${config.projectName}"` : ''
     } AND status in ("新建(New)", "处理中(Inprocess)", "测试验收(Test Verification)", "调试与审查(Code Review)", "关闭(Closed)") ORDER BY due ASC, priority DESC, created ASC`;
     const url = `${config.jiraHome}/rest/api/2/search?`; // jql=${encodeURIComponent(query)}&maxResults=100&fields=comment,assignee`;
-    const p = assign<PlainObject>({ jql: query, maxResults: 100, fields: ['comment', 'assignee'] }, config.pipeline.requestParams);
+    const p = assign<AnyObject>({ jql: query, maxResults: 100, fields: ['comment', 'assignee'] }, config.pipeline.requestParams);
     const r = await this.reqeust.post<{ total: number; issues: IssueItem[]; expand: string; maxResults: number } & JiraError>(url, p);
     const info = r.data;
 
@@ -260,7 +259,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
         logger.debug('[检查信息]', item.key, '被', mustRepair.author.displayName, '于', mustRepair.updated, '设为必须被修复');
       }
 
-      const comments: PlainObject[] = fields.comment.comments.slice(mustRepairTagIndex).reverse();
+      const comments: AnyObject[] = fields.comment.comments.slice(mustRepairTagIndex).reverse();
       /** 最新一次的 gitlab 提交信息 */
       const gitlabComment = comments.find(item => item.author.name === 'gitlab' && !item.body.includes('Merge'));
 
