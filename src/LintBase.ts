@@ -275,7 +275,7 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
         if (stats.errorCount) logger.info(cyan(' - errorCount:\t'), bold(redBright(stats.errorCount)));
         logger.info(cyan(' - Failed:\t'), bold(red(stats.failedFilesNum)));
         if (stats.passedFilesNum) logger.info(cyan(' - Passed:\t'), bold(greenBright(stats.passedFilesNum)));
-        logger.info(cyan(' - Total :\t'), stats.totalFilesNum);
+        logger.info(cyan(' - Total(Source):\t'), stats.totalFilesNum);
       }
 
       for (const [filepath, info] of Object.entries(stats.cacheFiles)) {

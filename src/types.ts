@@ -222,7 +222,7 @@ export interface LintResult {
   isPassed: boolean;
   /** 开始处理时间 */
   startTime?: number;
-  /** 处理的文件总数 */
+  /** 处理的（源）文件总数 */
   totalFilesNum?: number;
   /** 异常信息数(一个文件可能包含多个异常) */
   errorCount?: number;

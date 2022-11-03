@@ -32,6 +32,8 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
   private cache: {
     /** 检测到异常且需要 report 的文件列表 */
     allDiagnosticsFileMap: { [file: string]: Diagnostic[] };
+    /** 源文件列表缓存 */
+    sourceFiles: Set<string>;
     /** 检测通过的文件列表是否有变动(记录变动文件数)，用于标记是否需要写回缓存 */
     passedChanged: number;
   };
@@ -53,6 +55,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
       allDiagnosticsFileMap: {},
       /** 检测通过的文件列表是否有变动(记录变动文件数)，用于标记是否需要写回缓存 */
       passedChanged: 0,
+      sourceFiles: new Set(),
     };
     this.cacheInfo = { list: {} };
 
@@ -79,8 +82,6 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     const passed = this.cacheInfo.list;
     const TS = await import('typescript');
 
-    stats.totalFilesNum += total;
-
     console.log();
     logger.info(bold(cyanBright('Checking')), subDirection);
     logger.info(' - Total Files:', cyanBright(total));
@@ -93,6 +94,8 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     sourceFiles = sourceFiles.filter(filepath => {
       const fileMd5 = md5(filepath, true);
       const shortpath = fixToshortPath(filepath, config.rootDir);
+
+      this.cache.sourceFiles.add(shortpath);
 
       if (!config.toWhiteList && this.whiteList.list[shortpath]) {
         if (this.whiteList.list[shortpath].md5 === fileMd5) {
@@ -211,15 +214,15 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
         const fileList = [...new Set(temporaryDiagnostics.filter(d => d.file).map(d => fixToshortPath(d.file.fileName)))];
 
         if (fileList.length > 0) {
+          if (config.printDetail && config.printDetialOnSuccessed) {
+            logger.info('\n', TS.formatDiagnosticsWithColorAndContext(temporaryDiagnostics, host));
+          }
+
           logger.info(
             bold(yellowBright(`Diagnostics in whitelist[${redBright(fileList.length)}`)),
             bold(yellowBright(`files]:\n`)),
             fileListToString(fileList)
           );
-
-          if (config.printDetail && config.printDetialOnSuccessed) {
-            logger.info('\n', TS.formatDiagnosticsWithColorAndContext(temporaryDiagnostics, host));
-          }
         }
       }
 
@@ -328,16 +331,15 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
 
     const errorFileList = Object.keys(this.cache.allDiagnosticsFileMap);
 
-    stats.passedFilesNum = stats.totalFilesNum - errorFileList.length;
+    stats.totalFilesNum = this.cache.sourceFiles.size;
+    stats.passedFilesNum = errorFileList.filter(d => this.cache.sourceFiles.has(d)).length;
     stats.failedFilesNum = errorFileList.length;
-    stats.isPassed = stats.failedFilesNum === 0;
-
-    if (!stats.isPassed && config.printDetail) {
-      logger.error(red('Failed Files:'), fileListToString(errorFileList));
-    }
+    stats.isPassed = config.toWhiteList || stats.failedFilesNum === 0;
 
     // 异常类型统计
     if (!stats.isPassed) {
+      if (config.printDetail) logger.error(red('Failed Files:'), fileListToString(errorFileList));
+
       for (const filepath of errorFileList) {
         const d = this.cache.allDiagnosticsFileMap[filepath];
         d.forEach(item => {
