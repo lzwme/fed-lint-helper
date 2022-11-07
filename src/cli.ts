@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2022-10-27 22:15:47
+ * @LastEditTime: 2022-11-07 17:23:24
  * @Description: cli 工具
  */
 import { resolve } from 'node:path';
@@ -207,6 +207,24 @@ program
       pmName = baseConfig.pmcheck;
     }
     import('./pm-check').then(({ packageManagerCheck }) => packageManagerCheck(pmName, programOptions.debug));
+  });
+
+program
+  .command('stats [src...]')
+  .alias('s')
+  .description(`目录文件类型统计`)
+  .option('--root-dir', '指定统计的根目录。默认为当前目录')
+  .option('--extentions <ext...>', '需统计的文件类型后缀列表')
+  .option('--json', '是否输出为 json 格式')
+  .option('--json-file <filepath>', '输出为 json 格式时写入文件')
+  .action((src: string[], options) => {
+    import('./stats').then(({ stats }) => {
+      const opts = getProgramOptions();
+      const config = getConfig({ debug: opts.debug });
+      logger.debug(opts, options);
+      logger.debug(src);
+      stats({ src, rootDir: config.rootDir, ...options });
+    });
   });
 
 program.parse(process.argv);

@@ -198,6 +198,18 @@ export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {
   tscheck?: TsCheckConfig;
   /** package manager check */
   pmcheck?: 'npm' | 'yarn' | 'pnpm';
+  /** 源文件统计配置 */
+  fileStats?: {
+    src?: string[];
+    /** 需统计的文件类型后缀列表 */
+    extentions?: string[];
+    /** 文件 glob 排除规则 */
+    exclude?: string[];
+    /** 是否输出为 json 格式 */
+    json?: boolean;
+    /** 输出为 json 格式时写入文件 */
+    jsonFile?: string;
+  };
 }
 
 export interface WhiteListInfo<T = unknown> {
