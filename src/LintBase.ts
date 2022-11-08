@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-02 11:37:48
+ * @LastEditTime: 2022-11-08 09:56:34
  * @Description:  jest check
  */
 
@@ -10,7 +10,7 @@ import { existsSync, unlinkSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { color } from 'console-log-colors';
 import { assign, getObjectKeysUnsafe, execSync, createFilePathFilter, mkdirp, getHeadCommitId, isObject } from '@lzwme/fe-utils';
-import { getIndentSize, getTimeCost, globMatcher, isGitRepo } from './utils/common';
+import { getIndentSize, getTimeCost, globMatcher, isGitRepo, padSpace } from './utils/common';
 import { getLogger } from './utils/get-logger';
 import { createForkThread } from './worker/fork';
 import { getConfig, VERSION } from './config';
@@ -272,10 +272,10 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
       logger.debug('result', stats);
       logger.info(cyan(`[${config.mode}]`), bold(stats.isPassed ? greenBright('Verification passed!') : redBright('Verification failed!')));
       if (stats.totalFilesNum) {
-        if (stats.errorCount) logger.info(cyan(' - errorCount:\t'), bold(redBright(stats.errorCount)));
-        logger.info(cyan(' - Failed:\t'), bold(red(stats.failedFilesNum)));
-        if (stats.passedFilesNum) logger.info(cyan(' - Passed:\t'), bold(greenBright(stats.passedFilesNum)));
-        logger.info(cyan(' - Total(Source):\t'), stats.totalFilesNum);
+        if (stats.errorCount) logger.info(cyan(` - ${padSpace('errorCount', 15, false)}:`), bold(redBright(stats.errorCount)));
+        if (stats.failedFilesNum) logger.info(red(` - ${padSpace('Failed', 15, false)}:`), bold(red(stats.failedFilesNum)));
+        if (stats.passedFilesNum) logger.info(cyan(` - ${padSpace('Passed', 15, false)}:`), bold(greenBright(stats.passedFilesNum)));
+        logger.info(cyan(` - ${padSpace('Total(Source)', 15, false)}:`), stats.totalFilesNum);
       }
 
       for (const [filepath, info] of Object.entries(stats.cacheFiles)) {

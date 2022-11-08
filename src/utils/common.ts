@@ -86,3 +86,7 @@ export function getIndentSize(rootDir = process.cwd()): number {
 export function fileListToString(fileList: string[]) {
   return `\n - ${fileList.join('\n - ')}\n`;
 }
+
+export function padSpace(txt: unknown, maxLenth: number, start = true) {
+  return start ? String(txt).padStart(maxLenth, ' ') : String(txt).padEnd(maxLenth, ' ');
+}

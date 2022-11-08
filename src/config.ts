@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-02 12:05:39
+ * @LastEditTime: 2022-11-08 09:03:17
  * @Description:
  */
 
@@ -80,8 +80,11 @@ export const config: FlhConfig = {
   prettier: {
     mode: 'current',
     exclude: ['**/node_modules/**', '**/dist/**'],
-    extensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.json', '.less', '.scss', '.md'],
+    extensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.json', '.less', '.scss', '.md'],
     detectSubPackages: false,
+  },
+  fileStats: {
+    extensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.json', '.less', '.scss', '.md', 'c', 'cpp', 'py', 'rs'],
   },
 };
 

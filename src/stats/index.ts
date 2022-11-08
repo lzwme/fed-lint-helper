@@ -5,7 +5,7 @@ import { getLogger } from '../utils/get-logger';
 import { color } from 'console-log-colors';
 import { getConfig } from '../config';
 import { FlhConfig } from '../types';
-import { getTimeCost } from '../utils/common';
+import { getTimeCost, fileListToString, padSpace } from '../utils/common';
 
 type IFileStats = FlhConfig['fileStats'];
 
@@ -23,7 +23,7 @@ export async function stats(options: IStatsOption) {
       string,
       {
         total: number;
-        size: number;
+        totalSize: number;
         list: { filepath: string; stat: Stats }[];
       }
     >,
@@ -34,25 +34,22 @@ export async function stats(options: IStatsOption) {
   options = {
     src: config.src || ['src'],
     rootDir: config.rootDir,
-    exclude: ['node_modules/**', 'dist/**'],
+    exclude: ['**/node_modules/**', '**/dist/**'],
     ...config.fileStats,
     ...options,
   };
   if (!options.src?.length) options.src = ['src'];
-  if (!options.extentions?.length) options.extentions = ['ts', 'tsx', 'mjs', 'js', 'less', 'scss', 'css', 'json', 'md'];
 
-  const exts = options.extentions.map(d => d.replace(/^\./, '')).join(',');
-  let fileList: string[] = [];
+  const exts = options.extensions.map(d => d.replace(/^\./, '')).join(',');
+  const extGlobPattern = `**/*.${options.extensions.length > 1 ? `{${exts}}` : exts}`;
 
-  logger.debug('options:', options);
-  logger.info(`Start stats for ${color.magentaBright(options.src.join(','))}`);
+  logger.debug('options:', options, `exts: ${exts}`);
+  logger.info(`start stats for ${color.greenBright(options.src.join(','))}`);
 
-  for (const src of options.src) {
-    const rule = `${src}/**/*.{${exts}}`;
-    const list = await glob(rule, { cwd: options.rootDir, absolute: true, ignore: options.exclude });
-    // eslint-disable-next-line unicorn/prefer-spread
-    fileList = fileList.concat(list);
-  }
+  const fileList = await glob(
+    options.src.map(src => `${src}/${extGlobPattern}`),
+    { cwd: options.rootDir, absolute: true, ignore: options.exclude }
+  );
 
   result.total = fileList.length;
   for (const filepath of fileList) {
@@ -65,14 +62,14 @@ export async function stats(options: IStatsOption) {
     if (!result.exts[ext]) {
       result.exts[ext] = {
         total: 0,
-        size: 0,
+        totalSize: 0,
         list: [],
       };
     }
 
     result.exts[ext].list.push({ filepath, stat: fileStat });
     result.exts[ext].total++;
-    result.exts[ext].size += fileStat.size;
+    result.exts[ext].totalSize += fileStat.size;
     result.totalSize += fileStat.size;
   }
   result.endTime = Date.now();
@@ -89,17 +86,19 @@ export async function stats(options: IStatsOption) {
     }
   }
 
+  if (options.showFiles) {
+    logger.info(`all Files: ${fileListToString(fileList)}`);
+  }
+
   const statsInfo = [
-    `Success!`,
-    ` - Total Files: ${color.greenBright(result.total)} (${color.magentaBright(formatMem(result.totalSize))})`,
+    `success!`,
+    ` Total Files  : ${color.greenBright(padSpace(result.total, 6))} ${color.magentaBright(formatMem(result.totalSize))}`,
   ];
   const extsList = Object.entries(result.exts).sort((a, b) => b[1].total - a[1].total);
 
   for (const [ext, list] of extsList) {
     statsInfo.push(
-      `    - ${color.cyanBright(ext.padEnd(10, ' '))}: ${color.greenBright(String(list.total).padStart(6, ' '))} (${color.magentaBright(
-        formatMem(list.size)
-      )})`
+      `  - ${color.cyanBright(ext.padEnd(10, ' '))}: ${color.green(padSpace(list.total, 6))} ${color.magenta(formatMem(list.totalSize))}`
     );
   }
 

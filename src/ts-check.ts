@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-02 11:16:32
+ * @LastEditTime: 2022-11-08 09:55:33
  * @Description: typescript Diagnostics report
  */
 
@@ -83,7 +83,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     const TS = await import('typescript');
 
     console.log();
-    logger.info(bold(cyanBright('Checking')), subDirection);
+    logger.info(bold(cyanBright('Checking in')), subDirection);
     logger.info(' - Total Files:', cyanBright(total));
 
     /** 缓存命中数量 */

@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-02 11:19:48
+ * @LastEditTime: 2022-11-08 08:56:20
  * @Description:  prettier check
  */
 
@@ -75,8 +75,8 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
     const config = this.config;
 
     if (this.isCheckAll) {
-      const extentions = this.config.extensions.map(d => d.replace(/^\./, '')).join(',');
-      const extGlobPattern = `**/*.{${extentions}}`;
+      const exts = config.extensions.map(d => d.replace(/^\./, '')).join(',');
+      const extGlobPattern = `**/*.${config.extensions.length > 1 ? `{${exts}}` : exts}`;
       fileList = [];
 
       for (const d of this.config.src) {

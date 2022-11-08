@@ -202,13 +202,15 @@ export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {
   fileStats?: {
     src?: string[];
     /** 需统计的文件类型后缀列表 */
-    extentions?: string[];
+    extensions?: string[];
     /** 文件 glob 排除规则 */
     exclude?: string[];
     /** 是否输出为 json 格式 */
     json?: boolean;
     /** 输出为 json 格式时写入文件 */
     jsonFile?: string;
+    /** 是否打印文件列表 */
+    showFiles?: boolean;
   };
 }
 

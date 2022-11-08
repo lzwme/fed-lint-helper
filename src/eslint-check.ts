@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-02 10:45:23
+ * @LastEditTime: 2022-11-08 09:55:06
  * @Description:  eslint check
  */
 
@@ -109,7 +109,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
     const { config, stats, logger } = this;
     const lintList = this.isCheckAll ? config.src : config.fileList;
 
-    if (this.isCheckAll) this.logger.info(cyanBright('Checking'), lintList);
+    if (this.isCheckAll) this.logger.info(cyanBright('Checking in'), lintList.join(','));
     else logger.info(' - Total Files:', cyanBright(lintList.length));
     logger.debug('[options]:', config);
 
