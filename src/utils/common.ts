@@ -83,10 +83,28 @@ export function getIndentSize(rootDir = process.cwd()): number {
 }
 
 /** 将给定文件列表格式化为用于打印至控制台的字符串 */
-export function fileListToString(fileList: string[]) {
-  return `\n - ${fileList.join('\n - ')}\n`;
+export function fileListToString(fileList: string[], prefix = '-') {
+  return `\n ${prefix} ${fileList.join(`\n ${prefix} `)}\n`;
 }
 
 export function padSpace(txt: unknown, maxLenth: number, start = true) {
   return start ? String(txt).padStart(maxLenth, ' ') : String(txt).padEnd(maxLenth, ' ');
+}
+
+export function formatMem(mem: number) {
+  if (mem > 1 << 30) return (mem / (1 << 30)).toFixed(2) + 'G';
+  if (mem > 1 << 20) return (mem / (1 << 20)).toFixed(2) + 'M';
+  if (mem > 1 << 10) return (mem / (1 << 10)).toFixed(2) + 'KB';
+  return mem + 'B';
+}
+
+export function formatQty(number: number | string, qty = ',') {
+  const num = Number(number);
+  if (number === '' || Number.isNaN(num)) return number?.toString() ?? '';
+
+  const i = `${Math.abs(Number.parseInt(String(num), 10))}`;
+  const tail = String(Math.abs(num)).slice(i.length);
+  const j = i.length > 3 ? i.length % 3 : 0;
+
+  return (j ? i.slice(0, j) + qty : '') + i.slice(j).replace(/(\d{3})(?=\d)/g, `$1${qty}`) + tail;
 }

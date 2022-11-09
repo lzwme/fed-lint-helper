@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-08 09:20:27
+ * @LastEditTime: 2022-11-09 15:41:30
  * @Description: cli 工具
  */
 import { resolve } from 'node:path';
@@ -215,6 +215,7 @@ program
   .description(`文件类型数量统计`)
   .option('--root-dir', '指定统计的根目录。默认为当前目录')
   .option('--ext <ext...>', '需统计的文件类型后缀列表')
+  .option('--topN <number>', 'Line/Size Top N 统计的数量')
   .option('--json', '是否输出为 json 格式')
   .option('--json-file <filepath>', '输出为 json 格式时写入文件')
   .option('--show-files', '是否打印文件列表')

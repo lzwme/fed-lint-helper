@@ -211,6 +211,8 @@ export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {
     jsonFile?: string;
     /** 是否打印文件列表 */
     showFiles?: boolean;
+    /** TopLine 和 TopSize 统计文件数 */
+    topN?: number;
   };
 }
 

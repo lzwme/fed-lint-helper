@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-08 09:03:17
+ * @LastEditTime: 2022-11-09 15:53:49
  * @Description:
  */
 
@@ -84,7 +84,28 @@ export const config: FlhConfig = {
     detectSubPackages: false,
   },
   fileStats: {
-    extensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.json', '.less', '.scss', '.md', 'c', 'cpp', 'py', 'rs'],
+    extensions: [
+      '.ts',
+      '.tsx',
+      '.js',
+      '.jsx',
+      '.mjs',
+      '.cjs',
+      '.json',
+      '.less',
+      '.scss',
+      '.md',
+      'c',
+      'cpp',
+      'py',
+      'rs',
+      // binary
+      'mp3',
+      'wav',
+      'png',
+      'jpg',
+      'gif',
+    ],
   },
 };
 
