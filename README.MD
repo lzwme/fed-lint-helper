@@ -12,25 +12,25 @@
 [![GitHub forks][forks-badge]][forks-url]
 [![GitHub stars][stars-badge]][stars-url]
 
-前端项目编码质量 `Lint` 检测辅助工具。用于辅助大型长期研发的前端项目渐进式的迁移与改进编码规范约束。
+一个前端项目编码质量静态检查（`Lint`）辅助工具。用于辅助长期研发的大型前端项目渐进式的升级、迁移或改进编码规范约束规则。
 
-## 功能特性
+## 功能特性(Features)
 
-- 白名单机制。引入新版本、新规则时开启白名单模式，技术栈更新改造影响成本更低
-- 可选的多线程、多子进程执行模式。并行执行多项静态检查效率更高
-- 支持缓存能力。二次执行效率显著提升，避免重复执行浪费时间
+- 白名单机制。升级新版本、引入新规则时开启白名单模式，技术栈更新改造影响成本低
+- 可选的多线程、多进程执行模式。多项静态检查并行执行效率更高
+- 支持缓存能力。开启缓存二次执行效率显著提升，避免重复执行浪费时间
 
-已支持的 lint 检查能力：
+已支持的 `Lint` 能力：
 
-- `eslint` 自定义 eslint 检测
-- `tscheck` 自定义 TypeScript 检测
-- `jest` 自定义 jest 单元测试执行
-- `jira` 自定义关联 jira 的检测逻辑(测试)
+- `eslint` 自定义 ESLint 检测执行
+- `tscheck` 自定义 TypeScript 检测执行
+- `jest` 自定义 jest 单元测试的执行
 - `prettier` 自定义 prettier 编码风格检测与格式化
-- `commitlint` 自定义遵循 Angular commit style 的 git 提交规范(用于 git hooks)
+- `commitlint` 自定义遵循 Angular commit style 的 git 提交规范（用于 git hooks）
+- `jira` 自定义关联 jira 的检测逻辑（TODO: 方案说明）
 - more...
 
-## 安装
+## 安装(Install)
 
 ```bash
 # use pnpm
@@ -41,9 +41,9 @@ yarn add -D @lzwme/fed-lint-helper
 npm i -D @lzwme/fed-lint-helper
 ```
 
-## 使用
+## 使用(Useage)
 
-### 命令行方式
+### 命令行方式(Command Line Interface)
 
 ```bash
 flh --help
@@ -66,7 +66,7 @@ flh --prettier --fix
 flh --tscheck --eslint --jest
 ```
 
-其他辅助工具命令：
+其他辅助工具命令(Others)：
 
 ```bash
 # 目录删除
@@ -89,16 +89,16 @@ flh notify "任务执行失败！@all" --wx-work <web hook key1> <web hook key2>
 flh --commitlint
 
 # .husky/pre-commit
-flh --eslint --tscheck --jest --only-changes
-flh --prettier --only-changes --fix
+npm exec flh -- --eslint --tscheck --jest --only-changes
+npm exec flh -- --prettier --only-changes --fix
 git add --update
 ```
 
-`CI` 中可视具体需求配置。
+在 `CI` 持续集成过程中可视具体需求配置。
 
 ### API 调用
 
-提供了 `TsCheck`、`ESLintCheck `等类对象供 API 方式调用，以便自定义处理逻辑在 CI 构建中的集成。
+提供了 `TsCheck`、`ESLintCheck` 等类对象供 API 方式调用，以便自定义处理逻辑在 CI 构建中的集成。
 
 ```ts
 import { TsCheck, ESLintCheck } from '@lzwme/fed-lint-helper';
@@ -107,9 +107,9 @@ import { TsCheck, ESLintCheck } from '@lzwme/fed-lint-helper';
 const tsCheck = new TsCheck({
     exitOnError: false,
     src: ['src'],
-    checkOnInit: false,
-    debug: true,
-    toWhiteList: true,
+    // checkOnInit: false,
+    // debug: true,
+    // toWhiteList: true,
     // cache: true,
     // removeCache: false,
     // tsConfigFileName: 'tsconfig.eslint.json',
@@ -122,7 +122,6 @@ console.log(res);
 // eslint check
 const eslintCheck = new ESLintCheck({
   exitOnError: false,
-  checkOnInit: false,
   src: ['src'],
   eslintOptions: {
     overrideConfig: {
@@ -131,6 +130,7 @@ const eslintCheck = new ESLintCheck({
       // errorOnUnmatchedPattern: true,
     },
   },
+  // checkOnInit: false,
   // cache: argv.includes('cache'),
   // removeCache: argv.includes('nocache'),
   // silent: argv.includes('silent'),
@@ -141,7 +141,7 @@ const eslintCheck = new ESLintCheck({
 
 let res = await eslintCheck.start();
 console.log(res);
-res = await eslintCheck.start(['test-cases/ts-check-test-1.ts', 'src/ts-check.ts']);
+res = await eslintCheck.start(['test/test/test-cases/ts-check-test-1.ts', 'src/ts-check.ts']);
 console.log(res);
 ```
 
@@ -151,18 +151,18 @@ console.log(res);
 
 - [https://lzwme.github.io/fed-lint-helper/](https://lzwme.github.io/fed-lint-helper/)
 
-## 开发
+## 开发(Development)
 
 本地二次开发：
 
 ```bash
 git clone https://github.com/lzwme/fed-lint-helper
-yarn install
-npm link
-yarn dev
+pnpm install
+pnpm dev
+# npm link
 ```
 
-或者 [fork]() 本项目进行代码贡献。
+或者 [fork](https://github.com/lzwme/fed-lint-helper) 本项目进行代码贡献。
 
 **欢迎贡献想法与代码。**
 

@@ -1,5 +1,5 @@
 import { color } from 'console-log-colors';
-import { getLogger } from './utils';
+import { getLogger } from '../utils/get-logger';
 
 export function packageManagerCheck(wantedPM = '', isDebug = false) {
   const execpath = process.env.npm_execpath || '';

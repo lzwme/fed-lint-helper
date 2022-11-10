@@ -13,7 +13,7 @@ import { getHeadDiffFileList } from '@lzwme/fe-utils';
 import { FlhConfig, TsCheckConfig, JiraCheckConfig, CommitLintOptions, LintTypes } from './types';
 import { formatWxWorkKeys } from './utils';
 import { commConfig, getConfig, mergeCommConfig } from './config';
-import { rmdir } from './rmdir';
+import { rmdir } from './tools/rmdir';
 import { getLogger } from './utils';
 import { lintStartAsync } from './worker/lintStartAsync';
 import { flhInit } from './init';
@@ -143,7 +143,7 @@ program
 
     if (options.commitlint) {
       hasAction = true;
-      import('./commit-lint').then(({ commitMessageVerify }) => {
+      import('./lint/commit-lint').then(({ commitMessageVerify }) => {
         const cmvOptions: CommitLintOptions = { msgPath: options.commitEdit, exitOnError: options.exitOnError };
         if (typeof options.commitlint === 'string') cmvOptions.verify = options.commitlint;
         commitMessageVerify(cmvOptions);
@@ -206,7 +206,7 @@ program
       const baseConfig = getConfig({}, false);
       pmName = baseConfig.pmcheck;
     }
-    import('./pm-check').then(({ packageManagerCheck }) => packageManagerCheck(pmName, programOptions.debug));
+    import('./tools/pm-check').then(({ packageManagerCheck }) => packageManagerCheck(pmName, programOptions.debug));
   });
 
 program

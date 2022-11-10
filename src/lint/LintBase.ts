@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-08 09:56:34
+ * @LastEditTime: 2022-11-10 17:40:10
  * @Description:  jest check
  */
 
@@ -10,12 +10,12 @@ import { existsSync, unlinkSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { color } from 'console-log-colors';
 import { assign, getObjectKeysUnsafe, execSync, createFilePathFilter, mkdirp, getHeadCommitId, isObject } from '@lzwme/fe-utils';
-import { getIndentSize, getTimeCost, globMatcher, isGitRepo, padSpace } from './utils/common';
-import { getLogger } from './utils/get-logger';
-import { createForkThread } from './worker/fork';
-import { getConfig, VERSION } from './config';
-import type { CommConfig, ILintTypes, LintCacheInfo, LintResult, WhiteListInfo } from './types';
-import { exit } from './exit';
+import { getIndentSize, getTimeCost, globMatcher, isGitRepo, padSpace } from '../utils/common';
+import { getLogger } from '../utils/get-logger';
+import { createForkThread } from '../worker/fork';
+import { getConfig, VERSION } from '../config';
+import type { CommConfig, ILintTypes, LintCacheInfo, LintResult, WhiteListInfo } from '../types';
+import { exit } from '../exit';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export abstract class LintBase<C extends CommConfig & Record<string, any>, R extends LintResult = LintResult> {
@@ -38,16 +38,18 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
     this.config = assign({ whiteListFilePath: `config/whitelist-${tag}.json` } as C, baseConfig[tag]);
     this.parseConfig(this.config);
 
-    // 若没有自定义 logger
-    if (!this.logger) {
-      const level = this.config.silent ? 'silent' : this.config.debug ? 'debug' : 'log';
-      this.logger = getLogger(`[${this.tag}]`, level, baseConfig.logDir);
+    for (const key of ['exclude', 'include'] as const) {
+      if (baseConfig[key] !== this.config[key]) {
+        this.config[key] = [...new Set([...(baseConfig[key] || []), ...(this.config[key] || [])])];
+      }
     }
+
+    const level = this.config.silent ? 'silent' : this.config.debug ? 'debug' : 'log';
+    this.logger = getLogger(`[${this.tag}]`, level, baseConfig.logDir);
 
     this.config.whiteListFilePath = resolve(this.config.rootDir, this.config.whiteListFilePath);
     this.cacheFilePath = resolve(this.config.rootDir, baseConfig.cacheLocation, `${tag}Cache.json`);
 
-    this.logger.debug('config', this.config);
     if (this.config.checkOnInit) this.start();
   }
   protected init(): void {
@@ -119,7 +121,7 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
    */
   protected checkInWorkThreads(config = this.config) {
     // this.logger.info('start create work threads');
-    return import('./worker/worker-threads').then(({ createWorkerThreads }) => {
+    return import('../worker/worker-threads').then(({ createWorkerThreads }) => {
       return createWorkerThreads<R, C>({
         type: this.tag,
         debug: config.debug,

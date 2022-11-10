@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-08 09:55:06
+ * @LastEditTime: 2022-11-10 08:46:12
  * @Description:  eslint check
  */
 
@@ -11,9 +11,9 @@ import type { ESLint } from 'eslint';
 import { existsSync, statSync } from 'node:fs';
 import { extname, resolve } from 'node:path';
 import { fixToshortPath } from '@lzwme/fe-utils';
-import { arrayToObject, fileListToString } from './utils';
+import { arrayToObject, fileListToString } from '../utils';
 import { LintBase } from './LintBase';
-import type { ESLintCheckConfig, LintResult, WhiteListInfo } from './types';
+import type { ESLintCheckConfig, LintResult, WhiteListInfo } from '../types';
 
 const { bold, red, redBright, yellowBright, cyanBright } = color;
 

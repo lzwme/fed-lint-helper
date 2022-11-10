@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-09 15:53:49
+ * @LastEditTime: 2022-11-10 16:23:20
  * @Description:
  */
 
@@ -30,6 +30,7 @@ export const commConfig: CommConfig = {
   silent: false,
   src: ['src'],
   toWhiteList: false,
+  exclude: ['**/node_modules/**', '**/dist/**'],
 };
 
 export const config: FlhConfig = {
@@ -79,7 +80,6 @@ export const config: FlhConfig = {
   },
   prettier: {
     mode: 'current',
-    exclude: ['**/node_modules/**', '**/dist/**'],
     extensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.json', '.less', '.scss', '.md'],
     detectSubPackages: false,
   },

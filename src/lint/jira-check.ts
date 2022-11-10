@@ -11,9 +11,9 @@ import { existsSync, writeFileSync, readFileSync } from 'node:fs';
 import type { IncomingHttpHeaders } from 'node:http';
 import { color } from 'console-log-colors';
 import { assign, getHeadBranch, Request } from '@lzwme/fe-utils';
-import { getLogger, checkUserEmial } from './utils';
-import { getConfig } from './config';
-import type { AnyObject, JiraCheckConfig, LintResult } from './types';
+import { getLogger, checkUserEmial } from '../utils';
+import { getConfig } from '../config';
+import type { AnyObject, JiraCheckConfig, LintResult } from '../types';
 import { LintBase } from './LintBase';
 
 const { magenta, magentaBright, cyanBright, yellowBright, redBright, green, greenBright } = color;

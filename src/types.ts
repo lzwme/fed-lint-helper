@@ -18,14 +18,14 @@ export interface CommConfig {
   rootDir?: string;
   /** 是否打印调试信息 */
   debug?: boolean;
-  /** 文件排除列表，用于过滤一些不需要检测的文件。glob 规则，如： ['builder/**'] */
+  /** 文件包含列表，仅在该列表中的才报告异常。glob 规则，如： `['src\**\*.{ts,tsx,js,jsx}']` */
+  include?: string[];
+  /** 文件排除列表，用于过滤一些不需要检查处理的文件。glob 规则，如： ['builder/**'] */
   exclude?: string[];
   /** 文件后缀。若设置，则文件过滤时，先以 extensions 预处理 */
   extensions?: string[];
   /** 是否尝试修正可自动修正的异常 */
   fix?: boolean;
-  /** 文件包含列表。glob 规则，如： `['src\**\*.{ts,tsx,js,jsx}']` */
-  include?: string[];
   /** 静默模式。不打印任何信息，一般用于接口调用 */
   silent?: boolean;
   /** 是否打印异常详情。默认为 true */

@@ -35,8 +35,6 @@ eslintCheck
   .then(res => res && console.log('eslint test1:', res))
   .then(() => {
     eslintCheck.parseConfig({ mode: 'current' });
-    return eslintCheck
-      .start(['test-cases/ts-check-test-1.ts', 'src/ts-check.ts'])
-      .then(res => console.log('eslint test2:', res));
+    return eslintCheck.start(['test/test-cases/ts-check-test-1.ts', 'src/ts-check.ts']).then(res => console.log('eslint test2:', res));
   })
   .catch(err => console.log('failed!', err));

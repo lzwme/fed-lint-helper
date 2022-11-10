@@ -2,7 +2,6 @@
 /src
 **/*.spec.*
 test
-test-cases
 scripts
 README_zh-CN.md
 CHANGELOG.md

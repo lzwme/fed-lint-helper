@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-08 08:56:20
+ * @LastEditTime: 2022-11-10 17:09:08
  * @Description:  prettier check
  */
 
@@ -11,16 +11,15 @@ import { existsSync, statSync, readFileSync, writeFileSync } from 'node:fs';
 import { color } from 'console-log-colors';
 import glob from 'fast-glob';
 import { md5, assign, execSync, fixToshortPath } from '@lzwme/fe-utils';
-import { getConfig } from './config';
-import type { PrettierCheckConfig, LintResult, LintCacheInfo } from './types';
+import { getConfig } from '../config';
+import type { PrettierCheckConfig, LintResult, LintCacheInfo } from '../types';
 import { LintBase } from './LintBase';
-import { isGitRepo } from './utils/common';
+import { isGitRepo } from '../utils/common';
 
 export interface PrettierCheckResult extends LintResult {
   /** fix 修正过的文件路径列表 */
   fixedFileList?: string[];
   failedFiles?: string[];
-  // fileList: string[];
 }
 
 export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckResult> {
@@ -202,8 +201,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
           }
 
           const tipPrefix = item.fixed ? color.greenBright(`Fixed`) : item.passed ? color.green('PASS') : color.red('Failed');
-
-          if (!config.silent && !baseConfig.ci) this.logger.logInline(`[${tipPrefix}][${index}] ${filepath}`);
+          if (!config.silent && !baseConfig.ci) this.logger.logInline(` - [${tipPrefix}][${index}] ${filepath}`);
         } catch (error) {
           console.log();
           logger.error(error);
@@ -211,8 +209,9 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
         }
         return item;
       });
-
       const passedFiles = this.cacheInfo.list;
+
+      console.log();
 
       for (const d of results) {
         const shortpath = fixToshortPath(d.filepath, config.rootDir);

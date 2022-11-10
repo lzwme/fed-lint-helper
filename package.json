@@ -48,7 +48,7 @@
     "dist": "run-s test build doc:html",
     "release": "run-s dist",
     "release-version": "run-s dist version",
-    "clean": "ts-node -T -p tsconfig.cjs.json src/rmdir.ts ./cjs ./esm ./docs"
+    "clean": "ts-node -T -p tsconfig.cjs.json src/tools/rmdir.ts ./cjs ./esm ./docs"
   },
   "engines": {
     "node": ">=14.18"

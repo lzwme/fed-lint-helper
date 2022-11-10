@@ -13,10 +13,10 @@ import glob from 'fast-glob';
 import type { Config } from '@jest/types';
 import type { FormattedTestResults, formatTestResults } from '@jest/test-result';
 import { fixToshortPath, md5, execSync, rmrf, isEmptyObject } from '@lzwme/fe-utils';
-import { getConfig } from './config';
-import type { JestCheckConfig, LintCacheInfo, LintResult, WhiteListInfo } from './types';
+import { getConfig } from '../config';
+import type { JestCheckConfig, LintCacheInfo, LintResult, WhiteListInfo } from '../types';
 import { LintBase } from './LintBase';
-import { fileListToString } from './utils';
+import { fileListToString } from '../utils';
 
 export type JestCheckResult = LintResult;
 

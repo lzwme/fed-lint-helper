@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-08 09:55:33
+ * @LastEditTime: 2022-11-10 17:39:30
  * @Description: typescript Diagnostics report
  */
 
@@ -13,9 +13,9 @@ import type { Diagnostic, DiagnosticCategory, CompilerOptions } from 'typescript
 import glob from 'fast-glob';
 import { isMatch } from 'micromatch';
 import { md5, fixToshortPath } from '@lzwme/fe-utils';
-import type { TsCheckConfig, LintResult, WhiteListInfo, LintCacheInfo } from './types';
+import type { TsCheckConfig, LintResult, WhiteListInfo, LintCacheInfo } from '../types';
 import { LintBase } from './LintBase';
-import { arrayToObject, fileListToString } from './utils/common';
+import { arrayToObject, fileListToString } from '../utils/common';
 
 const { bold, redBright, yellowBright, cyanBright, red, cyan } = color;
 export interface TsCheckResult extends LintResult {
@@ -37,11 +37,8 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     /** 检测通过的文件列表是否有变动(记录变动文件数)，用于标记是否需要写回缓存 */
     passedChanged: number;
   };
-  constructor(override config: TsCheckConfig = {}) {
+  constructor(config: TsCheckConfig = {}) {
     super('tscheck', config);
-    config = this.parseConfig(config);
-    this.logger.debug('config', this.config);
-    if (config.checkOnInit) this.start();
   }
   protected override getInitStats() {
     const stats: TsCheckResult = {
