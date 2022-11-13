@@ -4,14 +4,14 @@
  * @see https://stylelint.io
  * @see http://stylelint.docschina.org/user-guide/configuration/
  */
-// @ts-check
-const { getStylelintConfig } = require('@gf/et-config');
+// @ts-nocheck
+const { getStylelintConfig } = require('@lzwme/fed-lint-helper/cjs/init/stylelint');
 const config = getStylelintConfig();
 
 module.exports = {
     ...config,
     // extends: [
-    //     ...config.ignoreFiles,
+    //     ...config.extends,
     // ],
     ignoreFiles: [...config.ignoreFiles, 'dist'],
     rules: {

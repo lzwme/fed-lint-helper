@@ -1,6 +1,5 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-# pnpm exec flh --tscheck --eslint --jest --only-changes --fix
-npx --no flh -- --tscheck --eslint --jest --only-changes --fix
-npx --no flh -- --prettier --only-changes --fix
+npm exec flh -- --tscheck --eslint --jest --only-changes --fix
+npm exec flh -- --prettier --only-changes --fix

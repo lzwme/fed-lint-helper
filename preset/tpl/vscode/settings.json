@@ -12,6 +12,7 @@
   "scss.validate": false,
   "stylelint.validate": [
     "scss",
+    "less",
     "css"
   ],
   "files.trimFinalNewlines": true,
@@ -27,7 +28,7 @@
     "public/**": true,
     "**/dist/**": true,
     "**/dist-admin/**": true,
-    "**/mock/**": true,
+    "**/mock/**": true
   },
   "git.rebaseWhenSync": true,
   "[json]": {

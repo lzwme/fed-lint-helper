@@ -1,7 +1,7 @@
-// @ts-check
-const { existsSync } = require('fs');
+const { existsSync } = require('node:fs');
+const { resolve } = require('node:path');
 const antdBoolean = ['visible', 'confirmLoading', 'closable', 'centered', 'maskClosable', 'forceRender', 'destroyOnClose'];
-/** @type {import('@types/eslint').Linter.Config} */
+/** @type {import('eslint').Linter.Config} */
 const eslint = {
   env: {
     browser: true,

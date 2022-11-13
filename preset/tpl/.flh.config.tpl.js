@@ -1,36 +1,44 @@
+const env = process.env;
+const isCI = (env.CI_MERGE_REQUEST_ID || env.GITLAB_CI || env.CI) != null || process.argv.slice(2).includes('--ci');
+const isMR = isCI && /merge_request/i.test(env.CI_PIPELINE_SOURCE || '');
+// const isInGitlabCI = Boolean(env.GITLAB_CI);
+
 /**
- * @type {import('./src/config').FlhConfig}
+ * @type {import('../../src/types').FlhConfig}
  */
 module.exports = {
   src: ['src'],
-  debug: false,
-  silent: false,
-  printDetail: true,
-  exitOnError: true,
-  cache: true,
-  removeCache: false,
-  wxWorkKeys: [],
-  wxWorkMessageFormat: (type) => {
-    const cn = require('child_process').execSync(`git log -1 --pretty="%cn"`, { encoding: 'utf8' }).trim();
-    return `[gitlab-ci]${type}任务执行失败，请检查 @${cn}`;
-  },
+  exclude: [],
   fix: false,
-  tscheck: {
-    whiteListFilePath: 'config/tsCheckWhiteList.json',
-  },
+  cache: !isMR,
   eslint: {
     fix: false,
-    whiteListFilePath: 'config/eslintWhitelist.json',
+    printDetialOnSuccessed: !isCI,
+    // eslintOptions: {
+    //   extensions: ['ts', 'tsx'],
+    //   overrideConfig: {},
+    // },
   },
-  jest: {
-    src: ['src'],
-    // silent: true,
-    // fileList: require('fast-glob').sync('src/**/**.spec.ts'),
-  },
+  // tscheck: {
+  //   tsConfigFileName: 'tsconfig.eslint.json',
+  //   exclude: [
+  //     'node_modules',
+  //     '**/*.test.{ts,tsx}',
+  //     '**/*/*.mock.{ts,tsx}',
+  //   ],
+  // },
+  // jest: {},
+  // prettier: {},
   // commitlint: {
   //   verify: (message) => {
   //     return /#\d+/.test(message);
   //   }
   // },
   // pmcheck: 'pnpm',
+  // userEmailRule: /@(lz|lzw)\.me$/,
+  // wxWorkKeys: isInGitlabCI ? ['xxx'] : [],
+  // wxWorkMessageFormat: (type) => {
+  //   const cn = require('child_process').execSync(`git log -1 --pretty="%cn"`, { encoding: 'utf8' }).trim();
+  //   return `[gitlab-ci]${type}任务执行失败，请检查 @${cn}`;
+  // },
 };

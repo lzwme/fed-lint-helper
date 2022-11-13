@@ -165,7 +165,7 @@ export async function flhInit(options: Record<string, string | boolean>, package
 
     if (tpl && !existsSync(tpl)) {
       logger.warn('模板文件不存在', color.redBright(tpl));
-    } else cfgInfo = readFileSync(tpl, 'utf8');
+    } else cfgInfo = readFileSync(tpl, 'utf8').replace('@ts-nocheck', '@ts-check');
 
     if (existsSync(item.configFile)) {
       logger.warn(color.yellowBright(`当前目录下已存在配置文件：`), color.cyanBright(item.configFile));
@@ -173,7 +173,7 @@ export async function flhInit(options: Record<string, string | boolean>, package
 
     if (cfgInfo) {
       if (type === 'flh') {
-        cfgInfo = readFileSync(tpl, 'utf8').replace(`import('./src/config')`, `import('${packageInfo.name}')`);
+        cfgInfo = cfgInfo.replace(/import\('.+'\)/m, `import('${packageInfo.name}')`);
       }
 
       mkdirp(dirname(item.configFile));
