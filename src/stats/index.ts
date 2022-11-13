@@ -2,6 +2,7 @@ import { extname, resolve } from 'node:path';
 import { writeFileSync, promises, type Stats } from 'node:fs';
 import glob from 'fast-glob';
 import { color } from 'console-log-colors';
+import { fixToshortPath } from '@lzwme/fe-utils';
 import { getLogger } from '../utils/get-logger';
 import { getTimeCost, fileListToString, padSpace, formatQty, formatMem } from '../utils/common';
 import { getConfig } from '../config';
@@ -31,13 +32,14 @@ export async function stats(options: IStatsOption) {
   const logger = getLogger();
 
   options = {
-    src: config.src || ['src'],
+    src: config.fileStats.src || config.src || ['src'],
     rootDir: config.rootDir,
     exclude: ['**/node_modules/**', '**/dist/**'],
     ...config.fileStats,
     ...options,
   };
   if (!options.src?.length) options.src = ['src'];
+  options.exclude = options.exclude.map(d => (d.includes('*') ? d : `**/${d}/**`));
 
   const exts = options.extensions.map(d => d.replace(/^\./, '')).join(',');
   const extGlobPattern = `**/*.${options.extensions.length > 1 ? `{${exts}}` : exts}`;
@@ -77,7 +79,9 @@ export async function stats(options: IStatsOption) {
     }
   }
 
-  if (options.showFiles) logger.info(`all Files: ${fileListToString(fileList)}`);
+  if (options.showFiles) {
+    logger.info(`all Files: ${fileListToString(options.showFullPath ? fileList : fileList.map(d => fixToshortPath(d, options.rootDir)))}`);
+  }
 
   const printWidths = { desc: 10, total: 6, line: 9 };
   const statsInfo = [
@@ -104,30 +108,34 @@ export async function stats(options: IStatsOption) {
 
     statsInfo.push('');
 
-    const topNfilesByLine = result.topNByLine.map(d => `${color.greenBright(padSpace(formatQty(allFilesInfo[d].line), 10))} ${d}`);
-    statsInfo.push(` ${color.cyanBright(`Top ${topN} Files by Lines:`)}${fileListToString(topNfilesByLine, '')}`);
+    const topNfilesByLine = result.topNByLine.map(
+      d =>
+        `${color.greenBright(padSpace(formatQty(allFilesInfo[d].line), 10))} ${
+          options.showFullPath ? d : fixToshortPath(d, options.rootDir)
+        }`
+    );
+    statsInfo.push(` ${color.cyanBright(`Top ${topN} Files By Lines:`)}${fileListToString(topNfilesByLine, '')}`);
 
-    const topNfilesBySize = result.topNBySize.map(d => `${color.greenBright(padSpace(formatMem(allFilesInfo[d].stat.size), 10))} ${d}`);
-    statsInfo.push(` ${color.cyanBright(`Top ${topN} Files by Size:`)}${fileListToString(topNfilesBySize, '')}`);
+    const topNfilesBySize = result.topNBySize.map(
+      d =>
+        `${color.greenBright(padSpace(formatMem(allFilesInfo[d].stat.size), 10))} ${
+          options.showFullPath ? d : fixToshortPath(d, options.rootDir)
+        }`
+    );
+    statsInfo.push(` ${color.cyanBright(`Top ${topN} Files By Size:`)}${fileListToString(topNfilesBySize, '')}`);
   }
-
-  logger.info(statsInfo.join('\n'));
 
   result.endTime = Date.now();
   logger.debug('result:', result);
 
   if (options.json) {
     const jsonRes = JSON.stringify(result, null, 2);
-    if (options.jsonFile) {
-      options.jsonFile = resolve(options.rootDir, options.jsonFile);
-      writeFileSync(options.jsonFile, jsonRes, 'utf8');
-    } else {
-      console.log(jsonRes);
-    }
+    if (options.jsonFile) writeFileSync(resolve(options.rootDir, options.jsonFile), jsonRes, 'utf8');
+    else console.log(jsonRes);
   }
 
+  logger.info(statsInfo.join('\n'));
   logger.info(getTimeCost(result.startTime));
-
   return result;
 }
 

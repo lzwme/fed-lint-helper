@@ -9,7 +9,7 @@ import { resolve } from 'node:path';
 import { existsSync } from 'node:fs';
 import { Option, program } from 'commander';
 import { color } from 'console-log-colors';
-import { getHeadDiffFileList } from '@lzwme/fe-utils';
+import { getHeadDiffFileList, wxWorkNotify } from '@lzwme/fe-utils';
 import { FlhConfig, TsCheckConfig, JiraCheckConfig, CommitLintOptions, LintTypes } from './types';
 import { formatWxWorkKeys } from './utils';
 import { commConfig, getConfig, mergeCommConfig } from './config';
@@ -184,10 +184,8 @@ program
         logger.log('企业微信机器人 webhook 格式不正确');
         process.exit(-1);
       } else {
-        import('./lib/WXWork').then(({ wxWorkNotify }) => {
-          wxWorkNotify(message, options.wxWorkKeys, programOptions.debug).then(list => {
-            if (list.some(d => d.errcode !== 200)) process.exit(-1);
-          });
+        wxWorkNotify(message, options.wxWorkKeys, programOptions.debug).then(list => {
+          if (list.some(d => d.errcode !== 200)) process.exit(-1);
         });
       }
     }
@@ -215,10 +213,12 @@ program
   .description(`文件类型数量统计`)
   .option('--root-dir', '指定统计的根目录。默认为当前目录')
   .option('--ext <ext...>', '需统计的文件类型后缀列表')
+  .option('-e, --exclude <rules...>', '文件排除规则')
   .option('--topN <number>', 'Line/Size Top N 统计的数量')
   .option('--json', '是否输出为 json 格式')
   .option('--json-file <filepath>', '输出为 json 格式时写入文件')
   .option('--show-files', '是否打印文件列表')
+  .option('--show-full-path', '打印文件路径时，是否显示为完整路径')
   .action((src: string[], options) => {
     import('./stats').then(({ stats }) => {
       const opts = getProgramOptions();
@@ -226,7 +226,8 @@ program
       logger.debug(opts, options);
       logger.debug(src);
       if (options.ext) options.extensions = options.ext;
-      stats({ src, rootDir: config.rootDir, ...options });
+      if (src.length > 0) options.src = src;
+      stats({ rootDir: config.rootDir, ...options });
     });
   });
 

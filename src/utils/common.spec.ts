@@ -11,16 +11,6 @@ describe('utils/common', () => {
     expect(1).toBeTruthy();
   });
 
-  it('md5', () => {
-    expect(comm.md5('abc').length).toEqual(32);
-    expect(comm.md5('abc', true).length).toEqual(0);
-    expect(comm.md5(__filename, true).length).toEqual(32);
-
-    // catch error
-    expect(comm.md5(void 0)).toEqual('');
-    expect(comm.md5(null, true)).toEqual('');
-  });
-
   it('formatWxWorkKeys', () => {
     expect(comm.formatWxWorkKeys(null).length).toBe(0);
     expect(comm.formatWxWorkKeys('').length).toBe(0);

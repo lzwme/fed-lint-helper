@@ -2,10 +2,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { color } from 'console-log-colors';
 import { formatTimeCost, execSync } from '@lzwme/fe-utils';
-import { Logger } from '../lib/Logger';
 import { isMatch } from 'micromatch';
-
-export { md5 } from '@lzwme/fe-utils';
+import { getLogger } from './get-logger';
 
 export function getTimeCost(startTime: number, withTip = true) {
   let timeCost = formatTimeCost(startTime); // (Date.now() - startTime) / 1000 + 's';
@@ -18,7 +16,7 @@ export function getTimeCost(startTime: number, withTip = true) {
  * @param startTime 开始时间戳
  */
 export function logTimeCost(startTime: number, prefix = '') {
-  Logger.getLogger().log(color.cyan(prefix), getTimeCost(startTime));
+  getLogger().log(color.cyan(prefix), getTimeCost(startTime));
 }
 
 /** 将32位字符串转换为 uuid 标准格式 */

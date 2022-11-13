@@ -3,7 +3,7 @@ export * from './lint/commit-lint';
 export * from './lint/eslint-check';
 export * from './lint/jira-check';
 export * from './lint/jest-check';
-export * from './lib';
+// export * from './lib';
 export * from './tools/pm-check';
 export * from './lint/prettier-check';
 export * from './tools/rmdir';
