@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.1.0](https://github.com/lzwme/fed-lint-helper/compare/v2.0.4...v2.1.0) (2022-11-14)
+
+
+### Features
+
+* 新增 stat 源码文件统计功能 ([f49d050](https://github.com/lzwme/fed-lint-helper/commit/f49d050af033083c125a77b40073fba72743c5e7))
+
 ### [2.0.4](https://github.com/lzwme/fed-lint-helper/compare/v2.0.3...v2.0.4) (2022-11-02)
 
 ### [2.0.3](https://github.com/lzwme/fed-lint-helper/compare/v2.0.2...v2.0.3) (2022-10-31)
