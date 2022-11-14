@@ -16,7 +16,6 @@ import { commConfig, getConfig, mergeCommConfig } from './config';
 import { rmdir } from './tools/rmdir';
 import { getLogger } from './utils';
 import { lintStartAsync } from './worker/lintStartAsync';
-import { flhInit } from './init';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const packageInfo = require('../package.json');
@@ -155,10 +154,10 @@ program
 
 program
   .command('init')
-  .description('执行初始化操作')
+  .description('执行 flh、ESLint、Prettier、TypeScript、jest、husky、vscode 等工具的配置初始化')
   .option('--force', '是否强制执行(配置文件已存在，则覆盖生成)')
   .action(options => {
-    flhInit(options, packageInfo);
+    import('./init/flh-init').then(({ flhInit }) => flhInit(options, packageInfo));
   });
 
 program

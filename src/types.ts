@@ -13,6 +13,8 @@ export type ArrayLikeArgs<T> = T extends ArrayLike<infer U> ? U : T;
 export const LintTypes = ['eslint', 'tscheck', 'jest', 'jira', 'prettier'] as const;
 export type ILintTypes = ArrayLikeArgs<typeof LintTypes>;
 
+export type IPackageManager = 'npm' | 'yarn' | 'pnpm';
+
 export interface CommConfig {
   /** 项目根目录，默认为当前工作目录 */
   rootDir?: string;
@@ -197,7 +199,7 @@ export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {
   prettier?: PrettierCheckConfig;
   tscheck?: TsCheckConfig;
   /** package manager check */
-  pmcheck?: 'npm' | 'yarn' | 'pnpm';
+  pmcheck?: IPackageManager;
   /** 源文件统计配置 */
   fileStats?: {
     src?: string[];
