@@ -180,10 +180,10 @@ pnpm dev
 [issues-badge]: https://img.shields.io/github/issues/lzwme/fed-lint-helper.svg
 [issues-url]: https://github.com/lzwme/fed-lint-helper/issues
 [npm-badge]: https://img.shields.io/npm/v/@lzwme/fed-lint-helper.svg?style=flat-square
-[npm-url]: https://npmjs.org/package/@lzwme/fed-lint-helper
+[npm-url]: https://npmjs.com/package/@lzwme/fed-lint-helper
 [node-badge]: https://img.shields.io/badge/node.js-%3E=_14.18.0-green.svg?style=flat-square
 [node-url]: https://nodejs.org/download/
 [download-badge]: https://img.shields.io/npm/dm/@lzwme/fed-lint-helper.svg?style=flat-square
-[download-url]: https://npmjs.org/package/@lzwme/fed-lint-helper
+[download-url]: https://npmjs.com/package/@lzwme/fed-lint-helper
 [bundlephobia-url]: https://bundlephobia.com/result?p=@lzwme/fed-lint-helper@latest
 [bundlephobia-badge]: https://badgen.net/bundlephobia/minzip/@lzwme/fed-lint-helper@latest
