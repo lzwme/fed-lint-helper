@@ -2,7 +2,7 @@ import { extname, resolve } from 'node:path';
 import { writeFileSync, promises, type Stats } from 'node:fs';
 import glob from 'fast-glob';
 import { color } from 'console-log-colors';
-import { fixToshortPath } from '@lzwme/fe-utils';
+import { fixToshortPath, md5 } from '@lzwme/fe-utils';
 import { getLogger } from '../utils/get-logger';
 import { getTimeCost, fileListToString, padSpace, formatQty, formatMem } from '../utils/common';
 import { getConfig } from '../config';
@@ -26,6 +26,7 @@ export async function stats(options: IStatsOption) {
     totalBlank: 0,
     topNByLine: [] as string[],
     topNBySize: [] as string[],
+    duplicates: [] as string[][],
     exts: {} as Record<
       string,
       {
@@ -62,7 +63,7 @@ export async function stats(options: IStatsOption) {
     options.src.map(src => `${src}/${pattern}`),
     { cwd: rootDir, absolute: true, ignore: options.exclude }
   );
-  const allFilesInfo = {} as { [filepath: string]: { filepath: string; line: number; stat: Stats } };
+  const allFilesInfo = {} as { [filepath: string]: { filepath: string; line: number; md5: string; stat: Stats } };
 
   result.total = fileList.length;
   for (const filepath of fileList) {
@@ -72,7 +73,7 @@ export async function stats(options: IStatsOption) {
     else if (filepath.endsWith(`.spec.${ext}`)) ext = `spec.${ext}`;
 
     const fileStat = await promises.stat(filepath);
-    const item = { filepath, line: 0, blank: 0, stat: fileStat };
+    const item = { filepath, line: 0, blank: 0, md5: md5(filepath, true), stat: fileStat };
 
     allFilesInfo[filepath] = item;
     result.totalSize += fileStat.size;
@@ -83,8 +84,9 @@ export async function stats(options: IStatsOption) {
     result.exts[ext].totalSize += fileStat.size;
 
     if (isTextFile(filepath)) {
-      const content = await promises.readFile(filepath, 'utf8');
-      const contentLines = content.trim().split('\n');
+      let content = await promises.readFile(filepath, 'utf8');
+      content = content.trim();
+      const contentLines = content.length > 0 ? content.split('\n') : [];
       item.line = contentLines.length;
       item.blank = contentLines.filter(line => line.trim() === '').length;
       result.exts[ext].totalLine += item.line;
@@ -152,6 +154,35 @@ export async function stats(options: IStatsOption) {
       );
       statsInfo.push(` ${cyanBright(`Top ${topN} Files By Size:`)}${fileListToString(topNfilesBySize, '')}`);
     }
+  }
+
+  // 重复文件统计
+  const filepathByMd5 = {} as { [md5: string]: string[] };
+  const duplicates = new Set<string>();
+
+  Object.values(allFilesInfo).forEach(d => {
+    if (!filepathByMd5[d.md5]) {
+      filepathByMd5[d.md5] = [d.filepath];
+    } else {
+      filepathByMd5[d.md5].push(d.filepath);
+      duplicates.add(d.md5);
+    }
+  });
+
+  if (duplicates.size > 0) {
+    const list = [...duplicates].map(d => filepathByMd5[d]).sort((a, b) => b.length - a.length);
+    result.duplicates = list;
+    const duplicatesTotal = list.reduce((total, item) => total + item.length, 0);
+    statsInfo.push(cyanBright(` Duplicate files[${list.length} - ${duplicatesTotal}]:`));
+    list.forEach(item => {
+      item = item.map(
+        d =>
+          `[${cyanBright(allFilesInfo[d].line)}, ${magentaBright(formatMem(allFilesInfo[d].stat.size))}] ${
+            showFullPath ? d : fixToshortPath(d, options.rootDir)
+          }`
+      );
+      statsInfo.push(`  ├─ ${item.join('\n  │  ')}\n`);
+    });
   }
 
   result.endTime = Date.now();
