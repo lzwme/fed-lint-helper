@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-10 17:40:10
+ * @LastEditTime: 2022-11-14 15:48:59
  * @Description:  jest check
  */
 
@@ -53,12 +53,12 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
     if (this.config.checkOnInit) this.start();
   }
   protected init(): void {
-    if (existsSync(this.config.whiteListFilePath)) {
+    const whiteListFilePath = this.config.whiteListFilePath;
+    if (existsSync(whiteListFilePath)) {
       if (!this.config.toWhiteList) {
-        const whiteListFilePath = resolve(this.config.rootDir, this.config.whiteListFilePath);
         const list = JSON.parse(readFileSync(whiteListFilePath, 'utf8'));
         this.whiteList = list.list ? list : { list }; // 兼容旧格式
-        this.logger.debug('load whiteList:', this.config.whiteListFilePath);
+        this.logger.debug('load whiteList:', whiteListFilePath);
       } else {
         // 追加模式，不删除旧文件
         // unlinkSync(whiteListFilePath);
@@ -156,7 +156,7 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
   }
   protected saveCache(filepath: string, info: unknown, isReset = false) {
     if (!isReset && existsSync(filepath)) info = assign(JSON.parse(readFileSync(filepath, 'utf8')), info);
-    if (isObject(info) && !Array.isArray(info)) {
+    if (isObject(info) && !Array.isArray(info) && filepath !== this.config.whiteListFilePath) {
       Object.assign(info, { $commitId: this.getCommitId() });
     }
 
