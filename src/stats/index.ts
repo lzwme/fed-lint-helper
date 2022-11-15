@@ -13,7 +13,67 @@ interface IStatsOption extends IFileStats {
   rootDir?: string;
 }
 
-const binaryExts = new Set(['png', 'jpg', 'gif', 'jpeg', 'svg', 'mp3', 'mp4', 'avi', 'wav', 'node', 'exe']);
+const binaryExts = new Set([
+  'avi',
+  'doc',
+  'docx',
+  'exe',
+  'gif',
+  'jpg',
+  'jpeg',
+  'mp3',
+  'mp4',
+  'node',
+  'ppt',
+  'pptx',
+  'pdf',
+  'png',
+  'svg',
+  'wav',
+  'xls',
+  'xlsx',
+]);
+const extensionsDefault = [
+  'ts',
+  'tsx',
+  'js',
+  'jsx',
+  'mjs',
+  'cjs',
+  'json',
+  'css',
+  'less',
+  'scss',
+  'md',
+  // others
+  'bat',
+  'c',
+  'class',
+  'cmd',
+  'cpp',
+  'cs',
+  'csv',
+  'h',
+  'html',
+  'java',
+  'php',
+  'proto',
+  'pug',
+  'py',
+  'rs',
+  'rs.in',
+  'sh',
+  'sql',
+  'svelte',
+  'swift',
+  'txt',
+  'vue',
+  'xml',
+  'yaml',
+  'zig',
+  // binary
+  ...binaryExts,
+];
 const isTextFile = (filepath: string) => !binaryExts.has(extname(filepath).slice(1).toLowerCase());
 
 export async function stats(options: IStatsOption) {
@@ -46,6 +106,7 @@ export async function stats(options: IStatsOption) {
     src: config.fileStats.src || config.src || ['src'],
     rootDir: config.rootDir,
     exclude: ['**/node_modules/**', '**/dist/**'],
+    extensions: extensionsDefault,
     ...config.fileStats,
     ...options,
   };
@@ -172,13 +233,7 @@ export async function stats(options: IStatsOption) {
     const list = [...duplicates].map(d => filepathByMd5[d]).sort((a, b) => b.length - a.length);
     result.duplicates = list;
     const duplicatesTotal = list.reduce((total, item) => total + item.length, 0);
-    statsInfo.push(
-      cyanBright(
-        ` Duplicate files[${list.length} - ${duplicatesTotal}]${
-          options.showDupFiles ? ':' : ' (set args of `--show-dup-files` to show detail duplicate files)'
-        }`
-      )
-    );
+    statsInfo.push(cyanBright(` Duplicate files[${list.length} - ${duplicatesTotal}]${options.showDupFiles ? ':' : ''}`));
     if (options.showDupFiles) {
       list.forEach(item => {
         item = item.map(

@@ -83,35 +83,7 @@ export const config: FlhConfig = {
     extensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.json', '.less', '.scss', '.md'],
     detectSubPackages: false,
   },
-  fileStats: {
-    extensions: [
-      '.ts',
-      '.tsx',
-      '.js',
-      '.jsx',
-      '.mjs',
-      '.cjs',
-      '.json',
-      '.less',
-      '.scss',
-      '.md',
-      'c',
-      'cpp',
-      'h',
-      'html',
-      'py',
-      'rs',
-      'java',
-      'proto',
-      // binary
-      'mp3',
-      'wav',
-      'png',
-      'jpg',
-      'gif',
-      'svg',
-    ],
-  },
+  fileStats: {},
 };
 
 let isInited = false;
