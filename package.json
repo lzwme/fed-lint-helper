@@ -58,7 +58,7 @@
     "registry": "https://registry.npmjs.com"
   },
   "dependencies": {
-    "@lzwme/fe-utils": "^1.1.0",
+    "@lzwme/fe-utils": "^1.2.0",
     "commander": "^9.4.1",
     "console-log-colors": "^0.2.3",
     "enquirer": "^2.3.6",
@@ -71,11 +71,11 @@
     "@jest/types": "^29.3.1",
     "@node-rs/deno-lint": "^1.14.0",
     "@types/eslint": "^8.4.10",
-    "@types/jest": "^29.2.2",
+    "@types/jest": "^29.2.3",
     "@types/micromatch": "^4.0.2",
     "@types/node": "^18.11.9",
-    "@typescript-eslint/eslint-plugin": "^5.42.1",
-    "@typescript-eslint/parser": "^5.42.1",
+    "@typescript-eslint/eslint-plugin": "^5.43.0",
+    "@typescript-eslint/parser": "^5.43.0",
     "eslint": "^8.27.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-jest": "^27.1.5",
