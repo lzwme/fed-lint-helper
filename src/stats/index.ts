@@ -52,15 +52,15 @@ export async function stats(options: IStatsOption) {
   if (!options.src?.length) options.src = ['src'];
   options.exclude = options.exclude.map(d => (d.includes('*') ? d : `**/${d}/**`));
 
-  const { extensions, rootDir, showFullPath } = options;
+  const { src, extensions, rootDir, showFullPath } = options;
   const exts = extensions.map(d => d.replace(/^\./, '')).join(',');
   const pattern = `**/*.${extensions.length > 1 ? `{${exts}}` : exts}`;
 
   logger.debug('options:', options, `exts: ${exts}`);
-  logger.info(`start stats for ${greenBright(options.src.join(','))}`);
+  logger.info(`start stats for ${greenBright(src.join(','))} in [${cyanBright(rootDir)}]`);
 
   const fileList = await glob(
-    options.src.map(src => `${src}/${pattern}`),
+    src.map(src => `${src}/${pattern}`),
     { cwd: rootDir, absolute: true, ignore: options.exclude }
   );
   const allFilesInfo = {} as { [filepath: string]: { filepath: string; line: number; md5: string; stat: Stats } };
@@ -172,7 +172,13 @@ export async function stats(options: IStatsOption) {
     const list = [...duplicates].map(d => filepathByMd5[d]).sort((a, b) => b.length - a.length);
     result.duplicates = list;
     const duplicatesTotal = list.reduce((total, item) => total + item.length, 0);
-    statsInfo.push(cyanBright(` Duplicate files[${list.length} - ${duplicatesTotal}]${options.showDupFiles ? ':' : ''}`));
+    statsInfo.push(
+      cyanBright(
+        ` Duplicate files[${list.length} - ${duplicatesTotal}]${
+          options.showDupFiles ? ':' : ' (set args of `--show-dup-files` to show detail duplicate files)'
+        }`
+      )
+    );
     if (options.showDupFiles) {
       list.forEach(item => {
         item = item.map(

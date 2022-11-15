@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-09 15:41:30
+ * @LastEditTime: 2022-11-15 14:22:39
  * @Description: cli 工具
  */
 import { resolve } from 'node:path';
@@ -218,6 +218,7 @@ program
   .option('--json-file <filepath>', '输出为 json 格式时写入文件')
   .option('--show-files', '是否打印文件列表')
   .option('--show-full-path', '打印文件路径时，是否显示为完整路径')
+  .option('--show-dup-files', '检测到重复文件时，是否显示重复文件列表')
   .action((src: string[], options) => {
     import('./stats').then(({ stats }) => {
       const opts = getProgramOptions();

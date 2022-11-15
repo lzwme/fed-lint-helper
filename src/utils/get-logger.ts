@@ -8,7 +8,10 @@ export function getLogger(tag = '[flh]', levelType?: LogLevelType, logDir?: stri
   return NLogger.getLogger(tag, { levelType, color, logDir });
 }
 
-/** 日志清理 */
+/**
+ * 日志清理
+ * @deprecated
+ */
 export async function logClean(logDir: string, validityDays = 7): Promise<number> {
   let count = 0;
   if (!existsSync(logDir) || +validityDays < 1) return count;

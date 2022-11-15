@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-15 10:33:05
+ * @LastEditTime: 2022-11-15 16:37:19
  * @Description:
  */
 
@@ -14,7 +14,7 @@ import { sync } from 'fast-glob';
 import { color } from 'console-log-colors';
 import { assign, isEmptyObject } from '@lzwme/fe-utils';
 import { CommConfig, FlhConfig, LintTypes } from './types';
-import { formatWxWorkKeys, getLogger, logClean } from './utils';
+import { formatWxWorkKeys, getLogger } from './utils';
 
 export const commConfig: CommConfig = {
   cache: true,
@@ -37,7 +37,6 @@ export const commConfig: CommConfig = {
 export const config: FlhConfig = {
   ...commConfig,
   configPath: '.flh.config.js',
-  cacheLocation: `node_modules/.cache/flh/`,
   packages: {},
   ci: Boolean(env.CI || env.GITLAB_CI || env.JENKINS_HOME),
   logValidityDays: 7,
@@ -181,7 +180,7 @@ export function getConfig(options?: FlhConfig, useCache = true) {
   if (config.logDir) {
     logger.setLogDir(config.logDir);
     // 只处理一次
-    if (!globalThis.isInChildProcess && !isInited) logClean(config.logDir, config.logValidityDays);
+    // if (!globalThis.isInChildProcess && !isInited) logClean(config.logDir, config.logValidityDays);
   }
 
   if (!config.cacheLocation) config.cacheLocation = resolve(baseCaceDir, `./.cache/flh/`);
