@@ -176,8 +176,10 @@ export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {
   configPath?: string;
   /** 根目录，默认为当前执行目录 */
   rootDir?: string;
-  /** 日志存放目录。默认为 `node_modules/.cache/flh/log` */
+  /** 日志存放目录。默认为 `node_modules/.cache/flh/log`。设置为 `_NIL_` 则表示禁用日志写文件 */
   logDir?: string;
+  /** 日志有效期。单位天，默认为 7 天 */
+  logValidityDays?: number;
   /** 缓存文件保存的目录路径。默认为： `<config.rootDir>/node_modules/.cache/flh/` */
   cacheLocation?: string;
   /** 是否开启调试模式(打印更多的细节) */
@@ -213,6 +215,8 @@ export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {
     jsonFile?: string;
     /** 是否打印文件列表 */
     showFiles?: boolean;
+    /** 是否打印重复文件列表 */
+    showDupFiles?: boolean;
     /** 打印文件路径时，是否显示为完整路径 */
     showFullPath?: boolean;
     /** TopLine 和 TopSize 统计文件数 */

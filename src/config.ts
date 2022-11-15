@@ -2,18 +2,19 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-10 16:23:20
+ * @LastEditTime: 2022-11-15 10:33:05
  * @Description:
  */
 
-import { color } from 'console-log-colors';
-import { sync } from 'fast-glob';
 import { existsSync, mkdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
+import { homedir } from 'node:os';
 import { env } from 'node:process';
+import { sync } from 'fast-glob';
+import { color } from 'console-log-colors';
 import { assign, isEmptyObject } from '@lzwme/fe-utils';
 import { CommConfig, FlhConfig, LintTypes } from './types';
-import { formatWxWorkKeys, getLogger } from './utils';
+import { formatWxWorkKeys, getLogger, logClean } from './utils';
 
 export const commConfig: CommConfig = {
   cache: true,
@@ -37,9 +38,9 @@ export const config: FlhConfig = {
   ...commConfig,
   configPath: '.flh.config.js',
   cacheLocation: `node_modules/.cache/flh/`,
-  logDir: `node_modules/.cache/flh/log`,
   packages: {},
   ci: Boolean(env.CI || env.GITLAB_CI || env.JENKINS_HOME),
+  logValidityDays: 7,
   tscheck: {
     mode: 'thread',
     exclude: ['**/*.test.{ts,tsx}', '**/*/*.mock.{ts,tsx}', '**/*/*.d.ts'],
@@ -168,16 +169,24 @@ export function getConfig(options?: FlhConfig, useCache = true) {
   // 公共通用配置
   mergeCommConfig(config);
 
-  if (!config.cacheLocation) config.cacheLocation = `node_modules/.cache/flh/`;
-  config.cacheLocation = resolve(config.rootDir, config.cacheLocation);
-  if (!existsSync(config.cacheLocation)) {
-    mkdirSync(config.cacheLocation, { recursive: true });
-  }
-
   config.wxWorkKeys = formatWxWorkKeys(config.wxWorkKeys);
-  if (config.logDir) logger.setLogDir(config.logDir);
 
   if (isEmptyObject(config.packages)) config.packages = getMenorepoPackages();
+
+  const npmModules = resolve(config.rootDir, 'node_modules');
+  const baseCaceDir = existsSync(npmModules) ? npmModules : resolve(homedir(), '.flh');
+
+  if (!config.logDir) config.logDir = resolve(baseCaceDir, './.cache/flh/log');
+  if (config.logDir === '_NIL_') config.logDir = ''; // 禁用日志
+  if (config.logDir) {
+    logger.setLogDir(config.logDir);
+    // 只处理一次
+    if (!globalThis.isInChildProcess && !isInited) logClean(config.logDir, config.logValidityDays);
+  }
+
+  if (!config.cacheLocation) config.cacheLocation = resolve(baseCaceDir, `./.cache/flh/`);
+  config.cacheLocation = resolve(config.rootDir, config.cacheLocation);
+  if (!existsSync(config.cacheLocation)) mkdirSync(config.cacheLocation, { recursive: true });
 
   isInited = true;
   return config;

@@ -102,7 +102,6 @@ export async function stats(options: IStatsOption) {
 
   const widths = { row: 70, ext: 10, sep: 15 };
   const statsInfo = [
-    greenBright(`success!`),
     '-'.repeat(widths.row),
     [
       padSpace('Extension', widths.ext),
@@ -173,16 +172,18 @@ export async function stats(options: IStatsOption) {
     const list = [...duplicates].map(d => filepathByMd5[d]).sort((a, b) => b.length - a.length);
     result.duplicates = list;
     const duplicatesTotal = list.reduce((total, item) => total + item.length, 0);
-    statsInfo.push(cyanBright(` Duplicate files[${list.length} - ${duplicatesTotal}]:`));
-    list.forEach(item => {
-      item = item.map(
-        d =>
-          `[${cyanBright(allFilesInfo[d].line)}, ${magentaBright(formatMem(allFilesInfo[d].stat.size))}] ${
-            showFullPath ? d : fixToshortPath(d, options.rootDir)
-          }`
-      );
-      statsInfo.push(`  ├─ ${item.join('\n  │  ')}\n`);
-    });
+    statsInfo.push(cyanBright(` Duplicate files[${list.length} - ${duplicatesTotal}]${options.showDupFiles ? ':' : ''}`));
+    if (options.showDupFiles) {
+      list.forEach(item => {
+        item = item.map(
+          d =>
+            `[${cyanBright(allFilesInfo[d].line)}, ${magentaBright(formatMem(allFilesInfo[d].stat.size))}] ${
+              showFullPath ? d : fixToshortPath(d, options.rootDir)
+            }`
+        );
+        statsInfo.push(`  ├─ ${item.join('\n  │  ')}\n`);
+      });
+    }
   }
 
   result.endTime = Date.now();
@@ -194,7 +195,8 @@ export async function stats(options: IStatsOption) {
     else console.log(jsonRes);
   }
 
-  logger.info(statsInfo.join('\n'));
+  logger.info(greenBright(`success!`));
+  console.info(statsInfo.join('\n'));
   logger.info(getTimeCost(result.startTime));
   return result;
 }
