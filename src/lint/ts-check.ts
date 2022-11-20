@@ -8,7 +8,7 @@
 
 import { resolve, dirname, normalize } from 'node:path';
 import { existsSync, statSync } from 'node:fs';
-import { color } from 'console-log-colors';
+import { bold, redBright, yellowBright, cyanBright, red, cyan } from 'console-log-colors';
 import type { Diagnostic, DiagnosticCategory, CompilerOptions } from 'typescript';
 import glob from 'fast-glob';
 import micromatch from 'micromatch';
@@ -17,7 +17,6 @@ import type { TsCheckConfig, LintResult, WhiteListInfo, LintCacheInfo } from '..
 import { LintBase } from './LintBase.js';
 import { arrayToObject, fileListToString } from '../utils/common.js';
 
-const { bold, redBright, yellowBright, cyanBright, red, cyan } = color;
 export interface TsCheckResult extends LintResult {
   /** 异常类型数量统计 */
   diagnosticsCategory: Partial<Record<keyof typeof DiagnosticCategory, number>>;

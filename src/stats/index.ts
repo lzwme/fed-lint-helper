@@ -1,7 +1,7 @@
 import { extname, resolve } from 'node:path';
 import { writeFileSync, promises, type Stats } from 'node:fs';
 import glob from 'fast-glob';
-import { color } from 'console-log-colors';
+import { green, greenBright, cyanBright, magentaBright } from 'console-log-colors';
 import { fixToshortPath, md5 } from '@lzwme/fe-utils';
 import { getLogger } from '../utils/get-logger.js';
 import { getTimeCost, fileListToString, padSpace, formatQty, formatMem } from '../utils/common.js';
@@ -100,7 +100,6 @@ export async function stats(options: IStatsOption) {
   };
   const config = getConfig();
   const logger = getLogger();
-  const { green, greenBright, cyanBright, magentaBright } = color;
 
   options = {
     src: config.fileStats.src || config.src || ['src'],

@@ -6,7 +6,7 @@
  * @Description:  eslint check
  */
 
-import { color } from 'console-log-colors';
+import { bold, red, redBright, yellowBright, cyanBright } from 'console-log-colors';
 import type { ESLint } from 'eslint';
 import { existsSync, statSync } from 'node:fs';
 import { extname, resolve } from 'node:path';
@@ -14,8 +14,6 @@ import { fixToshortPath } from '@lzwme/fe-utils';
 import { arrayToObject, fileListToString } from '../utils/index.js';
 import { LintBase } from './LintBase.js';
 import type { ESLintCheckConfig, LintResult, WhiteListInfo } from '../types.js';
-
-const { bold, red, redBright, yellowBright, cyanBright } = color;
 
 export interface ESLintCheckResult extends LintResult {
   /** warning 类型异常的总数量 */

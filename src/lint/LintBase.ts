@@ -8,7 +8,7 @@
 
 import { existsSync, unlinkSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
-import { color } from 'console-log-colors';
+import { bold, cyan, red, redBright, greenBright } from 'console-log-colors';
 import {
   assign,
   createFilePathFilter,
@@ -243,7 +243,7 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
     return result;
   }
   private startCheck() {
-    this.logger.info(color.cyan('start checking in'), color.greenBright(this.config.rootDir));
+    this.logger.info(cyan('start checking in'), greenBright(this.config.rootDir));
     if (this.init) this.init();
     return this.check();
   }
@@ -279,7 +279,6 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
     result = assign(stats, result);
 
     if (!globalThis.isInChildProcess) {
-      const { bold, cyan, red, redBright, greenBright } = color;
       logger.debug('result', stats);
       logger.info(cyan(`[${config.mode}]`), bold(stats.isPassed ? greenBright('Verification passed!') : redBright('Verification failed!')));
       if (stats.totalFilesNum) {

@@ -11,7 +11,7 @@ import { resolve, dirname } from 'node:path';
 import { homedir } from 'node:os';
 import { env } from 'node:process';
 // import { fileURLToPath } from 'node:url';
-import fg from 'fast-glob';
+import { sync } from 'fast-glob';
 import { color } from 'console-log-colors';
 import { assign, isEmptyObject, type PackageJson, readJsonFileSync } from '@lzwme/fe-utils';
 import { type CommConfig, type FlhConfig, LintTypes } from './types.js';
@@ -180,14 +180,12 @@ function getMenorepoPackages(rootDir = process.cwd()) {
 
   filepath = resolve(rootDir, 'packages');
   if (existsSync(filepath)) {
-    const pkgs = fg
-      .sync(['packages/**/*/package.json'], {
-        cwd: rootDir,
-        deep: 3,
-        ignore: ['**/node_modules/**', '**/dist/**'],
-        absolute: true,
-      })
-      .map(d => resolve(rootDir, d));
+    const pkgs = sync(['packages/**/*/package.json'], {
+      cwd: rootDir,
+      deep: 3,
+      ignore: ['**/node_modules/**', '**/dist/**'],
+      absolute: true,
+    }).map(d => resolve(rootDir, d));
 
     for (filepath of pkgs) {
       // eslint-disable-next-line @typescript-eslint/no-var-requires

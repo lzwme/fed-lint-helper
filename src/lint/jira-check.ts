@@ -10,14 +10,12 @@ import { resolve, join } from 'node:path';
 import { existsSync, writeFileSync, readFileSync } from 'node:fs';
 import type { IncomingHttpHeaders } from 'node:http';
 import { homedir } from 'node:os';
-import { color } from 'console-log-colors';
+import { magenta, magentaBright, cyanBright, yellowBright, redBright, green, greenBright } from 'console-log-colors';
 import { assign, getHeadBranch, readJsonFileSync, Request } from '@lzwme/fe-utils';
 import { getLogger, checkUserEmial } from '../utils/index.js';
 import { getConfig } from '../config.js';
 import type { AnyObject, JiraCheckConfig, LintResult } from '../types.js';
 import { LintBase } from './LintBase.js';
-
-const { magenta, magentaBright, cyanBright, yellowBright, redBright, green, greenBright } = color;
 
 export interface JiraCheckResult extends LintResult {
   /** 是否检测通过 */
