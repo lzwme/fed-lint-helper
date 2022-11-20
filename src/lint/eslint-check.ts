@@ -11,9 +11,9 @@ import type { ESLint } from 'eslint';
 import { existsSync, statSync } from 'node:fs';
 import { extname, resolve } from 'node:path';
 import { fixToshortPath } from '@lzwme/fe-utils';
-import { arrayToObject, fileListToString } from '../utils';
-import { LintBase } from './LintBase';
-import type { ESLintCheckConfig, LintResult, WhiteListInfo } from '../types';
+import { arrayToObject, fileListToString } from '../utils/index.js';
+import { LintBase } from './LintBase.js';
+import type { ESLintCheckConfig, LintResult, WhiteListInfo } from '../types.js';
 
 const { bold, red, redBright, yellowBright, cyanBright } = color;
 

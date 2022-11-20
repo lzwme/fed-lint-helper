@@ -10,11 +10,12 @@ import { existsSync, mkdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { homedir } from 'node:os';
 import { env } from 'node:process';
-import { sync } from 'fast-glob';
+// import { fileURLToPath } from 'node:url';
+import fg from 'fast-glob';
 import { color } from 'console-log-colors';
-import { assign, isEmptyObject } from '@lzwme/fe-utils';
-import { CommConfig, FlhConfig, LintTypes } from './types';
-import { formatWxWorkKeys, getLogger } from './utils';
+import { assign, isEmptyObject, type PackageJson, readJsonFileSync } from '@lzwme/fe-utils';
+import { type CommConfig, type FlhConfig, LintTypes } from './types.js';
+import { formatWxWorkKeys, getLogger } from './utils/index.js';
 
 export const commConfig: CommConfig = {
   cache: true,
@@ -67,7 +68,7 @@ export const config: FlhConfig = {
     type: 'commit',
     commitMsgPrefix: '[ET]',
     sealedCommentAuthors: [],
-    jiraHome: 'http://jira.com.cn',
+    jiraHome: '',
     issuePrefix: [],
     projectName: 'fed-lint-helper',
     pipeline: {
@@ -118,9 +119,13 @@ export function getConfig(options?: FlhConfig, useCache = true) {
   if (!isInited) {
     const configPath = resolve(config.configPath);
     if (existsSync(configPath)) {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const cfg: FlhConfig = require(configPath);
-      assign(config, cfg);
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const d = require(configPath);
+        assign(config, d);
+      } catch {
+        import(configPath).then(d => assign(config, d));
+      }
     } else if (config.debug || (options && options.debug)) {
       logger.log(color.yellowBright(`配置文件不存在：${configPath}`));
     }
@@ -169,22 +174,24 @@ function getMenorepoPackages(rootDir = process.cwd()) {
 
   if (existsSync(filepath)) {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const pkgInfo = require(filepath);
+    const pkgInfo = readJsonFileSync<PackageJson>(filepath);
     if (pkgInfo.packages) Object.assign(packages, pkgInfo.packages);
   }
 
   filepath = resolve(rootDir, 'packages');
   if (existsSync(filepath)) {
-    const pkgs = sync(['packages/**/*/package.json'], {
-      cwd: rootDir,
-      deep: 3,
-      ignore: ['**/node_modules/**', '**/dist/**'],
-      absolute: true,
-    }).map(d => resolve(rootDir, d));
+    const pkgs = fg
+      .sync(['packages/**/*/package.json'], {
+        cwd: rootDir,
+        deep: 3,
+        ignore: ['**/node_modules/**', '**/dist/**'],
+        absolute: true,
+      })
+      .map(d => resolve(rootDir, d));
 
     for (filepath of pkgs) {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const projectName = require(filepath).name as string;
+      const projectName = readJsonFileSync<PackageJson>(filepath).name;
       packages[projectName] = dirname(filepath);
     }
   }
@@ -192,5 +199,7 @@ function getMenorepoPackages(rootDir = process.cwd()) {
   return packages;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-export const VERSION: string = require('../package.json').version;
+// @ts-ignore
+export const flhSrcDir = typeof __dirname !== 'undefined' ? __dirname : dirname(fileURLToPath(import.meta.url));
+
+export const FlhPkgInfo = readJsonFileSync<PackageJson>(resolve(flhSrcDir, '../package.json'));

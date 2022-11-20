@@ -1,8 +1,8 @@
 import { statSync, existsSync } from 'node:fs';
-import { color } from 'console-log-colors';
+import { green, red } from 'console-log-colors';
 import glob from 'fast-glob';
 import { rmrfAsync, readSyncByRl } from '@lzwme/fe-utils';
-import { getLogger } from '../utils/get-logger';
+import { getLogger } from '../utils/get-logger.js';
 
 async function doRmdir(source: string, slient = false, force = false) {
   if (!existsSync(source)) return false;
@@ -11,13 +11,13 @@ async function doRmdir(source: string, slient = false, force = false) {
   const sourceTip = statSync(source).isFile() ? '文件' : '目录';
 
   if (!force) {
-    const force = await readSyncByRl(`是否删除该${sourceTip}(y/)？[${color.red(source)}] `);
+    const force = await readSyncByRl(`是否删除该${sourceTip}(y/)？[${red(source)}] `);
     if ('y' !== String(force).trim().toLowerCase()) return false;
   }
 
   await rmrfAsync(source);
 
-  if (!slient) logger.info(`${sourceTip}已删除：`, color.green(source));
+  if (!slient) logger.info(`${sourceTip}已删除：`, green(source));
   return true;
 }
 
@@ -45,5 +45,3 @@ export async function rmdir(srcs: string[], slient = false, force = false) {
 
   return total;
 }
-
-if (module === require.main) rmdir(process.argv.slice(2), false, true);

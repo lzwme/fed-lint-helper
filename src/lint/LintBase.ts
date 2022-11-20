@@ -9,13 +9,22 @@
 import { existsSync, unlinkSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { color } from 'console-log-colors';
-import { assign, getObjectKeysUnsafe, execSync, createFilePathFilter, mkdirp, getHeadCommitId, isObject } from '@lzwme/fe-utils';
-import { getIndentSize, getTimeCost, globMatcher, isGitRepo, padSpace } from '../utils/common';
-import { getLogger } from '../utils/get-logger';
-import { createForkThread } from '../worker/fork';
-import { getConfig, VERSION } from '../config';
-import type { CommConfig, ILintTypes, LintCacheInfo, LintResult, WhiteListInfo } from '../types';
-import { exit } from '../exit';
+import {
+  assign,
+  createFilePathFilter,
+  execSync,
+  getHeadCommitId,
+  getObjectKeysUnsafe,
+  isObject,
+  mkdirp,
+  readJsonFileSync,
+} from '@lzwme/fe-utils';
+import { getIndentSize, getTimeCost, globMatcher, isGitRepo, padSpace } from '../utils/common.js';
+import { getLogger } from '../utils/get-logger.js';
+import { createForkThread } from '../worker/fork.js';
+import { getConfig, FlhPkgInfo } from '../config.js';
+import type { CommConfig, ILintTypes, LintCacheInfo, LintResult, WhiteListInfo } from '../types.js';
+import { exit } from '../exit.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export abstract class LintBase<C extends CommConfig & Record<string, any>, R extends LintResult = LintResult> {
@@ -28,8 +37,8 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
   protected whiteList: WhiteListInfo = { list: {} };
   protected cacheInfo: LintCacheInfo = { list: {} };
 
-  /** start 之前调用。返回 false 则终止继续执行 */
-  protected abstract beforeStart(fileList?: string[]): boolean | Promise<boolean>;
+  /** start 之前调用。返回 true 才会继续执行 */
+  protected abstract beforeStart(fileList?: string[]): boolean | string | Promise<boolean | string>;
   /** 执行检测 */
   protected abstract check(fileList?: string[]): Promise<R>;
 
@@ -121,7 +130,7 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
    */
   protected checkInWorkThreads(config = this.config) {
     // this.logger.info('start create work threads');
-    return import('../worker/worker-threads').then(({ createWorkerThreads }) => {
+    return import('../worker/worker-threads.js').then(({ createWorkerThreads }) => {
       return createWorkerThreads<R, C>({
         type: this.tag,
         debug: config.debug,
@@ -137,12 +146,12 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
     if (!this.commitId && isGitRepo(this.config.rootDir)) this.commitId = getHeadCommitId();
     return this.commitId;
   }
-  protected getCacheInfo(useCache = false) {
+  protected getCacheInfo() {
     let cacheInfo: LintCacheInfo;
     if (existsSync(this.cacheFilePath)) {
       try {
-        cacheInfo = useCache ? require(this.cacheFilePath) : JSON.parse(readFileSync(this.cacheFilePath, { encoding: 'utf8' }));
-        if (!cacheInfo.list || (cacheInfo.version && cacheInfo.version !== VERSION)) {
+        cacheInfo = readJsonFileSync(this.cacheFilePath);
+        if (!cacheInfo.list || (cacheInfo.version && cacheInfo.version !== FlhPkgInfo.version)) {
           unlinkSync(this.cacheFilePath);
           cacheInfo = null;
         } else {
@@ -250,11 +259,11 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
 
     if (!this.isCheckAll && config.fileList.length > 0) config.fileList = this.filesFilter(config.fileList);
 
-    let hasFiles = this.isCheckAll ? this.config.src.length > 0 : config.fileList.length > 0;
+    let hasFiles: boolean | string = this.isCheckAll ? this.config.src.length > 0 : config.fileList.length > 0;
 
     if (hasFiles) hasFiles = await this.beforeStart(config.fileList);
-    if (!hasFiles) {
-      logger.info('No files to process\n');
+    if (hasFiles !== true) {
+      logger.info(typeof hasFiles === 'string' ? hasFiles : 'No files to process', '\n');
       return result;
     }
 
@@ -288,7 +297,7 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
 
         if (info.type === 'cache') {
           allInfo.success = stats.isPassed;
-          allInfo.version = VERSION;
+          allInfo.version = FlhPkgInfo.version;
         }
 
         if (info.deleted) {

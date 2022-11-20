@@ -8,8 +8,9 @@
 
 import { fork } from 'child_process';
 import { resolve } from 'node:path';
-import type { ILintTypes } from '../types';
-import { type CreateThreadOptions, handlerForCTOptions } from './utils';
+import { flhSrcDir } from '../config.js';
+import type { ILintTypes } from '../types.js';
+import { type CreateThreadOptions, handlerForCTOptions } from './utils.js';
 
 export interface WorkerMessageBody<T = unknown> {
   type: ILintTypes;
@@ -22,7 +23,8 @@ export function createForkThread<T, C = unknown>(
   onMessage?: (d: WorkerMessageBody<T>) => void
 ): Promise<T> {
   return new Promise((rs, reject) => {
-    const worker = fork(resolve(__dirname, './forked-process.js'), { silent: false });
+    // const _dirname = typeof __dirname !== 'undefined' ? __dirname : dirname(fileURLToPath(import.meta.url));
+    const worker = fork(resolve(flhSrcDir, './worker/forked-process.js'), { silent: false });
     worker.send(handlerForCTOptions(options, 'send'));
 
     worker.on('message', (info: WorkerMessageBody<T>) => {

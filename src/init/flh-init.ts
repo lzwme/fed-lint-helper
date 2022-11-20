@@ -1,10 +1,10 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { color } from 'console-log-colors';
-import { getObjectKeysUnsafe, type PackageJson, execSync, mkdirp } from '@lzwme/fe-utils';
+import { getObjectKeysUnsafe, type PackageJson, execSync, mkdirp, readJsonFileSync } from '@lzwme/fe-utils';
 import { prompt } from 'enquirer';
-import { getConfig } from '../config';
-import { getLogger, tryGetPackageManager } from '../utils';
+import { flhSrcDir, getConfig } from '../config.js';
+import { getLogger, tryGetPackageManager } from '../utils/index.js';
 
 function getCfgInfo() {
   const config = getConfig();
@@ -128,9 +128,8 @@ export async function flhInit(options: Record<string, string | boolean>, package
     return false;
   }
 
-  const tplDir = resolve(__dirname, '../../preset/tpl');
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const pkg: PackageJson = require(resolve(process.cwd(), './package.json'));
+  const tplDir = resolve(flhSrcDir, '../../preset/tpl');
+  const pkg: PackageJson = readJsonFileSync<PackageJson>(resolve(process.cwd(), './package.json'));
   const pkgAllDeps = Object.assign({}, pkg.dependencies, pkg.devDependencies);
   const deps = new Set<string>();
   const isUseTs = anwsers.flh.includes('tsconfig') || pkgAllDeps.typescript != null;

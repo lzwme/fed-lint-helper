@@ -1,3 +1,8 @@
 #!/usr/bin/env node
 
-require('../cjs/cli');
+try {
+    require('../cjs/cli.js');
+} catch (_e) {
+    console.log(_e.message);
+    import('../esm/cli.js');
+}

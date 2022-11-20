@@ -2,9 +2,21 @@
   "name": "@lzwme/fed-lint-helper",
   "description": "前端项目编码质量 lint 检测辅助工具。用于辅助大型长期研发的前端项目渐进式的迁移与改进编码规范约束。",
   "version": "2.1.1",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./esm/index.d.ts",
+        "default": "./esm/index.js"
+      },
+      "require": {
+        "types": "./cjs/index.d.ts",
+        "default": "./cjs/index.js"
+      }
+    }
+  },
   "main": "cjs/index.js",
   "module": "esm/index.js",
-  "typings": "cjs/index.d.ts",
+  "types": "esm/index.d.ts",
   "license": "MIT",
   "repository": "https://github.com/lzwme/fed-lint-helper.git",
   "author": {
@@ -27,7 +39,7 @@
     "dev": "npm run watch:build",
     "start": "npm run watch",
     "build": "run-s clean && run-p build:*",
-    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "build:cjs": "tsc -p tsconfig.cjs.json && node scripts/after-build.mjs",
     "build:esm": "tsc -p tsconfig.module.json",
     "fix": "run-s fix:*",
     "fix:lint": "eslint src --ext .ts --fix",
@@ -48,7 +60,7 @@
     "dist": "run-s test build doc:html",
     "release": "run-s dist",
     "release-version": "run-s dist version",
-    "clean": "ts-node -T -p tsconfig.cjs.json src/tools/rmdir.ts ./cjs ./esm ./docs"
+    "clean": "node scripts/rm.mjs ./cjs ./esm ./docs"
   },
   "engines": {
     "node": ">=14.18"
@@ -57,10 +69,16 @@
     "access": "public",
     "registry": "https://registry.npmjs.com"
   },
+  "files": [
+    "cjs",
+    "esm",
+    "preset",
+    "bin"
+  ],
   "dependencies": {
     "@lzwme/fe-utils": "^1.3.1",
     "commander": "^9.4.1",
-    "console-log-colors": "^0.2.3",
+    "console-log-colors": "^0.3.3",
     "enquirer": "^2.3.6",
     "fast-glob": "^3.2.12",
     "micromatch": "^4.0.5"
@@ -76,7 +94,7 @@
     "@types/node": "^18.11.9",
     "@typescript-eslint/eslint-plugin": "^5.43.0",
     "@typescript-eslint/parser": "^5.43.0",
-    "eslint": "^8.27.0",
+    "eslint": "^8.28.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-jest": "^27.1.5",
     "eslint-plugin-prettier": "^4.2.1",

@@ -2,10 +2,10 @@
 
 import { readFileSync } from 'node:fs';
 import { color } from 'console-log-colors';
-import { config } from '../config';
-import { getLogger } from '../utils/get-logger';
-import type { CommitLintOptions } from '../types';
-import { checkUserEmial } from '../utils';
+import { config } from '../config.js';
+import { getLogger } from '../utils/get-logger.js';
+import type { CommitLintOptions } from '../types.js';
+import { checkUserEmial } from '../utils/index.js';
 
 const helpTips = {
   build: '构建相关',

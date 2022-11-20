@@ -2,8 +2,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { color } from 'console-log-colors';
 import { formatTimeCost, execSync } from '@lzwme/fe-utils';
-import { isMatch } from 'micromatch';
-import { getLogger } from './get-logger';
+import micromatch from 'micromatch';
+import { getLogger } from './get-logger.js';
 
 export function getTimeCost(startTime: number, withTip = true) {
   let timeCost = formatTimeCost(startTime); // (Date.now() - startTime) / 1000 + 's';
@@ -46,7 +46,7 @@ export function arrayToObject<V = number>(arr: string[], value?: V) {
 }
 
 export function globMatcher(pathId: string, ruleIdNormalized: string, ruleId: string) {
-  return isMatch(pathId, ruleIdNormalized, { dot: true }) || isMatch(pathId, ruleId, { dot: true });
+  return micromatch.isMatch(pathId, ruleIdNormalized, { dot: true }) || micromatch.isMatch(pathId, ruleId, { dot: true });
 }
 
 /** 判断给定的目录是否为一个 git 仓库 */

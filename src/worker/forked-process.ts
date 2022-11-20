@@ -6,9 +6,9 @@
  * @Description: fork 子进程的具体调用逻辑实现
  */
 
-import type { WorkerMessageBody } from './fork';
-import { type CreateThreadOptions, handlerForCTOptions } from './utils';
-import { lintStartAsync } from './lintStartAsync';
+import type { WorkerMessageBody } from './fork.js';
+import { type CreateThreadOptions, handlerForCTOptions } from './utils.js';
+import { lintStartAsync } from './lintStartAsync.js';
 
 globalThis.isInChildProcess = true;
 process.on('message', (options: CreateThreadOptions) => {

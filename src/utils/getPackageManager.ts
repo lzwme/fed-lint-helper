@@ -1,7 +1,6 @@
 import { PackageJson } from '@lzwme/fe-utils';
-import { prompt } from 'enquirer';
 import { existsSync, readFileSync } from 'node:fs';
-import { IPackageManager } from '../types';
+import { IPackageManager } from '../types.js';
 
 export function getPackageManager(pkg?: PackageJson): IPackageManager | undefined {
   let packageManager: IPackageManager;
@@ -24,7 +23,8 @@ export async function tryGetPackageManager(pkg?: PackageJson): Promise<IPackageM
   let packageManager = getPackageManager(pkg);
 
   if (!packageManager) {
-    const anwsers = await prompt<{ pm: IPackageManager }>([
+    const enquirer = await import('enquirer');
+    const anwsers = await enquirer.prompt<{ pm: IPackageManager }>([
       {
         type: 'select',
         name: 'pm',

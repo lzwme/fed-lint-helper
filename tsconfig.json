@@ -6,6 +6,7 @@
     "moduleResolution": "node",
     "inlineSourceMap": false,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "noImplicitThis": true,
     "noImplicitAny": true,
     "noUnusedLocals": true,
@@ -18,7 +19,6 @@
     "strictNullChecks": false,
     "resolveJsonModule": true,
 
-    /* Debugging Options */
     "traceResolution": false,
     "listEmittedFiles": false,
     "listFiles": false,

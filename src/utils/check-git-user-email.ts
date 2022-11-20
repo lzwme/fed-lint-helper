@@ -2,7 +2,7 @@ import { color } from 'console-log-colors';
 import { existsSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { execSync } from '@lzwme/fe-utils';
-import { isGitRepo } from './common';
+import { isGitRepo } from './common.js';
 
 export const checkUserEmial = (regRule: string | RegExp, exitOnError = true, rootDir = process.cwd()) => {
   let errmsg = '';

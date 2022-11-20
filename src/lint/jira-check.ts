@@ -9,12 +9,13 @@
 import { resolve, join } from 'node:path';
 import { existsSync, writeFileSync, readFileSync } from 'node:fs';
 import type { IncomingHttpHeaders } from 'node:http';
+import { homedir } from 'node:os';
 import { color } from 'console-log-colors';
-import { assign, getHeadBranch, Request } from '@lzwme/fe-utils';
-import { getLogger, checkUserEmial } from '../utils';
-import { getConfig } from '../config';
-import type { AnyObject, JiraCheckConfig, LintResult } from '../types';
-import { LintBase } from './LintBase';
+import { assign, getHeadBranch, readJsonFileSync, Request } from '@lzwme/fe-utils';
+import { getLogger, checkUserEmial } from '../utils/index.js';
+import { getConfig } from '../config.js';
+import type { AnyObject, JiraCheckConfig, LintResult } from '../types.js';
+import { LintBase } from './LintBase.js';
 
 const { magenta, magentaBright, cyanBright, yellowBright, redBright, green, greenBright } = color;
 
@@ -139,8 +140,13 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
     const jiraPath = this.getJiraCfgPath(true);
 
     if (jiraPath) {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const jiraConfig: AnyObject = require(jiraPath);
+      const jiraConfig = readJsonFileSync<{
+        cookie?: string;
+        JSESSIONID?: string;
+        authorization?: string;
+        username?: string;
+        pwd?: string;
+      }>(jiraPath);
 
       if (jiraConfig.cookie) headers.cookie = jiraConfig.cookie;
 
@@ -165,7 +171,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
   private getJiraCfgPath(isPrintTips = false) {
     let filePath = '';
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const isFind = [this.config.rootDir, require('os').homedir()].some(dir => {
+    const isFind = [this.config.rootDir, homedir()].some(dir => {
       const fileNames = ['.jira.json', '.jira.js'];
       for (const filename of fileNames) {
         filePath = resolve(dir, filename);
@@ -471,7 +477,8 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
 
     return stats;
   }
-  protected beforeStart(): boolean {
+  protected beforeStart() {
+    if (!this.config.jiraHome) return '请配置 `jiraHome` 参数';
     return true;
   }
 }

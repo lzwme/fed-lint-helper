@@ -1,2 +1,2 @@
-export * from './flh-init';
-export * from './stylelint';
+export * from './flh-init.js';
+export * from './stylelint.js';

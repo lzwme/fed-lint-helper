@@ -1,6 +1,6 @@
 import { assign, isObject } from '@lzwme/fe-utils';
-import { getConfig } from '../config';
-import type { FlhConfig, ILintTypes } from '../types';
+import { getConfig } from '../config.js';
+import type { FlhConfig, ILintTypes } from '../types.js';
 
 export interface CreateThreadOptions<C = unknown> {
   debug?: boolean;

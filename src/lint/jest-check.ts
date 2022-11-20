@@ -13,10 +13,10 @@ import glob from 'fast-glob';
 import type { Config } from '@jest/types';
 import type { FormattedTestResults, formatTestResults } from '@jest/test-result';
 import { fixToshortPath, md5, execSync, rmrf, isEmptyObject } from '@lzwme/fe-utils';
-import { getConfig } from '../config';
-import type { JestCheckConfig, LintCacheInfo, LintResult, WhiteListInfo } from '../types';
-import { LintBase } from './LintBase';
-import { fileListToString } from '../utils';
+import { getConfig } from '../config.js';
+import type { JestCheckConfig, LintCacheInfo, LintResult, WhiteListInfo } from '../types.js';
+import { LintBase } from './LintBase.js';
+import { fileListToString } from '../utils/index.js';
 
 export type JestCheckResult = LintResult;
 
@@ -194,8 +194,8 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
           return formatTestResults;
         } catch {
           const entry = require.resolve('@jest/test-result', { paths: [require.resolve('jest')] });
-          // eslint-disable-next-line @typescript-eslint/no-var-requires
-          return require(entry).formatTestResults;
+          const { formatTestResults } = await import(entry);
+          return formatTestResults;
         }
       };
       const ftr = await getFTR();

@@ -10,15 +10,13 @@ import { existsSync } from 'node:fs';
 import { Option, program } from 'commander';
 import { color } from 'console-log-colors';
 import { getHeadDiffFileList, wxWorkNotify } from '@lzwme/fe-utils';
-import { FlhConfig, TsCheckConfig, JiraCheckConfig, CommitLintOptions, LintTypes } from './types';
-import { formatWxWorkKeys } from './utils';
-import { commConfig, getConfig, mergeCommConfig } from './config';
-import { rmdir } from './tools/rmdir';
-import { getLogger } from './utils';
-import { lintStartAsync } from './worker/lintStartAsync';
+import { FlhConfig, TsCheckConfig, JiraCheckConfig, CommitLintOptions, LintTypes } from './types.js';
+import { formatWxWorkKeys } from './utils/index.js';
+import { commConfig, FlhPkgInfo, getConfig, mergeCommConfig } from './config.js';
+import { rmdir } from './tools/rmdir.js';
+import { getLogger } from './utils/index.js';
+import { lintStartAsync } from './worker/lintStartAsync.js';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const packageInfo = require('../package.json');
 const logger = getLogger();
 
 interface POptions
@@ -61,8 +59,8 @@ interface POptions
 
 program
   // .aliases(['flh'])
-  .version(packageInfo.version, '-v, --version')
-  .description(color.cyanBright(packageInfo.description))
+  .version(FlhPkgInfo.version, '-v, --version')
+  .description(color.cyanBright(FlhPkgInfo.description))
   .option('-c, --config-path <filepath>', `配置文件 ${color.yellow('.flh.config.js')} 的路径`)
   .option('--silent', `开启静默模式。`)
   .option('--debug', `开启调试模式。`)
@@ -142,7 +140,7 @@ program
 
     if (options.commitlint) {
       hasAction = true;
-      import('./lint/commit-lint').then(({ commitMessageVerify }) => {
+      import('./lint/commit-lint.js').then(({ commitMessageVerify }) => {
         const cmvOptions: CommitLintOptions = { msgPath: options.commitEdit, exitOnError: options.exitOnError };
         if (typeof options.commitlint === 'string') cmvOptions.verify = options.commitlint;
         commitMessageVerify(cmvOptions);
@@ -157,7 +155,7 @@ program
   .description('执行 flh、ESLint、Prettier、TypeScript、jest、husky、vscode 等工具的配置初始化')
   .option('--force', '是否强制执行(配置文件已存在，则覆盖生成)')
   .action(options => {
-    import('./init/flh-init').then(({ flhInit }) => flhInit(options, packageInfo));
+    import('./init/flh-init.js').then(({ flhInit }) => flhInit(options, FlhPkgInfo));
   });
 
 program
@@ -203,7 +201,7 @@ program
       const baseConfig = getConfig({}, false);
       pmName = baseConfig.pmcheck;
     }
-    import('./tools/pm-check').then(({ packageManagerCheck }) => packageManagerCheck(pmName, programOptions.debug));
+    import('./tools/pm-check.js').then(({ packageManagerCheck }) => packageManagerCheck(pmName, programOptions.debug));
   });
 
 program
@@ -220,7 +218,7 @@ program
   .option('--show-full-path', '打印文件路径时，是否显示为完整路径')
   .option('--show-dup-files', '检测到重复文件时，是否显示重复文件列表')
   .action((src: string[], options) => {
-    import('./stats').then(({ stats }) => {
+    import('./stats/index.js').then(({ stats }) => {
       const opts = getProgramOptions();
       const config = getConfig({ debug: opts.debug });
       logger.debug(opts, options);

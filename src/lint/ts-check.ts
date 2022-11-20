@@ -11,11 +11,11 @@ import { existsSync, statSync } from 'node:fs';
 import { color } from 'console-log-colors';
 import type { Diagnostic, DiagnosticCategory, CompilerOptions } from 'typescript';
 import glob from 'fast-glob';
-import { isMatch } from 'micromatch';
+import micromatch from 'micromatch';
 import { md5, fixToshortPath } from '@lzwme/fe-utils';
-import type { TsCheckConfig, LintResult, WhiteListInfo, LintCacheInfo } from '../types';
-import { LintBase } from './LintBase';
-import { arrayToObject, fileListToString } from '../utils/common';
+import type { TsCheckConfig, LintResult, WhiteListInfo, LintCacheInfo } from '../types.js';
+import { LintBase } from './LintBase.js';
+import { arrayToObject, fileListToString } from '../utils/common.js';
 
 const { bold, redBright, yellowBright, cyanBright, red, cyan } = color;
 export interface TsCheckResult extends LintResult {
@@ -157,7 +157,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
         if (shortpath.includes('node_modules') || shortpath.endsWith('.d.ts')) return false;
         for (const p of config.exclude) {
           if (shortpath.includes(p)) return false;
-          if (isMatch(shortpath, p, { debug: config.debug })) return false;
+          if (micromatch.isMatch(shortpath, p, { debug: config.debug })) return false;
         }
       }
 

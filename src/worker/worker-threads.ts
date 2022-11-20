@@ -8,12 +8,13 @@
  * - worker_threads 比 child_process 和 cluster 更为轻量级的并行性，而且 worker_threads 可有效地共享内存
  * - eslint-plugins 也使用了 worker_threads，会有一些异常现象
  */
-
-import { Worker, isMainThread, parentPort, workerData } from 'worker_threads';
-import type { ILintTypes } from '../types';
-import { getLogger } from '../utils/get-logger';
-import { lintStartAsync } from './lintStartAsync';
-import { type CreateThreadOptions, handlerForCTOptions } from './utils';
+import { resolve } from 'node:path';
+import { Worker, isMainThread, parentPort, workerData } from 'node:worker_threads';
+import { flhSrcDir } from '../config.js';
+import type { ILintTypes } from '../types.js';
+import { getLogger } from '../utils/get-logger.js';
+import { lintStartAsync } from './lintStartAsync.js';
+import { type CreateThreadOptions, handlerForCTOptions } from './utils.js';
 
 interface WorkerMessageBody<T = unknown> {
   type: ILintTypes;
@@ -25,10 +26,10 @@ export function createWorkerThreads<T, C = unknown>(
   options: CreateThreadOptions<C>,
   onMessage?: (d: WorkerMessageBody<T>) => void
 ): Promise<T> {
-  return new Promise((resolve, reject) => {
+  return new Promise((rs, reject) => {
     if (!isMainThread) return reject(-2);
-
-    const worker = new Worker(__filename, {
+    const _filename = resolve(flhSrcDir, './worker/worker-threads.js');
+    const worker = new Worker(_filename, {
       workerData: handlerForCTOptions(options, 'send'),
       // stderr: true,
       // stdout: true,
@@ -40,7 +41,7 @@ export function createWorkerThreads<T, C = unknown>(
 
       if (info.end) {
         setTimeout(() => worker.terminate(), 100);
-        resolve(info.data);
+        rs(info.data);
       }
     });
 

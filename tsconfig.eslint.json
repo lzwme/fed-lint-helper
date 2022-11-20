@@ -4,5 +4,5 @@
     "outDir": "esm",
     "target": "esnext"
   },
-  "include": ["**/*.ts"]
+  "include": ["**/*.ts", "**/*.mjs"]
 }

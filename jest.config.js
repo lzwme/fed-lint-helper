@@ -4,11 +4,7 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  moduleFileExtensions: [
-    "ts",
-    "tsx",
-    "js"
-  ],
+  moduleFileExtensions: ['ts', 'tsx', 'js'],
   // transform: {
   //   '^.+\\.(t|j)sx?$': [
   //     '@swc/jest',
@@ -24,4 +20,8 @@ module.exports = {
   coveragePathIgnorePatterns: ['/node_modules/', 'src/cli.ts', 'src/index.ts'], // 'src/**/*.spec.ts'
   // collectCoverageFrom: ['src/**/!(*.d).ts'],
   maxWorkers: require('os').cpus().length,
+  moduleNameMapper: {
+    // "(.+)(common|utils|get-logger|config).js": "$1$2.ts"
+  },
+  resolver: '<rootDir>/scripts/jest-js-ts-resolver.js',
 };

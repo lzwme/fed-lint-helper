@@ -11,10 +11,10 @@ import { existsSync, statSync, readFileSync, writeFileSync } from 'node:fs';
 import { color } from 'console-log-colors';
 import glob from 'fast-glob';
 import { md5, assign, execSync, fixToshortPath } from '@lzwme/fe-utils';
-import { getConfig } from '../config';
-import type { PrettierCheckConfig, LintResult, LintCacheInfo } from '../types';
-import { LintBase } from './LintBase';
-import { isGitRepo } from '../utils/common';
+import { getConfig } from '../config.js';
+import type { PrettierCheckConfig, LintResult, LintCacheInfo } from '../types.js';
+import { LintBase } from './LintBase.js';
+import { isGitRepo } from '../utils/common.js';
 
 export interface PrettierCheckResult extends LintResult {
   /** fix 修正过的文件路径列表 */

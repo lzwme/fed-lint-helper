@@ -3,10 +3,10 @@ import { writeFileSync, promises, type Stats } from 'node:fs';
 import glob from 'fast-glob';
 import { color } from 'console-log-colors';
 import { fixToshortPath, md5 } from '@lzwme/fe-utils';
-import { getLogger } from '../utils/get-logger';
-import { getTimeCost, fileListToString, padSpace, formatQty, formatMem } from '../utils/common';
-import { getConfig } from '../config';
-import { FlhConfig } from '../types';
+import { getLogger } from '../utils/get-logger.js';
+import { getTimeCost, fileListToString, padSpace, formatQty, formatMem } from '../utils/common.js';
+import { getConfig } from '../config.js';
+import { FlhConfig } from '../types.js';
 
 type IFileStats = FlhConfig['fileStats'];
 interface IStatsOption extends IFileStats {

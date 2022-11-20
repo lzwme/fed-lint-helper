@@ -4,8 +4,8 @@
     "declaration": true,
     "emitDeclarationOnly": false,
     "outDir": "esm",
-    "target": "es2021",
-    "module": "esnext"
+    "target": "ES2022",
+    "module": "NodeNext"
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules/**", "__test__", "src/**/*.spec.ts"]
