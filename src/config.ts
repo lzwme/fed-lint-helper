@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-15 16:37:19
+ * @LastEditTime: 2022-11-22 18:24:31
  * @Description:
  */
 
@@ -197,7 +197,7 @@ function getMenorepoPackages(rootDir = process.cwd()) {
   return packages;
 }
 
-// @ts-ignore
-export const flhSrcDir = typeof __dirname !== 'undefined' ? __dirname : dirname(fileURLToPath(import.meta.url));
+// @ts-ignore todo: 改为 esm 模式
+export const flhSrcDir = __dirname; // typeof __dirname !== 'undefined' ? __dirname : dirname(fileURLToPath(import.meta.url));
 
 export const FlhPkgInfo = readJsonFileSync<PackageJson>(resolve(flhSrcDir, '../package.json'));

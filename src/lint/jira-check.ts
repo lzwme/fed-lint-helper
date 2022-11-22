@@ -2,17 +2,17 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-02 10:21:46
+ * @LastEditTime: 2022-11-22 18:25:10
  * @Description:  Jira check
  */
 
 import { resolve, join } from 'node:path';
-import { existsSync, writeFileSync, readFileSync } from 'node:fs';
+import { existsSync, writeFileSync, readFileSync, statSync } from 'node:fs';
 import type { IncomingHttpHeaders } from 'node:http';
 import { homedir } from 'node:os';
-import { magenta, magentaBright, cyanBright, yellowBright, redBright, green, greenBright } from 'console-log-colors';
+import { magenta, magentaBright, cyanBright, yellowBright, redBright, green, greenBright, cyan } from 'console-log-colors';
 import { assign, getHeadBranch, readJsonFileSync, Request } from '@lzwme/fe-utils';
-import { getLogger, checkUserEmial } from '../utils/index.js';
+import { getLogger, checkUserEmial, getGitLog } from '../utils/index.js';
 import { getConfig } from '../config.js';
 import type { AnyObject, JiraCheckConfig, LintResult } from '../types.js';
 import { LintBase } from './LintBase.js';
@@ -274,25 +274,21 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
 
       /** 最新一次的 review 信息 */
       const reviewComment = comments.find(item => item.body.includes('[已阅]'));
-      const gitlabCommiter = gitlabComment.body.split('|')[0].slice(1);
+      const commiter = gitlabComment.body.split('|')[0].slice(1);
       const reviewers = fields.customfield_13002 as { displayName: string }[];
       let errmsg = '';
 
       // review的留言需要在gitlab提交日志之后
       if (!reviewComment || reviewComment.id < gitlabComment.id) {
-        errmsg = `[${gitlabCommiter}]的代码提交未被[${reviewers?.[0]?.displayName || '未指定'}]审阅`;
+        errmsg = `[${commiter}]的代码提交未被[${reviewers?.[0]?.displayName || '未指定'}]审阅`;
       } else {
-        if (gitlabCommiter === reviewComment.author.key) {
+        if (commiter === reviewComment.author.key) {
           errmsg = `[${reviewComment.author.displayName.split('（')[0]}]不能 review 自己的提交，请指派给熟悉相关模块的开发人员审阅！`;
         } else if (config.debug) {
           logger.debug(
-            ' - [检查信息]',
-            item.key,
-            `[${gitlabCommiter}]的代码提交被`,
-            reviewComment.author.displayName,
-            '于',
-            reviewComment.updated,
-            '设为已阅'
+            ` - [检查信息][${magenta(item.key)}][${commiter}]的代码提交被`,
+            cyanBright(reviewComment.author.displayName),
+            `于 ${greenBright(reviewComment.updated)} 设为[已阅]`
           );
         }
       }
@@ -301,7 +297,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
         logger.info(
           `[${++stats.failedFilesNum}] 指派给`,
           fields.assignee.displayName.split('（')[0],
-          `http://jira.gf.com.cn/browse/${item.key}`,
+          `${config.jiraHome.replace(/\/$/, '')}/browse/${item.key}`,
           redBright(errmsg)
         );
         logger.info('-'.repeat(80));
@@ -310,13 +306,29 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
 
     return stats.failedFilesNum === 0;
   }
+  private getCommitMsg(commitEdit: string, rootDir: string) {
+    if (!commitEdit) commitEdit = './.git/COMMIT_EDITMSG';
+    const gitPath = join(rootDir, commitEdit);
+    const result = { gitPath: '', commitMessage: [] as string[] };
+
+    if (existsSync(gitPath) && statSync(gitPath).isFile) {
+      Object.assign(result, { gitPath, commitMessage: [readFileSync(gitPath, 'utf8').trim()] });
+    } else if (/^\d+$/.test(commitEdit) && +commitEdit) {
+      // 读取近 N 条提交日志
+      result.commitMessage = getGitLog(+commitEdit).map(d => d.s);
+    } else {
+      // todo: 尝试根据 commitId 读取
+    }
+
+    return result;
+  }
   /** git hooks commit-msg 检查 */
   private async commitMsgCheck(): Promise<boolean> {
     const baseConfig = getConfig();
-    const { config, stats, logger } = this;
+    const { config, logger } = this;
     const issuePrefixs = config.issuePrefix as string[];
 
-    if (baseConfig.userEmailRule) {
+    if (baseConfig.userEmailRule && !baseConfig.ci) {
       const errmsg = checkUserEmial(baseConfig.userEmailRule, false, baseConfig.rootDir);
       if (errmsg) {
         logger.error(errmsg);
@@ -329,134 +341,152 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
       return false;
     }
 
+    const { commitMessage, gitPath } = this.getCommitMsg(config.commitEdit, config.rootDir);
+    if (commitMessage.length === 0) {
+      logger.error('获取 commit msg 提交信息失败！');
+      return false;
+    }
+
+    const result = await this.validCommitMsgs(commitMessage);
+
+    if (gitPath && result.smartCommit && result.smartCommit !== commitMessage[0]) {
+      logger.info(`[智能修改commit]: ${greenBright(result.smartCommit)} \n`);
+      writeFileSync(gitPath, result.smartCommit, 'utf8');
+    }
+
+    return result.isvalid;
+  }
+  async validCommitMsgs(msgs: string[]) {
+    const result = { smartCommit: '', isvalid: true };
+    const { config, logger } = this;
+    const issuePrefixs = config.issuePrefix as string[];
     /** 当前本地分支。分支命名格式：3.10.1<_dev><_fix-xxx> */
     const branch = getHeadBranch();
     /** 根据本地分支获取分支所属迭代版本) */
     const sprintVersion = branch.split('_')[0];
     /** 允许提交的版本 - todo: cherry-pick 时的匿名分支也需要支持允许 commit */
     const allowedFixVersions = [sprintVersion, branch];
+    let smartCommit = '';
+
     // 自定义分支允许提交预研任务
     if (sprintVersion !== branch && !branch.includes('_dev')) allowedFixVersions.push('tech_ahead_v1');
 
-    const gitPath = join(config.rootDir, config.COMMIT_EDITMSG || './.git/COMMIT_EDITMSG');
-    const commitMessage = readFileSync(gitPath, 'utf8').trim();
+    for (const commitMessage of msgs) {
+      const issuePrefix = issuePrefixs.find(d => commitMessage.includes(d)) || issuePrefixs[0];
+      const jiraIDReg = new RegExp(`${issuePrefix}(\\d+)`, 'g');
+      const jiraIDs = commitMessage.match(jiraIDReg);
 
-    const issuePrefix = issuePrefixs.find(d => commitMessage.includes(d)) || issuePrefixs[0];
-    const jiraIDReg = new RegExp(`${issuePrefix}(\\d+)`, 'g');
-    const jiraIDs = commitMessage.match(jiraIDReg);
+      logger.info('='.repeat(40));
+      logger.info(`[COMMIT-MSG] ${yellowBright(commitMessage)}`);
+      logger.info('='.repeat(40));
 
-    logger.info('='.repeat(40));
-    logger.info(`[COMMIT-MSG] ${yellowBright(commitMessage)}`);
-    logger.info('='.repeat(40));
+      if (jiraIDs) {
+        /** 智能匹配正则表达式，commit覆盖, JIRA号后需要输入至少一个中文、【|[、英文或者空格进行隔开 例子: JGCPS-1234测试提交123 或 [JGCPS-1234] 测试提交123 => [ET][2.9.1][feature][JGCPS-1234]测试提交123 */
+        const smartRegWithMessage = new RegExp(`^\\[?${issuePrefix}\\d+\\]?([A-Za-z\\u4e00-\\u9fa5\\s【\\[]+.+)`);
+        /**  智能匹配正则表达式，单纯匹配jira 例子: JGCPS-1234 或 [JGCPS-1234] => [ET][2.9.1][feature][JGCPS-1234]JIRA本身的标题 */
+        const smartRegWithJIRA = new RegExp(`^\\[?${issuePrefix}(\\d+)\\]?`, 'g');
+        const issueTypeList = await this.getIssueType();
+        /** 禁止提交的类型 */
+        const noAllowIssueType: number[] = [];
+        // eslint-disable-next-line unicorn/no-array-reduce
+        const issueTypeToDesc = issueTypeList.reduce((object, item) => {
+          object[item.id] = item.name.replace(/[^A-Za-z]/g, '').toLowerCase();
+          if (object[item.id].includes('subtask')) object[item.id] = 'feature';
+          else if (object[item.id].includes('bug')) object[item.id] = 'bugfix';
 
-    if (jiraIDs) {
-      /** 智能匹配正则表达式，commit覆盖, JIRA号后需要输入至少一个中文、【|[、英文或者空格进行隔开 例子: JGCPS-1234测试提交123 或 [JGCPS-1234] 测试提交123 => [ET][2.9.1][feature][JGCPS-1234]测试提交123 */
-      const smartRegWithMessage = new RegExp(`^\\[?${issuePrefix}\\d+\\]?([A-Za-z\\u4e00-\\u9fa5\\s【\\[]+.+)`);
-      /**  智能匹配正则表达式，单纯匹配jira 例子: JGCPS-1234 或 [JGCPS-1234] => [ET][2.9.1][feature][JGCPS-1234]JIRA本身的标题 */
-      const smartRegWithJIRA = new RegExp(`^\\[?${issuePrefix}(\\d+)\\]?`, 'g');
-      const issueTypeList = await this.getIssueType();
-      /** 禁止提交的类型 */
-      const noAllowIssueType: number[] = [];
-      // eslint-disable-next-line unicorn/no-array-reduce
-      const issueTypeToDesc = issueTypeList.reduce((object, item) => {
-        object[item.id] = item.name.replace(/[^A-Za-z]/g, '').toLowerCase();
-        if (object[item.id].includes('subtask')) object[item.id] = 'feature';
-        else if (object[item.id].includes('bug')) object[item.id] = 'bugfix';
+          // 非 bug 的主任务，不允许提交
+          if (!item.subtask && object[item.id].includes('bug')) noAllowIssueType.push(item.id);
+          return object;
+        }, {} as Record<number, string>);
+        const jiraID = jiraIDs[0];
+        const { data: info } = await this.reqeust.get<IssueItem & JiraError>(`${config.jiraHome}/rest/api/latest/issue/${jiraID}`);
 
-        // 非 bug 的主任务，不允许提交
-        if (!item.subtask && object[item.id].includes('bug')) noAllowIssueType.push(item.id);
-        return object;
-      }, {} as Record<number, string>);
-      const jiraID = jiraIDs[0];
-      const { data: info } = await this.reqeust.get<IssueItem & JiraError>(`${config.jiraHome}/rest/api/latest/issue/${jiraID}`);
-
-      if (!info.fields || info.errorMessages) {
-        logger.error(info.errorMessages || `获取 ${jiraID} 信息异常`);
-        return false;
-      }
-
-      const summary = info.fields.summary;
-
-      logger.debug(`[${jiraID}]info`, info);
-      logger.info('[JIRA信息]', cyanBright(jiraID), yellowBright(summary));
-
-      if (!info.fields.fixVersions?.length) {
-        logger.error('JIRA没有挂修复版本，不允许提交');
-        return false;
-      }
-
-      // 修复版本可能同时存在多个
-      const fixVersions = info.fields.fixVersions.map(d => d.name);
-      if (!config.ignoreVersion && !fixVersions.some(d => allowedFixVersions.includes(d))) {
-        if (Array.isArray(config.allowedFixVersions) && fixVersions.some(d => config.allowedFixVersions.includes(d))) {
-          logger.warn('修复版本与当前本地分支不一致，但在允许跳过检查的列表中', fixVersions, config.allowedFixVersions);
-        } else {
-          logger.error(`修复版本[${magenta(fixVersions.join(','))}]与当前本地分支[${magentaBright(sprintVersion)}]不一致，不允许提交`);
-          return false;
+        if (!info.fields || info.errorMessages) {
+          logger.error(info.errorMessages || `获取 ${jiraID} 信息异常`);
+          return result;
         }
-      }
 
-      const versionName = info.fields.fixVersions[0].name;
-      const versionInfo = info.fields.fixVersions[0].description;
-      /** 是否已封板 */
-      const isSeal = (versionInfo && versionInfo.includes('[已封版]')) || false;
-      const issuetype = +info.fields.issuetype.id;
+        const summary = info.fields.summary;
 
-      if (noAllowIssueType.includes(issuetype)) {
-        logger.error('不允许在父任务jira上提交, commit 提交不通过');
-        return false;
-      }
+        logger.debug(`[${jiraID}]info`, info);
+        logger.info('[JIRA信息]', cyanBright(jiraID), cyan(summary));
 
-      const issueText = issueTypeToDesc[issuetype] || 'feature'; // 如果是其他类型，默认feature
-      const reg = new RegExp(`^${config.commitMsgPrefix.replace(/([.[-])/g, '\\$1')}\\[${versionName}]\\[${issueText}]\\[${jiraID}]`);
-      let smartCommit = commitMessage;
-
-      // 如果匹配到commit中包含中文，则保留提交信息
-      if (smartRegWithMessage.test(commitMessage)) {
-        // 如果用户需要手动填入commit信息
-        const message = commitMessage.match(smartRegWithMessage)[1].trim();
-        smartCommit = `${config.commitMsgPrefix}[${versionName}][${issueText}][${jiraID}] ${message}`;
-        logger.info(`[智能修改commit]: ${greenBright(smartCommit)} \n`);
-      } else if (smartRegWithJIRA.test(commitMessage)) {
-        // 如果只匹配到JIRA号
-        smartCommit = `${config.commitMsgPrefix}[${versionName}][${issueText}][${jiraID}] ${summary}`;
-        logger.info(`[智能修改commit]: ${greenBright(smartCommit)} \n`);
-      } else if (!reg.test(commitMessage)) {
-        // 如果都是自己填的
-        logger.debug(reg, commitMessage, reg.test(commitMessage));
-        logger.error('commit 格式校验不通过，请参考正确提交格式');
-        logger.log('===================  Example  ===================');
-        logger.log(greenBright(`${config.commitMsgPrefix}[${versionName}][${issueText}][${jiraID}] 描述问题或改进`));
-        logger.log('===================  Example  ===================');
-        return false;
-      }
-
-      writeFileSync(gitPath, smartCommit, { encoding: 'utf8' });
-
-      if (isSeal && stats.isPassed) {
-        logger.info(magentaBright(versionName), yellowBright('已经封版'));
-        // 查找由产品指派给当前用户的jira，备注了 [必须修复] 文案提交
-        const comment = info.fields.comment.comments.find(comment => {
-          return comment.body.includes('[必须修复]') && config.sealedCommentAuthors.includes(comment.author.name);
-        });
-
-        if (!comment) {
-          logger.error('[提交信息]', `[${jiraID}] JIRA并非必须修复，不允许提交`);
-          return false;
+        if (!info.fields.fixVersions?.length) {
+          logger.error('JIRA没有挂修复版本，不允许提交');
+          return result;
         }
-      }
-    } else {
-      if (/Merge branch/.test(commitMessage)) {
-        logger.error('同分支提交禁止执行 Merge 操作，请使用 git rebase 或 git pull -r 命令。若为跨分支合并，请增加 -n 参数\n');
-        return false;
-      } else if (!ignoredCommitList.some(reg => reg.test(commitMessage))) {
-        logger.error(`提交代码信息不符合规范，信息中应包含字符"${issuePrefix}XXXX".`);
-        logger.error('例如：', cyanBright(`${issuePrefix}9171 【两融篮子】多组合卖出，指令预览只显示一个组合。\n`));
-        return false;
+
+        // 修复版本可能同时存在多个
+        const fixVersions = info.fields.fixVersions.map(d => d.name);
+        if (!config.ignoreVersion && !fixVersions.some(d => allowedFixVersions.includes(d))) {
+          if (Array.isArray(config.allowedFixVersions) && fixVersions.some(d => config.allowedFixVersions.includes(d))) {
+            logger.warn('修复版本与当前本地分支不一致，但在允许跳过检查的列表中', fixVersions, config.allowedFixVersions);
+          } else {
+            logger.error(`修复版本[${magenta(fixVersions.join(','))}]与当前本地分支[${magentaBright(sprintVersion)}]不一致，不允许提交`);
+            return result;
+          }
+        }
+
+        const versionName = info.fields.fixVersions[0].name;
+        const versionInfo = info.fields.fixVersions[0].description;
+        /** 是否已封板 */
+        const isSeal = (versionInfo && versionInfo.includes('[已封版]')) || false;
+        const issuetype = +info.fields.issuetype.id;
+
+        if (noAllowIssueType.includes(issuetype)) {
+          logger.error('不允许在父任务jira上提交, commit 提交不通过');
+          return result;
+        }
+
+        const issueText = issueTypeToDesc[issuetype] || 'feature'; // 如果是其他类型，默认feature
+        const reg = new RegExp(`^${config.commitMsgPrefix.replace(/([.[-])/g, '\\$1')}\\[${versionName}]\\[${issueText}]\\[${jiraID}]`);
+        smartCommit = commitMessage;
+
+        // 如果匹配到commit中包含中文，则保留提交信息
+        if (smartRegWithMessage.test(commitMessage)) {
+          // 如果用户需要手动填入commit信息
+          const message = commitMessage.match(smartRegWithMessage)[1].trim();
+          smartCommit = `${config.commitMsgPrefix}[${versionName}][${issueText}][${jiraID}] ${message}`;
+        } else if (smartRegWithJIRA.test(commitMessage)) {
+          // 如果只匹配到JIRA号
+          smartCommit = `${config.commitMsgPrefix}[${versionName}][${issueText}][${jiraID}] ${summary}`;
+        } else if (!reg.test(commitMessage)) {
+          // 如果都是自己填的
+          logger.debug(reg, commitMessage, reg.test(commitMessage));
+          logger.error('commit 格式校验不通过，请参考正确提交格式');
+          logger.log('===================  Example  ===================');
+          logger.log(greenBright(`${config.commitMsgPrefix}[${versionName}][${issueText}][${jiraID}] 描述问题或改进`));
+          logger.log('===================  Example  ===================');
+          return result;
+        }
+
+        if (isSeal) {
+          logger.info(magentaBright(versionName), yellowBright('已经封版'));
+          // 查找由产品指派给当前用户的jira，备注了 [必须修复] 文案提交
+          const comment = info.fields.comment.comments.find(comment => {
+            return comment.body.includes('[必须修复]') && config.sealedCommentAuthors.includes(comment.author.name);
+          });
+
+          if (!comment) {
+            logger.error('[提交信息]', `[${jiraID}] JIRA并非 [必须修复]，不允许提交`);
+            return result;
+          }
+        }
+      } else {
+        if (/Merge branch/.test(commitMessage)) {
+          logger.error('同分支提交禁止执行 Merge 操作，请使用 git rebase 或 git pull -r 命令。若为跨分支合并，请增加 -n 参数\n');
+          return result;
+        } else if (!ignoredCommitList.some(reg => reg.test(commitMessage))) {
+          logger.error(`提交代码信息不符合规范，信息中应包含字符"${issuePrefix}XXXX".`);
+          logger.error('例如：', cyanBright(`${issuePrefix}9171 【两融篮子】多组合卖出，指令预览只显示一个组合。\n`));
+          return result;
+        }
       }
     }
 
-    return true;
+    result.smartCommit = smartCommit;
+    result.isvalid = true;
+    return result;
   }
   protected override init() {
     super.init();

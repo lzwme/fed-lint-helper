@@ -2,13 +2,13 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-15 14:22:39
+ * @LastEditTime: 2022-11-22 18:19:43
  * @Description: cli 工具
  */
 import { resolve } from 'node:path';
 import { existsSync } from 'node:fs';
 import { Option, program } from 'commander';
-import { color } from 'console-log-colors';
+import { bgYellowBright, cyanBright, green, greenBright, yellowBright } from 'console-log-colors';
 import { getHeadDiffFileList, wxWorkNotify } from '@lzwme/fe-utils';
 import { FlhConfig, TsCheckConfig, JiraCheckConfig, CommitLintOptions, LintTypes } from './types.js';
 import { formatWxWorkKeys } from './utils/index.js';
@@ -54,14 +54,14 @@ interface POptions
   commitlint?: boolean | string;
   /** 执行 jira check 的类型 */
   jiraType?: FlhConfig['jira']['type'];
-  commitEdit?: FlhConfig['jira']['COMMIT_EDITMSG'];
+  commitEdit?: FlhConfig['jira']['commitEdit'];
 }
 
 program
   // .aliases(['flh'])
   .version(FlhPkgInfo.version, '-v, --version')
-  .description(color.cyanBright(FlhPkgInfo.description))
-  .option('-c, --config-path <filepath>', `配置文件 ${color.yellow('.flh.config.js')} 的路径`)
+  .description(cyanBright(FlhPkgInfo.description))
+  .option('-c, --config-path <filepath>', `配置文件 ${yellowBright('.flh.config.js')} 的路径`)
   .option('--silent', `开启静默模式。`)
   .option('--debug', `开启调试模式。`)
   .option('--ci', `Whether to run task in continuous integration (CI) mode.`)
@@ -80,7 +80,12 @@ program
   .option('--tscheck', `执行 TypeScript Diagnostics check`)
   .option('--eslint', `执行 eslint 检查`)
   .option('--commitlint [verifyReg]', `执行 commitlint 检查`)
-  .option('--commit-edit', `指定 git commit msg 的文件路径。默认为 ${color.yellowBright('./.git/COMMIT_EDITMSG')}`)
+  .option(
+    '--commit-edit <filepath|N>',
+    `指定 git commit msg 的获取方式。可以是：COMMIT_EDITMSG 文件路径、commitId、数字(1-99，表示取最近N条日志全部验证)。默认为 ${bgYellowBright(
+      './.git/COMMIT_EDITMSG'
+    )}`
+  )
   .option('--jira', `执行 jira 检查`)
   .option('--jira-home', `指定 jira 首页 url 地址`)
   .addOption(new Option('--jira-type <type>', `执行 jira 检查的类型。可选值：`).choices(['commit', 'pipeline']))
@@ -114,7 +119,7 @@ program
 
     if (options.jiraHome) config.jira.jiraHome = options.jiraHome;
     if (options.projectName) config.jira.projectName = options.projectName;
-    if (options.commitEdit) config.jira.COMMIT_EDITMSG = options.commitEdit;
+    if (options.commitEdit) config.jira.commitEdit = options.commitEdit;
     if ('useJestCli' in options) config.jest.useJestCli = Boolean(+options.useJestCli);
     if ('usePrettierCli' in options) config.prettier.useCli = Boolean(+options.usePrettierCli);
     if ('fix' in options) config.fix = config.eslint.fix = Boolean(options.fix);
@@ -191,7 +196,7 @@ program
 program
   .command('pmcheck [packageManagerName]')
   .description(
-    `[utils]用于包管理工具约束，可配置为 ${color.greenBright('scripts.preinstall')} 命令。\n\t 例如，限制只可使用 pnpm: ${color.green(
+    `[utils]用于包管理工具约束，可配置为 ${greenBright('scripts.preinstall')} 命令。\n\t 例如，限制只可使用 pnpm: ${green(
       `"preinstall": "npx @lzwme/fed-lint-helper pmcheck pnpm"`
     )}`
   )

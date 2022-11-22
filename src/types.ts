@@ -144,8 +144,13 @@ export interface JiraCheckConfig extends CommConfig {
   issuePrefix?: string | string[];
   /** commit 提交固定前缀，如： [ET] */
   commitMsgPrefix?: string;
-  /** 提取 commit-msg 信息的文件路径。默认为 ./.git/COMMIT_EDITMSG */
-  COMMIT_EDITMSG?: string;
+  /**
+   * 指定 git commit msg 的获取方式。可以是：
+   * - COMMIT_EDITMSG 路径（默认为 ./.git/COMMIT_EDITMSG）
+   * - git commitId hash
+   * - 数字(0-99，表示取最近N条日志全部验证)
+   */
+  commitEdit?: string;
   /** 允许跳过分支版本检查提交的 jira 版本号 */
   allowedFixVersions?: string[];
   /** 是否忽略版本匹配检测 */
