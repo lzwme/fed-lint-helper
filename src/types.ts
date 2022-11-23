@@ -24,7 +24,7 @@ export interface CommConfig {
   include?: string[];
   /** 文件排除列表，用于过滤一些不需要检查处理的文件。glob 规则，如： ['builder/**'] */
   exclude?: string[];
-  /** 文件后缀。若设置，则文件过滤时，先以 extensions 预处理 */
+  /** 文件后缀。用于文件过滤等 */
   extensions?: string[];
   /** 是否尝试修正可自动修正的异常 */
   fix?: boolean;

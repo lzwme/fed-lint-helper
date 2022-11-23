@@ -106,10 +106,10 @@ export async function stats(options: IStatsOption) {
     rootDir: config.rootDir,
     exclude: ['**/node_modules/**', '**/dist/**'],
     extensions: extensionsDefault,
-    ...config.fileStats,
     ...options,
   };
   if (!options.src?.length) options.src = ['src'];
+  if (!options.extensions?.length) options.extensions = extensionsDefault;
   options.exclude = options.exclude.map(d => (d.includes('*') ? d : `**/${d}/**`));
 
   const { src, extensions, rootDir, showFullPath } = options;

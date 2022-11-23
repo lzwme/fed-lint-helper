@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-02 11:51:52
+ * @LastEditTime: 2022-11-23 15:19:01
  * @Description:  jest check
  */
 
@@ -80,6 +80,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
   protected async getSpecFileList(specFileList: string[]) {
     const { config, cacheInfo } = this;
     const specGlob = '.{spec,test}.{ts,js,tsx,jsx,mjs}';
+    const exclude = [...new Set(['**/node_modules/**', ...this.config.exclude])];
 
     if (this.isCheckAll) {
       specFileList = [];
@@ -88,7 +89,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
         const p = resolve(config.rootDir, d);
         if (!existsSync(p) || !statSync(p).isDirectory()) continue;
 
-        const files = await glob('**/*' + specGlob, { cwd: p, absolute: true });
+        const files = await glob('**/*' + specGlob, { cwd: p, absolute: true, ignore: exclude });
         specFileList.push(...files);
       }
     } else {
@@ -98,7 +99,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
 
           const ext = extname(filepath);
 
-          if (!['.js', '.jsx', '.ts', '.tsx', '.mjs', '.vue'].includes(ext)) return '';
+          if (!this.config.extensions.includes(ext)) return '';
 
           for (const testId of ['spec', 'test'] as const) {
             const specfile = filepath.replace(ext, `.${testId}${ext}`);
@@ -107,13 +108,13 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
 
           const fileDir = dirname(filepath);
           // 同目录下存在单测文件
-          let files = glob.sync('*' + specGlob, { cwd: fileDir, absolute: true });
+          let files = glob.sync('*' + specGlob, { cwd: fileDir, absolute: true, ignore: exclude });
           if (files.length > 0) return files[0];
 
           // 支持查找在父级目录中的同名单测文件
           let filename = basename(filepath).replace(ext, '');
           if (filename === 'index') filename = basename(fileDir);
-          files = glob.sync(`**/*/${filename}${specGlob}`, { cwd: dirname(fileDir), absolute: true });
+          files = glob.sync(`**/*/${filename}${specGlob}`, { cwd: dirname(fileDir), absolute: true, ignore: exclude });
           if (files.length > 0) return files[0];
 
           return '';

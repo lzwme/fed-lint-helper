@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-22 18:24:31
+ * @LastEditTime: 2022-11-23 17:32:53
  * @Description:
  */
 
@@ -21,7 +21,9 @@ export const commConfig: CommConfig = {
   cache: true,
   checkOnInit: false,
   debug: !!process.env.DEBUG,
+  exclude: ['**/node_modules/**', '**/dist/**'],
   exitOnError: true,
+  extensions: ['ts', 'tsx', 'js', 'jsx'],
   fileList: [],
   fix: false,
   mode: 'proc',
@@ -32,7 +34,6 @@ export const commConfig: CommConfig = {
   silent: false,
   src: ['src'],
   toWhiteList: false,
-  exclude: ['**/node_modules/**', '**/dist/**'],
 };
 
 export const config: FlhConfig = {
@@ -42,6 +43,7 @@ export const config: FlhConfig = {
   ci: Boolean(env.CI || env.GITLAB_CI || env.JENKINS_HOME),
   logValidityDays: 7,
   tscheck: {
+    extensions: ['ts', 'tsx', 'cts', 'mts'],
     mode: 'thread',
     exclude: ['**/*.test.{ts,tsx}', '**/*/*.mock.{ts,tsx}', '**/*/*.d.ts'],
     tsConfigFileName: 'tsconfig.json',
@@ -52,7 +54,7 @@ export const config: FlhConfig = {
     warningTip: `[errors-必须修复；warnings-历史文件选择性处理(对于历史文件慎重修改 == 类问题)]`,
     mode: 'proc',
     eslintOptions: {
-      extensions: ['ts', 'tsx', 'js', 'jsx'],
+      extensions: ['ts', 'tsx', 'js', 'jsx', 'cts', 'mts'],
       errorOnUnmatchedPattern: false,
     },
   },
@@ -60,7 +62,6 @@ export const config: FlhConfig = {
     jestOptions: {
       config: 'jest.config.js',
       coverageReporters: ['text-summary', 'html'],
-      // detectOpenHandles: true,
     },
   },
   jira: {
@@ -84,7 +85,9 @@ export const config: FlhConfig = {
     extensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.json', '.less', '.scss', '.md'],
     detectSubPackages: false,
   },
-  fileStats: {},
+  fileStats: {
+    extensions: [], // 避免被 common.extensions 覆盖
+  },
 };
 
 let isInited = false;
