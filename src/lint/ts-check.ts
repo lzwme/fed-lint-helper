@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-10 17:39:30
+ * @LastEditTime: 2022-11-25 10:45:36
  * @Description: typescript Diagnostics report
  */
 
@@ -24,7 +24,7 @@ export interface TsCheckResult extends LintResult {
   totalDiagnostics: number;
   errorTSCodes: { [code: number]: number };
 }
-type TSCheckWhiteList = WhiteListInfo<{ md5: string; tscodes: { [code: number]: number } }>;
+export type TSCheckWhiteList = WhiteListInfo<{ md5: string; tscodes: { [code: number]: number } }>;
 export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
   protected override whiteList: TSCheckWhiteList = { list: {} };
   protected override cacheInfo: LintCacheInfo<{ md5: string; updateTime: number }> = { list: {} };

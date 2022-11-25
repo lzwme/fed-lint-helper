@@ -196,7 +196,7 @@ export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {
   /** 企业微信机器人 webhook key 配置，用于 ci 中发送通知。可配置多个 */
   wxWorkKeys?: string[];
   /** 自定义微信通知的消息格式化 */
-  wxWorkMessageFormat?: (type: string) => string | WxWorkReqParams;
+  wxWorkMessageFormat?: (type: string, details: { errmsg?: string }) => string | WxWorkReqParams;
   /** 自定义出错退出前执行的回调方法 */
   beforeExitOnError?: (code: number, msg?: string) => void;
   commitlint?: CommitLintOptions;
@@ -255,6 +255,8 @@ export interface LintResult {
   totalFilesNum?: number;
   /** 异常信息数(一个文件可能包含多个异常) */
   errorCount?: number;
+  /** 错误信息。如可回调给告警类任务 */
+  errmsg?: string;
   /** 检测通过的文件数 */
   passedFilesNum?: number;
   /** 失败的文件数 */

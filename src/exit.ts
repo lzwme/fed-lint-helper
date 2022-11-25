@@ -8,7 +8,7 @@ import { getLogger } from './utils/get-logger.js';
  * @param {number} code 退出码
  * @param {number} startTime 开始时间，存在则打印执行时间成本
  */
-export async function exit(code = 0, prefix = '', startTime = 0) {
+export async function exit(code = 0, prefix = '', startTime = 0, errmsg = '') {
   let needDelay = config.debug || false;
 
   if (startTime) logTimeCost(startTime, prefix);
@@ -16,7 +16,7 @@ export async function exit(code = 0, prefix = '', startTime = 0) {
     if (config.wxWorkKeys.length > 0 && prefix !== 'wx') {
       // 企业微信通知
       const message =
-        typeof config.wxWorkMessageFormat === 'function' ? config.wxWorkMessageFormat(prefix) : `${prefix}任务执行失败，请检查`;
+        typeof config.wxWorkMessageFormat === 'function' ? config.wxWorkMessageFormat(prefix, { errmsg }) : `${prefix}任务执行失败，请检查`;
       await wxWorkNotify(message, config.wxWorkKeys, config.debug);
       needDelay = true;
     }

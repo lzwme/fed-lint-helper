@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-22 18:25:10
+ * @LastEditTime: 2022-11-25 14:49:48
  * @Description:  Jira check
  */
 
@@ -11,8 +11,8 @@ import { existsSync, writeFileSync, readFileSync, statSync } from 'node:fs';
 import type { IncomingHttpHeaders } from 'node:http';
 import { homedir } from 'node:os';
 import { magenta, magentaBright, cyanBright, yellowBright, redBright, green, greenBright, cyan } from 'console-log-colors';
-import { assign, getHeadBranch, readJsonFileSync, Request } from '@lzwme/fe-utils';
-import { getLogger, checkUserEmial, getGitLog } from '../utils/index.js';
+import { assign, execSync, getGitLog, getHeadBranch, readJsonFileSync, Request } from '@lzwme/fe-utils';
+import { getLogger, checkUserEmial } from '../utils/index.js';
 import { getConfig } from '../config.js';
 import type { AnyObject, JiraCheckConfig, LintResult } from '../types.js';
 import { LintBase } from './LintBase.js';
@@ -315,9 +315,10 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
       Object.assign(result, { gitPath, commitMessage: [readFileSync(gitPath, 'utf8').trim()] });
     } else if (/^\d+$/.test(commitEdit) && +commitEdit) {
       // 读取近 N 条提交日志
-      result.commitMessage = getGitLog(+commitEdit).map(d => d.s);
+      result.commitMessage = getGitLog(+commitEdit, rootDir).map(d => d.s);
     } else {
-      // todo: 尝试根据 commitId 读取
+      const msg = execSync(`git show --pretty="%s" -s ${commitEdit}`).stdout;
+      if (msg) result.commitMessage.push(msg);
     }
 
     return result;
@@ -506,7 +507,6 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
     return stats;
   }
   protected beforeStart() {
-    if (!this.config.jiraHome) return '请配置 `jiraHome` 参数';
-    return true;
+    return this.config.jiraHome ? true : '请配置 `jiraHome` 参数';
   }
 }
