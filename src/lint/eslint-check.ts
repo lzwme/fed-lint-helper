@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-10 08:46:12
+ * @LastEditTime: 2022-11-25 17:04:36
  * @Description:  eslint check
  */
 
@@ -145,11 +145,11 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
       if (Array.isArray(result.messages)) {
         for (const d of result.messages) {
           // ignored  file
-          if (!d.ruleId) {
-            if (/ignore pattern/.test(d.message)) return;
-          } else {
+          if (d.ruleId) {
             stats.rules[d.ruleId] = (stats.rules[d.ruleId] || 0) + 1;
             fileRules[filePath][d.ruleId] = (fileRules[filePath][d.ruleId] || 0) + 1;
+          } else {
+            if (/ignore pattern/.test(d.message)) return;
           }
         }
       }

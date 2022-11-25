@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-14 15:48:59
+ * @LastEditTime: 2022-11-25 17:03:27
  * @Description:  jest check
  */
 
@@ -63,15 +63,10 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
   }
   protected init(): void {
     const whiteListFilePath = this.config.whiteListFilePath;
-    if (existsSync(whiteListFilePath)) {
-      if (!this.config.toWhiteList) {
-        const list = JSON.parse(readFileSync(whiteListFilePath, 'utf8'));
-        this.whiteList = list.list ? list : { list }; // 兼容旧格式
-        this.logger.debug('load whiteList:', whiteListFilePath);
-      } else {
-        // 追加模式，不删除旧文件
-        // unlinkSync(whiteListFilePath);
-      }
+    if (existsSync(whiteListFilePath) && !this.config.toWhiteList) {
+      const list = JSON.parse(readFileSync(whiteListFilePath, 'utf8'));
+      this.whiteList = list.list ? list : { list }; // 兼容旧格式
+      this.logger.debug('load whiteList:', whiteListFilePath);
     }
   }
   /** 获取初始化的统计信息 */
@@ -197,15 +192,21 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
         for (const src of config.src) {
           const srcpath = resolve(config.rootDir, src);
           const pkgpath = pkgs.find(d => srcpath.startsWith(d)) || config.rootDir;
-          if (!pkgsCfg[pkgpath]) pkgsCfg[pkgpath] = { src: [srcpath], fileList: [] };
-          else pkgsCfg[pkgpath].src.push(srcpath);
+          if (pkgsCfg[pkgpath]) {
+            pkgsCfg[pkgpath].src.push(srcpath);
+          } else {
+            pkgsCfg[pkgpath] = { src: [srcpath], fileList: [] };
+          }
         }
       } else {
         for (let filepath of config.fileList) {
           filepath = resolve(config.rootDir, filepath);
           const pkgpath = pkgs.find(d => filepath.startsWith(d)) || config.rootDir;
-          if (!pkgsCfg[pkgpath]) pkgsCfg[pkgpath] = { src: [], fileList: [filepath] };
-          else pkgsCfg[pkgpath].fileList.push(filepath);
+          if (pkgsCfg[pkgpath]) {
+            pkgsCfg[pkgpath].fileList.push(filepath);
+          } else {
+            pkgsCfg[pkgpath] = { src: [], fileList: [filepath] };
+          }
         }
       }
     } else {

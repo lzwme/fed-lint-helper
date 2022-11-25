@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-10 17:09:08
+ * @LastEditTime: 2022-11-25 17:05:39
  * @Description:  prettier check
  */
 
@@ -148,7 +148,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
 
     logger.debug('fileList:', fileList);
 
-    if (config.useCli !== false) {
+    if (config.useCli) {
       const baseConfig = getConfig();
       const files = this.isCheckAll ? config.src : fileList;
       const cmd = [
@@ -216,16 +216,16 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
       for (const d of results) {
         const shortpath = fixToshortPath(d.filepath, config.rootDir);
 
-        if (!d.passed) {
-          if (passedFiles[shortpath]) delete passedFiles[shortpath];
-          stats.failedFiles.push(shortpath);
-        } else {
+        if (d.passed) {
           if (!passedFiles[shortpath]) {
             passedFiles[shortpath] = {
               md5: existsSync(d.filepath) ? md5(d.filepath, true) : '',
               updateTime: stats.startTime,
             };
           }
+        } else {
+          if (passedFiles[shortpath]) delete passedFiles[shortpath];
+          stats.failedFiles.push(shortpath);
         }
       }
 

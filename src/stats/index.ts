@@ -220,11 +220,11 @@ export async function stats(options: IStatsOption) {
   const duplicates = new Set<string>();
 
   Object.values(allFilesInfo).forEach(d => {
-    if (!filepathByMd5[d.md5]) {
-      filepathByMd5[d.md5] = [d.filepath];
-    } else {
+    if (filepathByMd5[d.md5]) {
       filepathByMd5[d.md5].push(d.filepath);
       duplicates.add(d.md5);
+    } else {
+      filepathByMd5[d.md5] = [d.filepath];
     }
   });
 

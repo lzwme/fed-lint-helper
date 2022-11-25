@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-23 17:32:53
+ * @LastEditTime: 2022-11-25 17:04:06
  * @Description:
  */
 
@@ -99,11 +99,13 @@ export function mergeCommConfig(options: FlhConfig, useDefault = true) {
     for (const type of LintTypes) {
       if (!options[type] || key in options[type]) continue;
 
-      if (!(key in options)) {
+      if (key in options) {
+        // @ts-ignore
+        options[type][key] = options[key];
+      } else {
         // @ts-ignore
         if (useDefault) options[type][key] = commConfig[key];
-        // @ts-ignore
-      } else options[type][key] = options[key];
+      }
     }
   }
   return options;
