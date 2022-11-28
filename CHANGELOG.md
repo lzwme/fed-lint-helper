@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.1.4](https://github.com/lzwme/fed-lint-helper/compare/v2.1.3...v2.1.4) (2022-11-28)
+
+
+### Bug Fixes
+
+* 修复 extensions 参数不规范导致 onlyChanges 匹配文件结果异常的问题 ([3b35fbf](https://github.com/lzwme/fed-lint-helper/commit/3b35fbff96d2a3d14357dc1b4c7d335a9ead7469))
+
 ### [2.1.3](https://github.com/lzwme/fed-lint-helper/compare/v2.1.2...v2.1.3) (2022-11-28)
 
 
