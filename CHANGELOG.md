@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.1.3](https://github.com/lzwme/fed-lint-helper/compare/v2.1.2...v2.1.3) (2022-11-28)
+
+
+### Bug Fixes
+
+* 修复 jira check 失败时仍会通过的问题 ([f04f6c0](https://github.com/lzwme/fed-lint-helper/commit/f04f6c0b668e6cc86cf9a01ec18c40fb2187f27c))
+
 ### [2.1.2](https://github.com/lzwme/fed-lint-helper/compare/v2.1.1...v2.1.2) (2022-11-25)
 
 ### [2.1.1](https://github.com/lzwme/fed-lint-helper/compare/v2.1.0...v2.1.1) (2022-11-16)
