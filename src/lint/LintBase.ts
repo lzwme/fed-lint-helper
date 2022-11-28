@@ -47,6 +47,10 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
     this.config = assign({ whiteListFilePath: `config/whitelist-${tag}.json` } as C, baseConfig[tag]);
     this.parseConfig(this.config);
 
+    if (this.config.extensions?.length > 0) {
+      this.config.extensions = this.config.extensions.map(ext => (ext.startsWith('.') ? ext : `.${ext}`));
+    }
+
     for (const key of ['exclude', 'include'] as const) {
       if (baseConfig[key] !== this.config[key]) {
         this.config[key] = [...new Set([...(baseConfig[key] || []), ...(this.config[key] || [])])];

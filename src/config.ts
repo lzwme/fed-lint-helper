@@ -23,7 +23,7 @@ export const commConfig: CommConfig = {
   debug: !!process.env.DEBUG,
   exclude: ['**/node_modules/**', '**/dist/**'],
   exitOnError: true,
-  extensions: ['ts', 'tsx', 'js', 'jsx'],
+  extensions: ['.ts', '.tsx', '.js', '.jsx'],
   fileList: [],
   fix: false,
   mode: 'proc',
@@ -43,7 +43,7 @@ export const config: FlhConfig = {
   ci: Boolean(env.CI || env.GITLAB_CI || env.JENKINS_HOME),
   logValidityDays: 7,
   tscheck: {
-    extensions: ['ts', 'tsx', 'cts', 'mts'],
+    extensions: ['.ts', '.tsx', '.cts', '.mts'],
     mode: 'thread',
     exclude: ['**/*.test.{ts,tsx}', '**/*/*.mock.{ts,tsx}', '**/*/*.d.ts'],
     tsConfigFileName: 'tsconfig.json',
