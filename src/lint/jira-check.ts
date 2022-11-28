@@ -138,16 +138,17 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
     const jiraPath = this.getJiraCfgPath(true);
 
     if (jiraPath) {
-      const jiraConfig = readJsonFileSync<{
+      type JiraConfig = {
         cookie?: string;
         JSESSIONID?: string;
         authorization?: string;
         username?: string;
         pwd?: string;
-      }>(jiraPath);
+      };
+      // const jiraConfig = jiraPath.endsWith('.json') ? readJsonFileSync<JiraConfig>(jiraPath) : await import(jiraPath);
+      const jiraConfig = jiraPath.endsWith('.json') ? readJsonFileSync<JiraConfig>(jiraPath) : require(jiraPath);
 
       if (jiraConfig.cookie) headers.cookie = jiraConfig.cookie;
-
       if (jiraConfig.JSESSIONID && !headers.cookie.includes('JSESSIONID=')) {
         headers.cookie += `;JSESSIONID=${jiraConfig.JSESSIONID}`;
       }
@@ -195,6 +196,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
 
     if (issueTypeList.length === 0) {
       const url = `${this.config.jiraHome}/rest/api/2/issuetype`;
+      await this.initRequest();
       const result = await this.reqeust.get<typeof issueTypeList>(url);
       if (!Array.isArray(result.data)) {
         this.logger.warn('获取 issuetype 列表异常：', result.data || result.headers);
@@ -358,7 +360,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
     return result.isvalid;
   }
   async validCommitMsgs(msgs: string[]) {
-    const result = { smartCommit: '', isvalid: true };
+    const result = { smartCommit: '', isvalid: false };
     const { config, logger } = this;
     const issuePrefixs = config.issuePrefix as string[];
     /** 当前本地分支。分支命名格式：3.10.1<_dev><_fix-xxx> */
@@ -491,13 +493,13 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
   }
   protected override init() {
     super.init();
-    this.initRequest();
   }
   protected async check() {
     const stats = this.getInitStats();
     this.logger.info(green(`start checking`));
 
     try {
+      await this.initRequest();
       stats.isPassed = this.config.type === 'commit' ? await this.commitMsgCheck() : await this.pipelineCheck();
     } catch (error) {
       this.logger.error((error as Error).message, '\n', (error as Error).stack);
