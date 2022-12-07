@@ -103,9 +103,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
       const passedFiles = this.cacheInfo.list;
 
       fileList = fileList.filter(filepath => {
-        const shortpath = fixToshortPath(filepath, config.rootDir);
-
-        const item = passedFiles[shortpath];
+        const item = passedFiles[fixToshortPath(filepath, config.rootDir)];
         if (!item) return true;
         const fileMd5 = md5(filepath, true);
         const isChanged = fileMd5 !== item.md5;
@@ -140,6 +138,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
     this.init();
 
     const { logger, stats, config } = this;
+    const passedFiles = this.cacheInfo.list;
 
     logger.debug('[options]:', config, fileList);
     fileList = await this.getFileList(fileList);
@@ -195,6 +194,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
             if (item.fixed) {
               writeFileSync(filepath, fixedcontent, 'utf8');
               stats.fixedFileList.push(filepath);
+              passedFiles[fixToshortPath(filepath, config.rootDir)] = { md5: md5(filepath, true), updateTime: stats.startTime };
             }
           } else {
             item.passed = prettier.check(rawContent, options);
@@ -209,7 +209,6 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
         }
         return item;
       });
-      const passedFiles = this.cacheInfo.list;
 
       console.log();
 
