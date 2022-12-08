@@ -134,9 +134,9 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     const subConfigFile = resolve(subDirection, config.tsConfigFileName);
     const hasSubConfig = existsSync(subConfigFile);
 
-    const options: CompilerOptions = TS.readConfigFile(hasSubConfig ? subConfigFile : config.tsConfigFileName, TS.sys.readFile).config;
+    const tsConfig = TS.readConfigFile(hasSubConfig ? subConfigFile : config.tsConfigFileName, TS.sys.readFile);
+    const options = Object.assign<CompilerOptions, CompilerOptions>({ forceConsistentCasingInFileNames: true }, tsConfig.config);
     const cfg = TS.parseJsonConfigFileContent(options, TS.sys, hasSubConfig ? subDirection : dirname(config.tsConfigFileName));
-
     const host = TS.createCompilerHost(cfg.options);
     const program = TS.createProgram(sourceFiles, cfg.options, host);
 
