@@ -2,13 +2,13 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-22 18:19:43
+ * @LastEditTime: 2022-12-10 00:25:43
  * @Description: cli 工具
  */
 import { resolve } from 'node:path';
 import { existsSync } from 'node:fs';
 import { Option, program } from 'commander';
-import { bgYellowBright, cyanBright, green, greenBright, yellowBright } from 'console-log-colors';
+import { cyanBright, green, greenBright, yellowBright } from 'console-log-colors';
 import { getHeadDiffFileList, wxWorkNotify } from '@lzwme/fe-utils';
 import { FlhConfig, TsCheckConfig, JiraCheckConfig, CommitLintOptions, LintTypes } from './types.js';
 import { formatWxWorkKeys } from './utils/index.js';
@@ -82,7 +82,7 @@ program
   .option('--commitlint [verifyReg]', `执行 commitlint 检查`)
   .option(
     '--commit-edit <filepath|N>',
-    `指定 git commit msg 的获取方式。可以是：COMMIT_EDITMSG 文件路径、commitId、数字(1-99，表示取最近N条日志全部验证)。默认为 ${bgYellowBright(
+    `指定 git commit msg 的获取方式。可以是：COMMIT_EDITMSG 文件路径、commitId、数字(1-99，表示取最近N条日志全部验证)。默认为 ${yellowBright(
       './.git/COMMIT_EDITMSG'
     )}`
   )
