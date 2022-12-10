@@ -15,11 +15,12 @@ import {
   execSync,
   getHeadCommitId,
   getObjectKeysUnsafe,
+  isGitRepo,
   isObject,
   mkdirp,
   readJsonFileSync,
 } from '@lzwme/fe-utils';
-import { getIndentSize, getTimeCost, globMatcher, isGitRepo, padSpace } from '../utils/common.js';
+import { getIndentSize, getTimeCost, globMatcher, padSpace } from '../utils/common.js';
 import { getLogger } from '../utils/get-logger.js';
 import { createForkThread } from '../worker/fork.js';
 import { getConfig, FlhPkgInfo } from '../config.js';

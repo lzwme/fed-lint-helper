@@ -122,6 +122,8 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
         .filter(Boolean);
     }
 
+    specFileList = [...new Set(specFileList)];
+
     const totalFiles = specFileList.length;
     let cacheHits = 0;
 

@@ -1,6 +1,5 @@
 // import test from 'ava';
 import * as comm from './common';
-import { isGitRepo } from './common';
 
 describe('utils/common', () => {
   console.log = jest.fn();
@@ -19,29 +18,27 @@ describe('utils/common', () => {
     expect(comm.formatWxWorkKeys('d5aeb3d8-8dd6-4ffc-bbe2-89982ca00000')[0].length).toBe(36);
   });
 
-  it('isGitRepo', () => {
-    let exists = true;
-    let execSyncResult = '';
+  it('arrayToObject', () => {
+    expect(comm.arrayToObject([])).toEqual({});
+    expect(comm.arrayToObject(['abc'])).toEqual({ abc: 1 });
+    expect(comm.arrayToObject(['abc'], true)).toEqual({ abc: true });
 
-    jest.mock('node:fs', () => ({
-      existsSync: (_filepath: string) => {
-        // console.log(_filepath, exists);
-        return exists;
-      },
-      readFileSync: () => '',
-    }));
-    jest.mock('node:child_process', () => ({
-      execSync: () => {
-        if (execSyncResult) throw new Error(execSyncResult);
-        return '';
-      },
-    }));
+    const spy = jest.fn();
+    try {
+      comm.arrayToObject(null);
+    } catch {
+      spy();
+    }
+    expect(spy).toHaveBeenCalled();
+    // expect(comm.arrayToObject(null)).toThrow();
+  });
 
-    expect(comm.isGitRepo()).toBeTruthy();
-
-    exists = false;
-    execSyncResult = 'isGitRepo exec error';
-    expect(isGitRepo()).toBeTruthy();
-    expect(isGitRepo('abc')).toBeFalsy();
+  it('padSpace', () => {
+    expect(comm.padSpace('', 0)).toBe('');
+    expect(comm.padSpace('123', 0)).toBe('123');
+    expect(comm.padSpace('123', 3)).toBe('123');
+    expect(comm.padSpace('123', 5)).toBe('  123');
+    expect(comm.padSpace('123', 5, true)).toBe('  123');
+    expect(comm.padSpace('123', 5, false)).toBe('123  ');
   });
 });
