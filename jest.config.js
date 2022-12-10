@@ -23,5 +23,5 @@ module.exports = {
   moduleNameMapper: {
     // "(.+)(common|utils|get-logger|config).js": "$1$2.ts"
   },
-  resolver: '<rootDir>/scripts/jest-js-ts-resolver.js',
+  resolver: '<rootDir>/preset/jest-js-ts-resolver.js',
 };

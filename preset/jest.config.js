@@ -18,6 +18,7 @@ module.exports = {
   },
   extensionsToTreatAsEsm: ['.ts'],
   maxWorkers: require('os').cpus().length,
+  resolver: require.resolve('@lzwme/fed-lint-helper/preset/jest-js-ts-resolver.js'),
   // transform: {
   //   '^.+\\.(t|j)sx?$': [
   //     '@swc/jest',
