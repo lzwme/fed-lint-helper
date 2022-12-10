@@ -142,6 +142,7 @@ export function getConfig(options?: FlhConfig, useCache = true) {
     config.silent = false;
     logger.updateOptions({ levelType: 'debug' });
   }
+  if (config.logValidityDays) logger.updateOptions({ validityDays: config.logValidityDays });
 
   if (!('printDetialOnSuccessed' in config)) {
     commConfig.printDetialOnSuccessed = config.printDetialOnSuccessed = config.ci !== true;
@@ -161,8 +162,6 @@ export function getConfig(options?: FlhConfig, useCache = true) {
   if (config.logDir === '_NIL_') config.logDir = ''; // 禁用日志
   if (config.logDir) {
     logger.setLogDir(config.logDir);
-    // 只处理一次
-    // if (!globalThis.isInChildProcess && !isInited) logClean(config.logDir, config.logValidityDays);
   }
 
   if (!config.cacheLocation) config.cacheLocation = resolve(baseCaceDir, `./.cache/flh/`);
