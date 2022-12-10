@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.1.5](https://github.com/lzwme/fed-lint-helper/compare/v2.1.4...v2.1.5) (2022-12-10)
+
+
+### Bug Fixes
+
+* 更新日志有效天数参数的支持 ([2b123e4](https://github.com/lzwme/fed-lint-helper/commit/2b123e42ad5de22e009ddee5e7e035be3aaa9676))
+* prettier 执行 fixed 文件应同时更新最新的 md5 值 ([37c6d3b](https://github.com/lzwme/fed-lint-helper/commit/37c6d3b4cbd196f529328fa5594fbce77dd4b39e))
+
 ### [2.1.4](https://github.com/lzwme/fed-lint-helper/compare/v2.1.3...v2.1.4) (2022-11-28)
 
 
