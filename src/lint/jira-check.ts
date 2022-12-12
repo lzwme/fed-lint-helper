@@ -21,12 +21,10 @@ export interface JiraCheckResult extends LintResult {
   /** 是否检测通过 */
   isPassed: boolean;
 }
-
 interface JiraError {
   errorMessages?: string[];
   errors?: AnyObject;
 }
-
 interface IssueItem {
   expand: string;
   id: string;
@@ -66,7 +64,6 @@ interface IssueItem {
     [key: string]: unknown;
   };
 }
-
 interface Author {
   self: string;
   name: string;
@@ -82,6 +79,13 @@ interface Author {
   active: boolean;
   timeZone: string;
 }
+type JiraConfig = {
+  cookie?: string;
+  JSESSIONID?: string;
+  authorization?: string;
+  username?: string;
+  pwd?: string;
+};
 
 /**
  * @url 忽略规则参考地址: https://github.com/conventional-changelog/commitlint/blob/master/%40commitlint/is-ignored/src/defaults.ts
@@ -98,7 +102,6 @@ const ignoredCommitList = [
 
 export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
   private reqeust: Request;
-
   constructor(config: JiraCheckConfig = {}) {
     super('jira', config);
   }
@@ -119,7 +122,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
 
     return config;
   }
-  private initRequest() {
+  private async initRequest() {
     if (this.reqeust) return;
 
     const headers = assign<IncomingHttpHeaders>(
@@ -134,20 +137,11 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
       },
       this.config.headers
     );
-    // 在当前工作目录下存在 .jira.json 文件
     const jiraPath = this.getJiraCfgPath(true);
 
     if (jiraPath) {
-      type JiraConfig = {
-        cookie?: string;
-        JSESSIONID?: string;
-        authorization?: string;
-        username?: string;
-        pwd?: string;
-      };
-      // const jiraConfig = jiraPath.endsWith('.json') ? readJsonFileSync<JiraConfig>(jiraPath) : await import(jiraPath);
-      const jiraConfig = jiraPath.endsWith('.json') ? readJsonFileSync<JiraConfig>(jiraPath) : require(jiraPath);
-
+      const jiraConfig = jiraPath.endsWith('.json') ? readJsonFileSync<JiraConfig>(jiraPath) : await import(jiraPath);
+      if (jiraConfig.default) Object.assign(jiraConfig, jiraConfig.default);
       if (jiraConfig.cookie) headers.cookie = jiraConfig.cookie;
       if (jiraConfig.JSESSIONID && !headers.cookie.includes('JSESSIONID=')) {
         headers.cookie += `;JSESSIONID=${jiraConfig.JSESSIONID}`;
@@ -169,7 +163,6 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
   /** 返回本地的 .jira.json 配置文件路径 */
   private getJiraCfgPath(isPrintTips = false) {
     let filePath = '';
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const isFind = [this.config.rootDir, homedir()].some(dir => {
       const fileNames = ['.jira.json', '.jira.js'];
       for (const filename of fileNames) {
@@ -490,9 +483,6 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
     result.smartCommit = smartCommit;
     result.isvalid = true;
     return result;
-  }
-  protected override init() {
-    super.init();
   }
   protected async check() {
     const stats = this.getInitStats();

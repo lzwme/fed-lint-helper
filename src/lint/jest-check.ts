@@ -22,24 +22,14 @@ export type JestCheckResult = LintResult;
 
 export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
   protected override whiteList: WhiteListInfo<number> = { list: {} };
-  protected override stats = this.getInitStats();
   protected override cacheInfo: LintCacheInfo<{ md5: string; specMd5: string; updateTime: number }> = { list: {} };
   /** 要缓存到 cacheFilePath 的信息 */
   private cache = {
     /** 缓存 getSpecFiles 返回的结果 */
     specFiles: null as string[],
   };
-
   constructor(config: JestCheckConfig = {}) {
     super('jest', config);
-  }
-  /** 获取初始化的统计信息 */
-  protected override getInitStats() {
-    const stats: JestCheckResult = {
-      ...super.getInitStats(),
-    };
-    this.stats = stats;
-    return stats;
   }
   protected getJestOptions(specFileList: string[]) {
     const baseConfig = getConfig();
@@ -167,7 +157,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
 
     if (specFileList.length === 0) return stats;
     logger.info('Total Test Files:', color.magentaBright(stats.totalFilesNum));
-    if (stats.cacheHits) this.logger.info(` - Cache hits:`, stats.cacheHits);
+    if (stats.cacheHits) logger.info(` - Cache hits:`, stats.cacheHits);
 
     const options = this.getJestOptions(specFileList);
     const outputJsonFile = options.outputFile;
@@ -180,9 +170,9 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
       const argv = this.jestOptionToArgv({ ...options, json: true, 'unhandled-rejections': 'strict' });
       const cmd = [`node --max_old_space_size=8192 ./node_modules/jest/bin/jest.js`, argv, files.join(' ')].join(' ');
 
-      this.logger.debug('[jest-cli][cmd]', color.cyanBright(cmd));
+      logger.debug('[jest-cli][cmd]', color.cyanBright(cmd));
       const res = execSync(cmd, config.silent ? 'pipe' : 'inherit', config.rootDir, config.debug);
-      this.logger.debug('result:\n', res);
+      logger.debug('result:\n', res);
 
       if (existsSync(outputJsonFile)) {
         results = JSON.parse(readFileSync(outputJsonFile, 'utf8')) as FormattedTestResults;

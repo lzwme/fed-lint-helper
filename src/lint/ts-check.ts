@@ -40,38 +40,32 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     super('tscheck', config);
   }
   protected override getInitStats() {
-    const stats: TsCheckResult = {
+    this.stats = {
       ...super.getInitStats(),
       errorTSCodes: {},
       totalDiagnostics: 0,
       diagnosticsCategory: {},
     };
-    this.stats = stats;
     this.cache = {
       allDiagnosticsFileMap: {},
-      /** 检测通过的文件列表是否有变动(记录变动文件数)，用于标记是否需要写回缓存 */
       passedChanged: 0,
       sourceFiles: new Set(),
     };
     this.cacheInfo = { list: {} };
 
-    return stats;
+    return this.stats;
   }
   protected override init() {
     super.init();
-
     Object.assign(this.cacheInfo, this.getCacheInfo());
   }
   /** 返回可检测的子项目路径 */
   private getCheckProjectDirs(source = this.config.src) {
-    const { rootDir } = this.config;
     return source.filter(d => {
-      const p = resolve(rootDir, d);
+      const p = resolve(this.config.rootDir, d);
       return existsSync(p) && statSync(p).isDirectory();
     });
   }
-
-  /** ts 编译 */
   private async compile(sourceFiles: string[], subDirection: string) {
     const { config, stats, logger } = this;
     const total = sourceFiles.length;
@@ -133,7 +127,6 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
 
     const subConfigFile = resolve(subDirection, config.tsConfigFileName);
     const hasSubConfig = existsSync(subConfigFile);
-
     const tsConfig = TS.readConfigFile(hasSubConfig ? subConfigFile : config.tsConfigFileName, TS.sys.readFile);
     const options = Object.assign<CompilerOptions, CompilerOptions>({ forceConsistentCasingInFileNames: true }, tsConfig.config);
     const cfg = TS.parseJsonConfigFileContent(options, TS.sys, hasSubConfig ? subDirection : dirname(config.tsConfigFileName));
@@ -223,7 +216,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
       }
 
       if (config.toWhiteList) Object.assign(this.whiteList.list, errFileCodes);
-      this.logger.debug('errFileCodes', errFileCodes);
+      logger.debug('errFileCodes', errFileCodes);
     }
   }
   /** 返回指定子目录中匹配到的 ts 文件列表 */
@@ -264,12 +257,11 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
 
     if (cache.passedChanged) {
       stats.cacheFiles[this.cacheFilePath] = { updated: this.cacheInfo, deleted };
-      this.logger.info(`update cache(${this.cache.passedChanged}):`, cyanBright(fixToshortPath(this.cacheFilePath, config.rootDir)));
+      this.logger.info(`update cache(${cache.passedChanged}):`, cyanBright(fixToshortPath(this.cacheFilePath, config.rootDir)));
     }
 
     return { removeFromWhiteList };
   }
-  /** 执行 ts check */
   public async check(fileList = this.config.fileList) {
     const { config, stats, logger } = this;
     const TS = await import('typescript');
@@ -353,7 +345,6 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
   beforeStart(): boolean {
     if (this.isCheckAll) return true;
     this.config.fileList = this.config.fileList.filter(filepath => {
-      // 过滤 .d.ts 文件，且必须以 .tsx? 结尾
       return /\.tsx?$/i.test(filepath) && !filepath.endsWith('.d.ts');
     });
     return this.config.fileList.length > 0;

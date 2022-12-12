@@ -8,38 +8,31 @@
 
 import { resolve } from 'node:path';
 import { existsSync, statSync, readFileSync, writeFileSync } from 'node:fs';
-import { color } from 'console-log-colors';
-import glob from 'fast-glob';
+import { green, greenBright, magentaBright, red, redBright } from 'console-log-colors';
 import { md5, assign, execSync, fixToshortPath, isGitRepo } from '@lzwme/fe-utils';
+import glob from 'fast-glob';
 import { getConfig } from '../config.js';
 import type { PrettierCheckConfig, LintResult, LintCacheInfo } from '../types.js';
 import { LintBase } from './LintBase.js';
 
 export interface PrettierCheckResult extends LintResult {
-  /** fix 修正过的文件路径列表 */
   fixedFileList?: string[];
   failedFiles?: string[];
 }
 
 export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckResult> {
-  /** 统计信息 */
-  protected override stats = this.getInitStats();
-  /** 要缓存到 cacheFilePath 的信息 */
   override cacheInfo: LintCacheInfo<{ md5: string; updateTime: number }> = { list: {} };
   constructor(config: PrettierCheckConfig = {}) {
     super('prettier', config);
   }
-  /** 获取初始化的统计信息 */
-  protected override getInitStats() {
-    const stats: PrettierCheckResult = {
+  protected override getInitStats(): PrettierCheckResult {
+    this.stats = {
       ...super.getInitStats(),
       fixedFileList: [],
       failedFiles: [],
     };
-    this.stats = stats;
-    return stats;
+    return this.stats;
   }
-  /** 配置参数格式化 */
   public override parseConfig(config: PrettierCheckConfig) {
     super.parseConfig(config);
     if (!this.config.extensions?.length) {
@@ -53,7 +46,6 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
     this.cacheInfo = { list: {} };
   }
   protected async getOptions(_fileList: string[]) {
-    // const baseConfig = getConfig();
     const prettier = await import('prettier');
     const cfgFile = await prettier.resolveConfigFile();
     const cfg = cfgFile ? await prettier.resolveConfig(cfgFile, { editorconfig: true }) : {};
@@ -65,19 +57,18 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
       },
       config.prettierConfig
     );
-    this.logger.debug('configfile:', cfgFile, cfg);
-    this.logger.debug('[getOptons]', options);
+    this.logger.debug('configfile:', cfgFile, cfg, '\n[getOptons]', options);
     return options;
   }
   protected async getFileList(fileList: string[]) {
-    const config = this.config;
+    const { config, logger } = this;
 
     if (this.isCheckAll) {
       const exts = config.extensions.map(d => d.replace(/^\./, '')).join(',');
       const extGlobPattern = `**/*.${config.extensions.length > 1 ? `{${exts}}` : exts}`;
       fileList = [];
 
-      for (const d of this.config.src) {
+      for (const d of config.src) {
         const p = resolve(config.rootDir, d);
         if (!existsSync(p)) continue;
         if (!statSync(p).isDirectory()) {
@@ -91,7 +82,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
     }
 
     fileList = this.filesFilter(fileList, !this.isCheckAll);
-    this.logger.info(`Total Files:`, color.magentaBright(fileList.length));
+    logger.info(`Total Files:`, magentaBright(fileList.length));
 
     const totalFiles = fileList.length;
     let cacheHits = 0;
@@ -116,7 +107,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
 
       cacheHits = totalFiles - fileList.length;
 
-      if (cacheHits) this.logger.info(` - Cache hits:`, cacheHits);
+      if (cacheHits) logger.info(` - Cache hits:`, cacheHits);
     }
 
     this.stats.totalFilesNum = totalFiles;
@@ -124,15 +115,6 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
 
     return fileList;
   }
-  // private getParser(filepath: string) {
-  //   const ext = extname(filepath).slice(1);
-  //   switch (ext) {
-  //     case 'ts':
-  //     case 'tsx':
-  //       return 'typescript';
-  //   }
-  //   return 'json';
-  // }
   protected async check(fileList = this.config.fileList): Promise<PrettierCheckResult> {
     this.init();
 
@@ -156,21 +138,16 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
         baseConfig.fix ? `--write` : `-c`, // `-l`
         config.silent ? `--loglevel=silent` : null,
         '--ignore-unknown',
-      ]
-        .filter(Boolean)
-        .join(' ');
+      ].filter(Boolean);
 
-      const res = execSync(cmd, 'pipe', config.rootDir, config.debug);
+      const res = execSync(cmd.join(' '), 'pipe', config.rootDir, config.debug);
       this.logger.debug('result:\n', res);
       if (res.stderr) {
         stats.failedFiles = res.stderr
           .trim()
           .split('\n')
           .slice(1, -1)
-          .filter(line => {
-            if (!line.startsWith('[') || line.includes(' | ')) return false;
-            return true;
-          })
+          .filter(line => line.startsWith('[') && !line.includes(' | '))
           .map(line => fixToshortPath(line.replace(/^\[.+]/, '').trim()));
 
         stats.failedFiles = this.filesFilter(stats.failedFiles);
@@ -199,7 +176,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
             item.passed = prettier.check(rawContent, options);
           }
 
-          const tipPrefix = item.fixed ? color.greenBright(`Fixed`) : item.passed ? color.green('PASS') : color.red('Failed');
+          const tipPrefix = item.fixed ? greenBright(`Fixed`) : item.passed ? green('PASS') : red('Failed');
           if (!config.silent && !baseConfig.ci) this.logger.logInline(` - [${tipPrefix}][${index}] ${filepath}`);
         } catch (error) {
           console.log();
@@ -210,7 +187,6 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
       });
 
       console.log();
-
       for (const d of results) {
         const shortpath = fixToshortPath(d.filepath, config.rootDir);
 
@@ -239,9 +215,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
     if (stats.totalFilesNum >= stats.failedFilesNum) stats.passedFilesNum = stats.totalFilesNum - stats.failedFilesNum;
 
     if (stats.failedFilesNum > 0) {
-      logger.error(
-        `Failed Files(${color.red(stats.failedFilesNum)}):\n` + color.redBright(stats.failedFiles.map(d => ` - ${d}\n`).join(''))
-      );
+      logger.error(`Failed Files(${red(stats.failedFilesNum)}):\n` + redBright(stats.failedFiles.map(d => ` - ${d}\n`).join('')));
     }
     if (stats.fixedFileList.length > 0) logger.info(` - Fixed:\t`, stats.fixedFileList.length);
 

@@ -36,6 +36,7 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
   protected isCheckAll = false;
   protected logger: ReturnType<typeof getLogger>;
   protected whiteList: WhiteListInfo = { list: {} };
+  /** 要缓存到 cacheFilePath 的信息 */
   protected cacheInfo: LintCacheInfo = { list: {} };
 
   /** start 之前调用。返回 true 才会继续执行 */

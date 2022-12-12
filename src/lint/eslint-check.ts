@@ -38,9 +38,8 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
   constructor(config: ESLintCheckConfig = {}) {
     super('eslint', config);
   }
-  /** 获取初始化的统计信息 */
   protected override getInitStats() {
-    const stats: ESLintCheckResult = {
+    this.stats = {
       ...super.getInitStats(),
       errorCount: 0,
       warningCount: 0,
@@ -52,8 +51,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
       warningFiles: [],
       rules: {},
     };
-    this.stats = stats;
-    return stats;
+    return this.stats;
   }
   /** 配置参数格式化 */
   public override parseConfig(config: ESLintCheckConfig) {
@@ -69,9 +67,6 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
   private getESLintOptions(lintList: string[]) {
     const cfg = this.config;
     const option: ESLint.Options = {
-      // overrideConfigFile: './.eslintrc.js',
-      // ignore: true,
-      // overrideConfig: cfg.eslintOptions.overrideConfig,
       ...cfg.eslintOptions,
       // 存在不以 ts、tsx 结尾的路径、或路径中包含 *，则允许 glob 匹配
       globInputPaths: lintList.some(d => !/\.(j|t)sx?$/.test(d) || d.includes('*')),
@@ -82,8 +77,8 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
       fix: !!cfg.fix,
     };
 
-    ['.eslintrc.js', '.eslintrc', '.eslintrc.json'].some(d => {
-      const filepath = resolve(cfg.rootDir, d);
+    ['.js', '.cjs', '.mjs', '', '.json'].some(d => {
+      const filepath = resolve(cfg.rootDir, `.eslintrc${d}`);
       if (existsSync(filepath)) {
         option.overrideConfigFile = filepath;
         return true;
@@ -96,15 +91,11 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
 
     return option;
   }
-
-  /**
-   * 执行 eslint 校验
-   */
   protected async check() {
     this.init();
 
     this.stats = this.getInitStats();
-    const { config, stats, logger } = this;
+    const { config, stats, logger, whiteList } = this;
     const lintList = this.isCheckAll ? config.src : config.fileList;
 
     if (this.isCheckAll) this.logger.info(cyanBright('Checking in'), lintList.join(','));
@@ -131,8 +122,8 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
       if (!result.warningCount && !result.errorCount) {
         stats.passedFilesNum++;
         // remove passed files from old whitelist
-        if (this.whiteList.list[filePath]) {
-          delete this.whiteList.list[filePath];
+        if (whiteList.list[filePath]) {
+          delete whiteList.list[filePath];
           removeFromWhiteList.push(filePath);
         }
         return;
@@ -162,7 +153,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
         stats.warningCount += result.warningCount;
         if (result.messages.length > 0) {
           waringReults.push(result);
-          if (!config.toWhiteList && !this.whiteList.list[filePath]) newWaringReults.push(result);
+          if (!config.toWhiteList && !whiteList.list[filePath]) newWaringReults.push(result);
         }
       }
 
@@ -170,7 +161,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
         stats.errorCount += result.errorCount;
         if (result.messages.length > 0) {
           errorResults.push(result);
-          if (!config.toWhiteList && !this.whiteList.list[filePath]) newErrorReults.push(result);
+          if (!config.toWhiteList && !whiteList.list[filePath]) newErrorReults.push(result);
         }
       }
     });
@@ -182,18 +173,18 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
       if (results.length === 0) {
         logger.debug('no new error file');
       } else {
-        this.whiteList.list = fileRules;
+        whiteList.list = fileRules;
 
         if (config.printDetail !== false) logger.info(`\n ${formatter.format(results)}`);
 
         logger.info('[ADD]write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
-        this.stats.cacheFiles[config.whiteListFilePath] = { updated: this.whiteList };
+        stats.cacheFiles[config.whiteListFilePath] = { updated: whiteList };
       }
     } else {
       if (removeFromWhiteList.length > 0) {
         logger.info(' [REMOVE]write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
-        this.stats.cacheFiles[config.whiteListFilePath] = {
-          updated: this.whiteList,
+        stats.cacheFiles[config.whiteListFilePath] = {
+          updated: whiteList,
           deleted: arrayToObject(removeFromWhiteList),
         };
         logger.info(' remove from whilelist:', fileListToString(removeFromWhiteList));
@@ -201,7 +192,6 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
 
       const tips = config.warningTip || '';
 
-      // 存在 error 异常
       if (stats.errorCount && (!config.allowErrorToWhiteList || newErrorReults.length > 0)) {
         stats.isPassed = false;
 
@@ -247,18 +237,15 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
         );
       }
     }
-    Object.assign(this.stats, {
+    Object.assign(stats, {
       fixedCount: config.fix ? stats.fixableErrorCount + stats.fixableWarningCount : 0,
       lintList,
       totalFilesNum: results.length,
       errorFiles: errorResults.map(d => d.filePath), // results.filter(d => d.errorCount).map(d => d.filePath),
       warningFiles: waringReults.map(d => d.filePath), // results.filter(d => d.warningCount).map(d => d.filePath),
-      // results,
-      // newErrCount: newErrorReults.length,
-      // newWarningCount: newWaringReults.length,
     } as ESLintCheckResult);
 
-    return this.stats;
+    return stats;
   }
   protected beforeStart(): boolean {
     if (this.isCheckAll) return true;
