@@ -104,18 +104,14 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
         if (!stats.cacheFiles[config.whiteListFilePath]) {
           stats.cacheFiles[config.whiteListFilePath] = { updated: this.whiteList };
         }
-
-        return true;
       }
 
-      if (!passed[shortpath]) {
-        // 新文件：先放到 passed 中
-        passed[shortpath] = { md5: fileMd5, updateTime: null };
-      } else if (config.cache && passed[shortpath].md5 === fileMd5) {
+      if (passed[shortpath] && config.cache && passed[shortpath].md5 === fileMd5) {
         cacheHits++;
         return false;
       }
-      passed[shortpath].md5 = fileMd5;
+
+      passed[shortpath] = { md5: fileMd5, updateTime: null };
 
       return true;
     });
