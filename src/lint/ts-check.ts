@@ -320,7 +320,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     const errorFileList = Object.keys(this.cache.allDiagnosticsFileMap);
 
     stats.totalFilesNum = this.cache.sourceFiles.size;
-    stats.passedFilesNum = errorFileList.filter(d => this.cache.sourceFiles.has(d)).length;
+    stats.passedFilesNum = [...this.cache.sourceFiles].filter(d => !errorFileList.includes(d)).length;
     stats.failedFilesNum = errorFileList.length;
     stats.isPassed = config.toWhiteList || stats.failedFilesNum === 0;
 
@@ -328,8 +328,8 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     if (!stats.isPassed) {
       if (config.printDetail) logger.error(red('Failed Files:'), fileListToString(errorFileList));
 
-      for (const filepath of errorFileList) {
-        const d = this.cache.allDiagnosticsFileMap[filepath];
+      for (const shortpath of errorFileList) {
+        const d = this.cache.allDiagnosticsFileMap[shortpath];
         d.forEach(item => {
           const cateString = TS.DiagnosticCategory[item.category] as keyof typeof DiagnosticCategory;
           stats.diagnosticsCategory[cateString] = (stats.diagnosticsCategory[cateString] || 0) + 1;
