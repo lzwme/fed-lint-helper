@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.1.7](https://github.com/lzwme/fed-lint-helper/compare/v2.1.6...v2.1.7) (2023-01-03)
+
+
+### Bug Fixes
+
+* 修复 ts-check 不会从白名单移除已修复文件的问题 ([308890e](https://github.com/lzwme/fed-lint-helper/commit/308890e834b50a803f1740d4a90081b2f3f8edfe))
+
 ### [2.1.6](https://github.com/lzwme/fed-lint-helper/compare/v2.1.5...v2.1.6) (2022-12-30)
 
 
