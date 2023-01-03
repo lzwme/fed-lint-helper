@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-25 17:03:27
+ * @LastEditTime: 2023-01-03 10:48:18
  * @Description:  jest check
  */
 
@@ -165,14 +165,18 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
     return cacheInfo;
   }
   protected saveCache(filepath: string, info: unknown, isReset = false) {
+    const baseConfig = getConfig();
+
     if (!isReset && existsSync(filepath)) info = assign(JSON.parse(readFileSync(filepath, 'utf8')), info);
+
     if (isObject(info) && !Array.isArray(info) && filepath !== this.config.whiteListFilePath) {
       Object.assign(info, { $commitId: this.getCommitId() });
     }
 
     mkdirp(dirname(filepath));
     writeFileSync(filepath, JSON.stringify(info, null, getIndentSize(this.config.rootDir)), { encoding: 'utf8' });
-    if (!filepath.includes('node_modules') && isGitRepo(this.config.rootDir)) {
+
+    if (!baseConfig.ci && !filepath.includes('node_modules') && isGitRepo(this.config.rootDir)) {
       execSync(`git add ${filepath}`, void 0, this.config.rootDir, !this.config.silent);
     }
   }

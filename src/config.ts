@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-25 17:04:06
+ * @LastEditTime: 2023-01-03 11:01:36
  * @Description:
  */
 
@@ -40,7 +40,7 @@ export const config: FlhConfig = {
   ...commConfig,
   configPath: '.flh.config.js',
   packages: {},
-  ci: Boolean(env.CI || env.GITLAB_CI || env.JENKINS_HOME),
+  ci: Boolean(env.CI || env.GITLAB_CI || env.JENKINS_HOME || env.FLH_CI),
   logValidityDays: 7,
   tscheck: {
     extensions: ['.ts', '.tsx', '.cts', '.mts'],
