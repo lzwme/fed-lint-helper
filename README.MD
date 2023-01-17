@@ -86,12 +86,12 @@ flh notify "任务执行失败！@all" --wx-work <web hook key1> <web hook key2>
 
 ```bash
 # .husky/commit-msg
-flh --commitlint
+npm exec flh --commitlint
 
 # .husky/pre-commit
 npm exec flh -- --eslint --tscheck --jest --only-changes
 npm exec flh -- --prettier --only-changes --fix
-git add --update
+# git add --update
 ```
 
 在 `CI` 持续集成过程中可视具体需求配置。

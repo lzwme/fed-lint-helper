@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-25 17:04:36
+ * @LastEditTime: 2023-01-17 15:23:39
  * @Description:  eslint check
  */
 
@@ -10,7 +10,7 @@ import { bold, red, redBright, yellowBright, cyanBright } from 'console-log-colo
 import type { ESLint } from 'eslint';
 import { existsSync, statSync } from 'node:fs';
 import { extname, resolve } from 'node:path';
-import { fixToshortPath } from '@lzwme/fe-utils';
+import { execSync, fixToshortPath, isGitRepo } from '@lzwme/fe-utils';
 import { arrayToObject, fileListToString } from '../utils/index.js';
 import { LintBase } from './LintBase.js';
 import type { ESLintCheckConfig, LintResult, WhiteListInfo } from '../types.js';
@@ -114,10 +114,15 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
     /** 在白名单列表中但本次检测无异常的文件列表（将从白名单列表中移除） */
     const removeFromWhiteList: string[] = [];
     const fileRules: { [filepath: string]: Record<string, number> } = {};
+    const fixedFileList = new Set<string>();
 
     // eslint-disable-next-line unicorn/no-array-for-each
     results.forEach(result => {
       const filePath = fixToshortPath(result.filePath, config.rootDir);
+
+      if (config.fix && (result.fixableErrorCount || result.fixableWarningCount)) {
+        fixedFileList.add(filePath);
+      }
 
       if (!result.warningCount && !result.errorCount) {
         stats.passedFilesNum++;
@@ -237,6 +242,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
         );
       }
     }
+
     Object.assign(stats, {
       fixedCount: config.fix ? stats.fixableErrorCount + stats.fixableWarningCount : 0,
       lintList,
@@ -244,6 +250,10 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
       errorFiles: errorResults.map(d => d.filePath), // results.filter(d => d.errorCount).map(d => d.filePath),
       warningFiles: waringReults.map(d => d.filePath), // results.filter(d => d.warningCount).map(d => d.filePath),
     } as ESLintCheckResult);
+
+    if (isGitRepo(config.rootDir) && config.fix && fixedFileList.size > 0) {
+      execSync(`git add ${[...fixedFileList].join(' ')}`, 'inherit', config.rootDir);
+    }
 
     return stats;
   }

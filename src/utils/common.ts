@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { color } from 'console-log-colors';
-import { formatTimeCost } from '@lzwme/fe-utils';
+import { execSync, formatTimeCost } from '@lzwme/fe-utils';
 import micromatch from 'micromatch';
 import { getLogger } from './get-logger.js';
 
@@ -93,4 +93,15 @@ export function formatQty(number: number | string, qty = ',') {
   const j = i.length > 3 ? i.length % 3 : 0;
 
   return (j ? i.slice(0, j) + qty : '') + i.slice(j).replace(/(\d{3})(?=\d)/g, `$1${qty}`) + tail;
+}
+
+export function getGitStaged(cwd = process.cwd()) {
+  const cmd = `git diff --staged --diff-filter=ACMR --name-only -z`;
+  const result = execSync(cmd, 'pipe', cwd);
+  if (result.error) {
+    getLogger().error(result.error);
+    throw new Error('获取暂存区文件失败，请重试：' + result.stderr);
+  }
+
+  return result.stdout.split('\u0000').filter(Boolean);
 }

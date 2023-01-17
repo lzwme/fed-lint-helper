@@ -38,8 +38,6 @@ export interface CommConfig {
   src?: string[];
   /** 要检测的文件列表。主要用于指定仅检测发生变更的文件 */
   fileList?: string[];
-  /** 是否仅检测 git 变化的文件 */
-  onlyChanges?: boolean;
   /** 初始化即执行check。默认为 false。设置为 true 则初始化后即调用 start 方法 */
   checkOnInit?: boolean;
   /** 执行完成时存在 lint 异常，是否退出程序。默认为 true */
@@ -229,6 +227,10 @@ export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {
     /** TopLine 和 TopSize 统计文件数 */
     topN?: number;
   };
+  /** 是否仅检测 git 变化的文件 */
+  onlyChanges?: boolean;
+  /** 是否仅检测 git add 添加到缓冲区中的文件，优先级高于 onlyChanges */
+  onlyStaged?: boolean;
 }
 
 export interface WhiteListInfo<T = unknown> {

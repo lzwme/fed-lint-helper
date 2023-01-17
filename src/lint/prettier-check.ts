@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-25 17:05:39
+ * @LastEditTime: 2023-01-17 15:18:44
  * @Description:  prettier check
  */
 
@@ -204,9 +204,12 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
       }
 
       this.stats.cacheFiles[this.cacheFilePath] = { updated: this.cacheInfo };
+
       if (baseConfig.fix && stats.fixedFileList.length > 0) {
         logger.info(`fixed files(${stats.fixedFileList.length}):\n`, stats.fixedFileList.map(d => ` - ${d}\n`).join(''));
-        if (isGitRepo(baseConfig.rootDir)) execSync(`git add --update`);
+        if (isGitRepo(baseConfig.rootDir)) {
+          execSync(`git add ${stats.fixedFileList.join(' ')}`, 'inherit', baseConfig.rootDir);
+        }
       }
     }
 

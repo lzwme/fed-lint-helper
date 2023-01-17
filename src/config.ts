@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2023-01-17 11:22:19
+ * @LastEditTime: 2023-01-17 15:10:19
  * @Description:
  */
 
@@ -28,7 +28,6 @@ export const commConfig: CommConfig = {
   fix: false,
   ignoreWhiteList: false,
   mode: 'proc',
-  onlyChanges: false,
   printDetail: true,
   removeCache: false,
   rootDir: process.cwd(),
@@ -43,6 +42,8 @@ export const config: FlhConfig = {
   packages: {},
   ci: Boolean(env.CI || env.GITLAB_CI || env.JENKINS_HOME || env.FLH_CI),
   logValidityDays: 7,
+  onlyChanges: false,
+  onlyStaged: false,
   tscheck: {
     extensions: ['.ts', '.tsx', '.cts', '.mts'],
     mode: 'thread',

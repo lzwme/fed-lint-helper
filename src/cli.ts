@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2023-01-17 11:21:27
+ * @LastEditTime: 2023-01-17 15:10:44
  * @Description: cli 工具
  */
 import { resolve } from 'node:path';
@@ -10,8 +10,8 @@ import { existsSync } from 'node:fs';
 import { Option, program } from 'commander';
 import { cyanBright, green, greenBright, yellowBright } from 'console-log-colors';
 import { getHeadDiffFileList, wxWorkNotify } from '@lzwme/fe-utils';
-import { FlhConfig, TsCheckConfig, JiraCheckConfig, CommitLintOptions, LintTypes } from './types.js';
-import { formatWxWorkKeys } from './utils/index.js';
+import { FlhConfig, JiraCheckConfig, CommitLintOptions, LintTypes } from './types.js';
+import { formatWxWorkKeys, getGitStaged } from './utils/index.js';
 import { commConfig, FlhPkgInfo, getConfig, mergeCommConfig } from './config.js';
 import { rmdir } from './tools/rmdir.js';
 import { getLogger } from './utils/index.js';
@@ -20,8 +20,7 @@ import { lintStartAsync } from './worker/lintStartAsync.js';
 const logger = getLogger();
 
 interface POptions
-  extends Pick<TsCheckConfig, 'toWhiteList' | 'ignoreWhiteList'>,
-    Pick<JiraCheckConfig, 'jiraHome' | 'projectName'>,
+  extends Pick<JiraCheckConfig, 'jiraHome' | 'projectName'>,
     Pick<
       FlhConfig,
       | 'cache'
@@ -31,14 +30,16 @@ interface POptions
       | 'exitOnError'
       | 'fix'
       | 'mode'
-      | 'printDetail'
+      | 'ignoreWhiteList'
+      | 'onlyChanges'
+      | 'onlyStaged'
       | 'removeCache'
       | 'silent'
       | 'src'
+      | 'toWhiteList'
+      | 'printDetail'
       | 'wxWorkKeys'
     > {
-  /** 是否仅检测 git 变化的文件 */
-  onlyChanges?: boolean;
   /** 是否执行 tscheck */
   tscheck?: boolean;
   /** 是否执行 eslint */
@@ -69,6 +70,7 @@ program
   .option('--no-print-detail', `不打印异常详情。`)
   .option('--src <src...>', `指定要检测的源码目录。默认为 src`)
   .option('--only-changes', `只检测 git 仓库变更的文件`, false)
+  .option('--only-staged', `只检测 git add 添加到缓冲区中的文件（支持部分提交模式）`, false)
   .option('--cache', `开启缓存模式。`)
   .option('--no-cache', `禁用缓存模式。`)
   .option('--remove-cache', `移除已存在的缓存。`)
@@ -127,7 +129,11 @@ program
 
     const baseConfig = getConfig(mergeCommConfig(config, false));
     let hasAction = false;
-    let changeFiles: string[] = options.onlyChanges ? getHeadDiffFileList(0, baseConfig.rootDir) : null;
+    let changeFiles: string[] = options.onlyStaged
+      ? getGitStaged(baseConfig.rootDir)
+      : options.onlyChanges
+      ? getHeadDiffFileList(0, baseConfig.rootDir)
+      : null;
 
     if (changeFiles) {
       changeFiles = changeFiles.filter(d => existsSync(resolve(baseConfig.rootDir, d)));
