@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2023-01-03 10:48:18
+ * @LastEditTime: 2023-01-17 09:24:15
  * @Description:  jest check
  */
 
@@ -69,7 +69,7 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
   }
   protected init(): void {
     const whiteListFilePath = this.config.whiteListFilePath;
-    if (existsSync(whiteListFilePath) && !this.config.toWhiteList) {
+    if (existsSync(whiteListFilePath) && !this.config.toWhiteList && !this.config.ignoreWhiteList) {
       const list = JSON.parse(readFileSync(whiteListFilePath, 'utf8'));
       this.whiteList = list.list ? list : { list }; // 兼容旧格式
       this.logger.debug('load whiteList:', whiteListFilePath);
@@ -166,10 +166,14 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
   }
   protected saveCache(filepath: string, info: unknown, isReset = false) {
     const baseConfig = getConfig();
+    const isWhiteList = filepath !== this.config.whiteListFilePath;
+
+    // 忽略白名单，不写入文件
+    if (isWhiteList && this.config.ignoreWhiteList) return;
 
     if (!isReset && existsSync(filepath)) info = assign(JSON.parse(readFileSync(filepath, 'utf8')), info);
 
-    if (isObject(info) && !Array.isArray(info) && filepath !== this.config.whiteListFilePath) {
+    if (isObject(info) && !Array.isArray(info) && !isWhiteList) {
       Object.assign(info, { $commitId: this.getCommitId() });
     }
 

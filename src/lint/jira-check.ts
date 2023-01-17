@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2022-11-25 14:49:48
+ * @LastEditTime: 2023-01-17 11:18:57
  * @Description:  Jira check
  */
 
@@ -248,7 +248,11 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
       }
 
       logger.debug(item.key, fields);
-
+      const versionInfo = fields.fixVersions[0].description;
+      /** 是否已封板 */
+      const isSeal = (versionInfo && versionInfo.includes('[已封版]')) || false;
+      // 没封板不做检查
+      if (!isSeal) continue;
       // 查找必须修复的标记
       const mustRepairTagIndex = fields.comment.comments.findIndex(comment => comment.body.includes('[必须修复]'));
       if (mustRepairTagIndex === -1) continue;
@@ -260,7 +264,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
 
       const comments: AnyObject[] = fields.comment.comments.slice(mustRepairTagIndex).reverse();
       /** 最新一次的 gitlab 提交信息 */
-      const gitlabComment = comments.find(item => item.author.name === 'gitlab' && !item.body.includes('Merge'));
+      const gitlabComment = comments.find(item => item.author.name === 'gitlab' && !item.body.includes('/merge_requests/'));
 
       if (!gitlabComment) {
         logger.debug('[检查信息]', `[${item.key}]未有代码提交`);

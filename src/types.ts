@@ -56,6 +56,8 @@ export interface CommConfig {
    * - 初始化、规则变更、版本升级导致新增异常，但又不能立即修复的情况下，可设置为 true 执行一次
    */
   toWhiteList?: boolean;
+  /** 是否忽略白名单，仅检查全部异常情况 */
+  ignoreWhiteList?: boolean;
   /** 是否探测子项目并在子项目中分别执行 lint。默认为 true */
   detectSubPackages?: boolean;
   /**

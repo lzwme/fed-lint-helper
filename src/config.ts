@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: lzw
- * @LastEditTime: 2023-01-03 11:01:36
+ * @LastEditTime: 2023-01-17 11:22:19
  * @Description:
  */
 
@@ -26,6 +26,7 @@ export const commConfig: CommConfig = {
   extensions: ['.ts', '.tsx', '.js', '.jsx'],
   fileList: [],
   fix: false,
+  ignoreWhiteList: false,
   mode: 'proc',
   onlyChanges: false,
   printDetail: true,

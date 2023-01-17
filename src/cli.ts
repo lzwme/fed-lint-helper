@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2022-12-10 00:25:43
+ * @LastEditTime: 2023-01-17 11:21:27
  * @Description: cli 工具
  */
 import { resolve } from 'node:path';
@@ -20,7 +20,7 @@ import { lintStartAsync } from './worker/lintStartAsync.js';
 const logger = getLogger();
 
 interface POptions
-  extends Pick<TsCheckConfig, 'toWhiteList'>,
+  extends Pick<TsCheckConfig, 'toWhiteList' | 'ignoreWhiteList'>,
     Pick<JiraCheckConfig, 'jiraHome' | 'projectName'>,
     Pick<
       FlhConfig,
@@ -74,6 +74,7 @@ program
   .option('--remove-cache', `移除已存在的缓存。`)
   .option('--no-exit-on-error', `检测到异常时，不以非 0 值立即退出。`)
   .option('--toWhiteList', `是否将检测到异常的文件输出到白名单文件列表中。`, false)
+  .option('--ignoreWhiteList', `是否忽略白名单。适用于不更新白名单，仅了解所有异常的场景`, false)
   .option('--fix', `是否修正可自动修正的异常。如 eslint --fix 等`)
   .option('--no-fix', `禁用自动修正。`)
   .option('--wx-work-keys <key...>', '发送至企业微信机器人，需指定 webhook key 的值，可指定多个机器人')
