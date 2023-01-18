@@ -1,27 +1,37 @@
-import { statSync, existsSync } from 'node:fs';
-import { green, red } from 'console-log-colors';
+import { statSync, existsSync, promises } from 'node:fs';
+import { green, red, greenBright } from 'console-log-colors';
 import glob from 'fast-glob';
 import { rmrfAsync, readSyncByRl } from '@lzwme/fe-utils';
 import { getLogger } from '../utils/get-logger.js';
+import { formatMem } from '../utils/common';
 
-async function doRmdir(source: string, slient = false, force = false) {
+async function doRmdir(source: string, slient = false, force = false, dryRun = false, showSize = true) {
   if (!existsSync(source)) return false;
 
   const logger = getLogger();
   const sourceTip = statSync(source).isFile() ? '文件' : '目录';
 
+  let fileSize = '';
+  if (showSize) {
+    const fielStat = await promises.stat(source);
+    fileSize = greenBright(`[${formatMem(fielStat.size)}]`.padStart(10, ' '));
+  }
+
   if (!force) {
-    const force = await readSyncByRl(`是否删除该${sourceTip}(y/)？[${red(source)}] `);
+    const force = await readSyncByRl(`是否删除该${sourceTip}(y/)？[${fileSize} ${red(source)}] `);
     if ('y' !== String(force).trim().toLowerCase()) return false;
   }
 
-  await rmrfAsync(source);
+  if (!dryRun) await rmrfAsync(source);
 
-  if (!slient) logger.info(`${sourceTip}已删除：`, green(source));
+  if (!slient) {
+    logger.info((dryRun ? `[dryRun]` : '') + `${sourceTip}已删除：${fileSize}`, green(source));
+  }
+
   return true;
 }
 
-export async function rmdir(srcs: string[], slient = false, force = false) {
+export async function rmdir(srcs: string[], { slient = false, force = false, dryRun = false, showSize = true }) {
   const logger = getLogger();
 
   if (!Array.isArray(srcs) || srcs.length === 0) {
@@ -35,9 +45,9 @@ export async function rmdir(srcs: string[], slient = false, force = false) {
     const files = source.includes('*') ? await glob(source, { cwd: process.cwd() }) : [source];
     for (const filepath of files) {
       if (force) {
-        list.push(doRmdir(filepath, slient, force));
+        list.push(doRmdir(filepath, slient, force, dryRun, showSize));
       } else {
-        list.push(await doRmdir(filepath, slient, force));
+        list.push(await doRmdir(filepath, slient, force, dryRun, showSize));
       }
     }
   }
@@ -45,7 +55,7 @@ export async function rmdir(srcs: string[], slient = false, force = false) {
   const result = await Promise.all(list);
   const total = result.filter(Boolean).length;
 
-  logger.debug(`执行完成！共删除了 ${total} 个文件或目录`);
+  logger.debug((dryRun ? `[dryRun]` : '') + `执行完成！共删除了 ${total} 个文件或目录`);
 
   return total;
 }
