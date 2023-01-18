@@ -29,12 +29,16 @@ export async function rmdir(srcs: string[], slient = false, force = false) {
     return 0;
   }
 
-  const list: Promise<boolean>[] = [];
+  const list: (Promise<boolean> | boolean)[] = [];
   for (const source of srcs) {
     // const files = glob.isDynamicPattern(source) ? await glob(source, { cwd: process.cwd() }) : [source];
     const files = source.includes('*') ? await glob(source, { cwd: process.cwd() }) : [source];
     for (const filepath of files) {
-      list.push(doRmdir(filepath, slient, force));
+      if (force) {
+        list.push(doRmdir(filepath, slient, force));
+      } else {
+        list.push(await doRmdir(filepath, slient, force));
+      }
     }
   }
 
