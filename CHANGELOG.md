@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.2.0](https://github.com/lzwme/fed-lint-helper/compare/v2.1.7...v2.2.0) (2023-01-18)
+
+
+### Features
+
+* 新增 onlyStaged 参数，用于仅检测添加到缓冲区的文件，支持 git 部分提交模式 ([3e3d655](https://github.com/lzwme/fed-lint-helper/commit/3e3d655dfd6838a2cdb65e67bc2aedf1ea0818bc))
+
 ### [2.1.7](https://github.com/lzwme/fed-lint-helper/compare/v2.1.6...v2.1.7) (2023-01-03)
 
 
