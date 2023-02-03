@@ -1,15 +1,18 @@
+import { cpus } from 'node:os';
 import { statSync, existsSync, promises } from 'node:fs';
 import { green, red, greenBright } from 'console-log-colors';
 import glob from 'fast-glob';
-import { rmrfAsync, readSyncByRl } from '@lzwme/fe-utils';
+import { rmrfAsync, readSyncByRl, concurrency } from '@lzwme/fe-utils';
 import { getLogger } from '../utils/get-logger.js';
-import { formatMem } from '../utils/common';
+import { formatMem, getTimeCost } from '../utils/common';
+import { dirname } from 'node:path';
 
 async function doRmdir(source: string, slient = false, force = false, dryRun = false, showSize = true) {
   if (!existsSync(source)) return false;
 
   const logger = getLogger();
-  const sourceTip = statSync(source).isFile() ? '文件' : '目录';
+  const isFile = statSync(source).isFile();
+  const sourceTip = isFile ? '文件' : '目录';
 
   let fileSize = '';
   if (showSize) {
@@ -22,7 +25,18 @@ async function doRmdir(source: string, slient = false, force = false, dryRun = f
     if ('y' !== String(force).trim().toLowerCase()) return false;
   }
 
-  if (!dryRun) await rmrfAsync(source);
+  logger.debug((dryRun ? `[dryRun]` : '') + `[开始删除]${sourceTip}：${fileSize}`, green(source));
+
+  if (!dryRun) {
+    await rmrfAsync(source);
+
+    // 清理父级空目录
+    if (isFile) {
+      const dirpath = dirname(source);
+      const fileList = await promises.readdir(dirpath);
+      if (fileList.length === 0) rmrfAsync(dirpath);
+    }
+  }
 
   if (!slient) {
     logger.info((dryRun ? `[dryRun]` : '') + `${sourceTip}已删除：${fileSize}`, green(source));
@@ -32,6 +46,7 @@ async function doRmdir(source: string, slient = false, force = false, dryRun = f
 }
 
 export async function rmdir(srcs: string[], { slient = false, force = false, dryRun = false, showSize = true }) {
+  const startTime = Date.now();
   const logger = getLogger();
 
   if (!Array.isArray(srcs) || srcs.length === 0) {
@@ -39,23 +54,28 @@ export async function rmdir(srcs: string[], { slient = false, force = false, dry
     return 0;
   }
 
-  const list: (Promise<boolean> | boolean)[] = [];
+  logger.debug('[RM]开始处理:', srcs);
+
+  const list: (() => Promise<boolean>)[] = [];
+  let result: boolean[] = [];
+
   for (const source of srcs) {
     // const files = glob.isDynamicPattern(source) ? await glob(source, { cwd: process.cwd() }) : [source];
-    const files = source.includes('*') ? await glob(source, { cwd: process.cwd() }) : [source];
+    const files = source.includes('*') ? await glob(source, { cwd: process.cwd(), onlyFiles: false }) : [source];
     for (const filepath of files) {
       if (force) {
-        list.push(doRmdir(filepath, slient, force, dryRun, showSize));
+        list.push(() => doRmdir(filepath, slient, force, dryRun, showSize));
       } else {
-        list.push(await doRmdir(filepath, slient, force, dryRun, showSize));
+        result.push(await doRmdir(filepath, slient, force, dryRun, showSize));
       }
     }
   }
 
-  const result = await Promise.all(list);
+  // eslint-disable-next-line unicorn/no-await-expression-member
+  if (list.length > 0) result = (await concurrency(list, cpus().length)).map(d => d.result);
   const total = result.filter(Boolean).length;
 
-  logger.debug((dryRun ? `[dryRun]` : '') + `执行完成！共删除了 ${total} 个文件或目录`);
+  logger.debug((dryRun ? `[dryRun]` : '') + `执行完成！共删除了 ${total} 个文件或目录。`, getTimeCost(startTime));
 
   return total;
 }
