@@ -1,7 +1,7 @@
 import { extname, resolve } from 'node:path';
 import { writeFileSync, promises, type Stats } from 'node:fs';
 import glob from 'fast-glob';
-import { green, greenBright, cyanBright, magentaBright } from 'console-log-colors';
+import { green, greenBright, cyanBright, magentaBright, gray } from 'console-log-colors';
 import { fixToshortPath, md5 } from '@lzwme/fe-utils';
 import { getLogger } from '../utils/get-logger.js';
 import { getTimeCost, fileListToString, padSpace, formatQty, formatMem } from '../utils/common.js';
@@ -230,18 +230,26 @@ export async function stats(options: IStatsOption) {
 
   if (duplicates.size > 0) {
     const list = [...duplicates].map(d => filepathByMd5[d]).sort((a, b) => b.length - a.length);
-    result.duplicates = list;
     const duplicatesTotal = list.reduce((total, item) => total + item.length, 0);
-    statsInfo.push(cyanBright(` Duplicate files[${list.length} - ${duplicatesTotal}]${options.showDupFiles ? ':' : ''}`));
+
+    result.duplicates = list;
+    statsInfo.push(
+      cyanBright(
+        ` Duplicate files: [${duplicatesTotal}/${list.length}]${
+          options.showDupFiles ? ':' : ' (Add `showDupFiles` parameter to display details)'
+        }`
+      )
+    );
+
     if (options.showDupFiles) {
-      list.forEach(item => {
-        item = item.map(
-          d =>
-            `[${cyanBright(allFilesInfo[d].line)}, ${magentaBright(formatMem(allFilesInfo[d].stat.size))}] ${
-              showFullPath ? d : fixToshortPath(d, options.rootDir)
-            }`
-        );
-        statsInfo.push(`  ├─ ${item.join('\n  │  ')}\n`);
+      list.forEach((item, idx) => {
+        const headTip = `[${idx + 1}] Total: ${cyanBright(item.length)}  Line: ${greenBright(
+          allFilesInfo[item[0]].line
+        )}  Size: ${magentaBright(formatMem(allFilesInfo[item[0]].stat.size))}`;
+
+        item = item.map(d => (showFullPath ? d : fixToshortPath(d, options.rootDir)));
+        item.unshift(gray(headTip));
+        statsInfo.push(` ├─ ${item.join('\n │  ')}\n${idx + 1 === list.length ? '' : ' │'}`);
       });
     }
   }
