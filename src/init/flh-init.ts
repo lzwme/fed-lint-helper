@@ -128,7 +128,7 @@ export async function flhInit(options: Record<string, string | boolean>, package
     return false;
   }
 
-  const tplDir = resolve(flhSrcDir, '../../preset/tpl');
+  const tplDir = resolve(flhSrcDir, '../preset/tpl');
   const pkg: PackageJson = readJsonFileSync<PackageJson>(resolve(process.cwd(), './package.json'));
   const pkgAllDeps = Object.assign({}, pkg.dependencies, pkg.devDependencies);
   const deps = new Set<string>();

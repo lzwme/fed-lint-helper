@@ -1,13 +1,14 @@
 module.exports = {
+    arrowParens: 'avoid',
     bracketSpacing: true,
-    printWidth: 140,
+    endOfLine: 'auto',
+    htmlWhitespaceSensitivity: 'ignore',
+    proseWrap: 'preserve',
     semi: true,
     singleQuote: true,
     trailingComma: 'es5',
-    proseWrap: 'preserve',
-    arrowParens: 'avoid',
-    endOfLine: 'auto',
-    htmlWhitespaceSensitivity: 'ignore',
+    editorconfig: true,
+    // printWidth: 140, // use .editorconfig
     // tabWidth: 4,
     overrides: [{
         files: '.prettierrc',
