@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 // import test from 'ava';
 import * as comm from './common';
 

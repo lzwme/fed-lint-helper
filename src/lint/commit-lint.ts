@@ -1,13 +1,14 @@
 // @see https://github.com/umijs/umi-next/blob/master/scripts/verifyCommit.ts
 
 import { readFileSync } from 'node:fs';
+import { assign } from '@lzwme/fe-utils';
 import { color } from 'console-log-colors';
 import { config } from '../config.js';
 import { getLogger } from '../utils/get-logger.js';
 import type { CommitLintOptions } from '../types.js';
 import { checkUserEmial } from '../utils/index.js';
 
-const helpTips = {
+let helpTips: Record<string, string> = {
   build: '构建相关',
   ci: '持续集成',
   docs: '文档/注释修改',
@@ -44,8 +45,23 @@ export function commitMessageVerify(options?: CommitLintOptions) {
   }
 
   if (isPass) {
-    options = Object.assign({ exitOnError: true, useAngularStyle: true } as CommitLintOptions, config.commitlint, options);
+    options = assign({ exitOnError: true, useAngularStyle: true } as CommitLintOptions, config.commitlint, options);
     if (!options.msgPath) options.msgPath = process.env.GIT_PARAMS || process.env.COMMIT_EDITMSG || './.git/COMMIT_EDITMSG';
+
+    if (options.allowTypes) {
+      if (Array.isArray(options.allowTypes)) {
+        options.allowTypes = options.allowTypes.reduce((o, type) => {
+          o[type] = helpTips[type] || type;
+          return o;
+        }, {} as Record<string, string>);
+      }
+
+      helpTips = options.allowTypes;
+    }
+
+    if (options.customTypes) Object.assign(helpTips, options.customTypes);
+
+    if (options.help) return showHelp();
 
     const message = readFileSync(options.msgPath, 'utf8').trim();
 
@@ -66,7 +82,6 @@ export function commitMessageVerify(options?: CommitLintOptions) {
     }
 
     const types = [...new Set([...Object.keys(helpTips), 'Merge', 'UI'])].join('|');
-
     const commitRE = new RegExp(
       `^(((\uD83C[\uDF00-\uDFFF])|(\uD83D[\uDC00-\uDE4F\uDE80-\uDEFF])|[\u2600-\u2B55]) )?(revert: )?(${types})((.+))?: .{1,100}`
     );
@@ -78,14 +93,9 @@ export function commitMessageVerify(options?: CommitLintOptions) {
           // color.red(`Invalid commit message format.\n`),
           // color.red(`  Proper commit message format is required for automated changelog generation. Examples:\n`),
           color.red(`提交日志不符合规范。\n`),
-          color.magentaBright(`  合法的提交日志格式如下(emoji 和 scope 可选填)：\n`),
-          color.green(`  [(emoji)?] [revert: ?]<type>[(scope)?]: <message>\n`),
-          color.green(`    💥 feat(compiler): add 'comments' option`),
-          color.green(`    🐛 fix(v-model): handle events on blur (close #28)\n\n`),
-          color.cyanBright(`  [type] 详细参考：\n`),
-          ...Object.entries(helpTips).map(([key, val]) => `    ${color.green(`${key}: ${val}`)}`),
         ].join('\n')
       );
+      showHelp();
     }
   }
 
@@ -95,4 +105,20 @@ export function commitMessageVerify(options?: CommitLintOptions) {
   return isPass;
 }
 
-if (require.main === module) commitMessageVerify({ msgPath: process.argv.slice(2)[0] });
+function showHelp() {
+  /* eslint-disable no-console */
+  console.log(
+    [
+      // color.red(`Invalid commit message format.\n`),
+      // color.red(`  Proper commit message format is required for automated changelog generation. Examples:\n`),
+      color.magentaBright(`  合法的提交日志格式如下(emoji 和 scope 可选填)：\n`),
+      color.greenBright(`  [(emoji)?] [revert: ?]<type>[(scope)?]: <message>\n`),
+      color.green(`    💥 feat(compiler): add 'comments' option`),
+      color.green(`    🐛 fix(v-model): handle events on blur (close #28)\n\n`),
+      color.cyanBright(`  [type] 详细参考：\n`),
+      ...Object.entries(helpTips).map(([key, val]) => `    ${color.green(`${key}: ${val}`)}`),
+    ].join('\n')
+  );
+}
+
+// if (require.main === module) commitMessageVerify({ help: process.argv.slice(2).includes('-h') });

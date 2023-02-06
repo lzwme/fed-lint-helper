@@ -25,7 +25,7 @@ async function doRmdir(source: string, slient = false, force = false, dryRun = f
     if ('y' !== String(force).trim().toLowerCase()) return false;
   }
 
-  logger.debug((dryRun ? `[dryRun]` : '') + `[开始删除]${sourceTip}：${fileSize}`, green(source));
+  logger.debug(`${dryRun ? `[dryRun]` : ''}[开始删除]${sourceTip}：${fileSize}`, green(source));
 
   if (!dryRun) {
     await rmrfAsync(source);
@@ -39,7 +39,7 @@ async function doRmdir(source: string, slient = false, force = false, dryRun = f
   }
 
   if (!slient) {
-    logger.info((dryRun ? `[dryRun]` : '') + `${sourceTip}已删除：${fileSize}`, green(source));
+    logger.info(`${dryRun ? `[dryRun]` : ''}${sourceTip}已删除：${fileSize}`, green(source));
   }
 
   return true;
@@ -75,7 +75,7 @@ export async function rmdir(srcs: string[], { slient = false, force = false, dry
   if (list.length > 0) result = (await concurrency(list, cpus().length)).map(d => d.result);
   const total = result.filter(Boolean).length;
 
-  logger.debug((dryRun ? `[dryRun]` : '') + `执行完成！共删除了 ${total} 个文件或目录。`, getTimeCost(startTime));
+  logger.debug(`${dryRun ? `[dryRun]` : ''}执行完成！共删除了 ${total} 个文件或目录。`, getTimeCost(startTime));
 
   return total;
 }

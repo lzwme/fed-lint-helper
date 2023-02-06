@@ -260,10 +260,11 @@ export async function stats(options: IStatsOption) {
   if (options.json) {
     const jsonRes = JSON.stringify(result, null, 2);
     if (options.jsonFile) writeFileSync(resolve(rootDir, options.jsonFile), jsonRes, 'utf8');
-    else console.log(jsonRes);
+    /* eslint-disable no-console */ else console.log(jsonRes);
   }
 
   logger.info(greenBright(`success!`));
+  /* eslint-disable-next-line no-console */
   console.info(statsInfo.join('\n'));
   logger.info(getTimeCost(result.startTime));
   return result;

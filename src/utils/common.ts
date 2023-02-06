@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { color } from 'console-log-colors';
 import { execSync, formatTimeCost } from '@lzwme/fe-utils';
+import { formatByteSize } from '@lzwme/fe-utils/cjs/common/helper';
 import micromatch from 'micromatch';
 import { getLogger } from './get-logger.js';
 
@@ -78,10 +79,7 @@ export function padSpace(txt: unknown, maxLenth: number, start = true) {
 }
 
 export function formatMem(mem: number) {
-  if (mem > 1 << 30) return (mem / (1 << 30)).toFixed(2) + 'G';
-  if (mem > 1 << 20) return (mem / (1 << 20)).toFixed(2) + 'M';
-  if (mem > 1 << 10) return (mem / (1 << 10)).toFixed(2) + 'KB';
-  return mem + 'B';
+  return formatByteSize(mem);
 }
 
 export function formatQty(number: number | string, qty = ',') {
@@ -100,7 +98,7 @@ export function getGitStaged(cwd = process.cwd()) {
   const result = execSync(cmd, 'pipe', cwd);
   if (result.error) {
     getLogger().error(result.error);
-    throw new Error('获取暂存区文件失败，请重试：' + result.stderr);
+    throw new Error(`获取暂存区文件失败，请重试：${result.stderr}`);
   }
 
   return result.stdout.split('\u0000').filter(Boolean);

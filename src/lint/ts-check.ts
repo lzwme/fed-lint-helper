@@ -72,7 +72,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     const passed = this.cacheInfo.list;
     const TS = await import('typescript');
 
-    console.log();
+    logger.info();
     logger.info(bold(cyanBright('Checking in')), subDirection);
     logger.info(' - Total Files:', cyanBright(total));
 

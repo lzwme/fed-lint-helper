@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /*
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
@@ -218,7 +219,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
     if (stats.totalFilesNum >= stats.failedFilesNum) stats.passedFilesNum = stats.totalFilesNum - stats.failedFilesNum;
 
     if (stats.failedFilesNum > 0) {
-      logger.error(`Failed Files(${red(stats.failedFilesNum)}):\n` + redBright(stats.failedFiles.map(d => ` - ${d}\n`).join('')));
+      logger.error(`Failed Files(${red(stats.failedFilesNum)}):\n${redBright(stats.failedFiles.map(d => ` - ${d}\n`).join(''))}`);
     }
     if (stats.fixedFileList.length > 0) logger.info(` - Fixed:\t`, stats.fixedFileList.length);
 

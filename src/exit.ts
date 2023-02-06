@@ -9,7 +9,7 @@ import { getLogger } from './utils/get-logger.js';
  * @param {number} startTime 开始时间，存在则打印执行时间成本
  */
 export async function exit(code = 0, prefix = '', startTime = 0, errmsg = '') {
-  let needDelay = config.debug || false;
+  let needDelay = config.debug;
 
   if (startTime) logTimeCost(startTime, prefix);
   if (code !== 0) {

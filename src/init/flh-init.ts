@@ -14,7 +14,7 @@ function getCfgInfo() {
     string,
     {
       tpl: string;
-      exist?: boolean;
+      isExist?: boolean;
       configFile?: string;
       tplOthers?: [string, string][];
       devDeps?: string[];
@@ -45,7 +45,7 @@ function getCfgInfo() {
       devDeps: ['typescript', '@types/node'],
     },
     editorconfig: {
-      exist: false,
+      isExist: false,
       tpl: `.editorconfig`,
     },
     vscode: {
@@ -64,28 +64,28 @@ function getCfgInfo() {
   Object.values(info).forEach(value => {
     if (!value.configFile) value.configFile = value.tpl.replace('.tpl.', '.');
     if (!value.devDeps) value.devDeps = [];
-    value.exist = existsSync(value.configFile);
+    value.isExist = existsSync(value.configFile);
   });
 
-  info.eslint.exist = ['', '.js', '.json', '.ts'].some(d => {
+  info.eslint.isExist = ['', '.js', '.json', '.ts'].some(d => {
     const filename = `.eslintrc${d}`;
-    const exist = existsSync(filename);
-    if (exist) info.eslint.configFile = filename;
-    return exist;
+    const isExist = existsSync(filename);
+    if (isExist) info.eslint.configFile = filename;
+    return isExist;
   });
 
-  info.prettier.exist = ['', '.js', '.json', '.ts'].some(d => {
+  info.prettier.isExist = ['', '.js', '.json', '.ts'].some(d => {
     const filename = `.prettierrc${d}`;
-    const exist = existsSync(filename);
-    if (exist) info.prettier.configFile = filename;
-    return exist;
+    const isExist = existsSync(filename);
+    if (isExist) info.prettier.configFile = filename;
+    return isExist;
   });
 
-  info.jest.exist = ['.js', '.json', '.ts'].some(d => {
+  info.jest.isExist = ['.js', '.json', '.ts'].some(d => {
     const filename = `jest.config${d}`;
-    const exist = existsSync(filename);
-    if (exist) info.jest.configFile = filename;
-    return exist;
+    const isExist = existsSync(filename);
+    if (isExist) info.jest.configFile = filename;
+    return isExist;
   });
 
   return info;
@@ -106,9 +106,9 @@ export async function flhInit(options: Record<string, string | boolean>, package
 
       return {
         name: key,
-        message: `[${color.magentaBright(key)}] ${item.exist ? color.gray(`已存在配置文件`) : `是否初始化配置文件？`}`,
-        hint: color[item.exist ? 'cyan' : 'cyanBright'](item.configFile),
-        disabled: item.exist,
+        message: `[${color.magentaBright(key)}] ${item.isExist ? color.gray(`已存在配置文件`) : `是否初始化配置文件？`}`,
+        hint: color[item.isExist ? 'cyan' : 'cyanBright'](item.configFile),
+        disabled: item.isExist,
       };
     })
     .sort((a, b) => (a.disabled === b.disabled ? 0 : a.disabled ? 1 : -1));
@@ -139,9 +139,10 @@ export async function flhInit(options: Record<string, string | boolean>, package
     const tpl = 'tpl' in item ? resolve(tplDir, item.tpl) : '';
     let cfgInfo = '';
 
-    if (tpl && !existsSync(tpl)) {
-      logger.warn('模板文件不存在', color.redBright(tpl));
-    } else cfgInfo = readFileSync(tpl, 'utf8').replace('@ts-nocheck', '@ts-check');
+    if (tpl) {
+      if (existsSync(tpl)) cfgInfo = readFileSync(tpl, 'utf8').replace('@ts-nocheck', '@ts-check');
+      else logger.warn('模板文件不存在', color.redBright(tpl));
+    }
 
     if (existsSync(item.configFile)) {
       logger.warn(color.yellowBright(`当前目录下已存在配置文件：`), color.cyanBright(item.configFile));

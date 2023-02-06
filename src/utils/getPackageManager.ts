@@ -13,7 +13,7 @@ export function getPackageManager(pkg?: PackageJson): IPackageManager | undefine
     if (existsSync('./package-lock.json')) return 'npm';
 
     const execpath = process.env.npm_execpath || '';
-    packageManager = /pnpm/.test(execpath) ? 'pnpm' : /yarn/.test(execpath) ? 'yarn' : void 0;
+    packageManager = execpath.includes('pnpm') ? 'pnpm' : execpath.includes('yarn') ? 'yarn' : void 0;
   }
 
   return packageManager;

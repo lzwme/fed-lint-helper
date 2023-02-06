@@ -1,3 +1,4 @@
+const { assign } = require('@lzwme/fe-utils');
 const { existsSync } = require('node:fs');
 const { resolve } = require('node:path');
 const antdBoolean = ['visible', 'confirmLoading', 'closable', 'centered', 'maskClosable', 'forceRender', 'destroyOnClose'];
@@ -19,15 +20,15 @@ const eslint = {
     ecmaVersion: 2022,
     sourceType: 'module',
     tsconfigRootDir: process.cwd(),
-    projectFolderIgnoreList: ['node_modules/', 'dist/', 'mock/'],
+    projectFolderIgnoreList: ['node_modules/', 'dist/', 'cache/', 'tmp/', 'release/'],
     warnOnUnsupportedTypeScriptVersion: false,
     ecmaFeatures: {
       jsx: true,
     },
   },
   extends: ['eslint:recommended'],
-  plugins: ['import'],
-  ignorePatterns: ['node_modules/', 'dist/', 'dist-*'], // , 'src/**/*.js'
+  plugins: [],
+  ignorePatterns: ['node_modules/**', 'dist/**', 'dist-*', 'cache/**', 'tmp/**', 'release/**'], // , 'src/**/*.js'
   rules: {
     // 'no-restricted-syntax': 'off',
     'prefer-object-spread': 'off',
@@ -109,63 +110,63 @@ const eslint = {
     'prefer-spread': 'error',
     'prefer-template': 'error',
     'prefer-numeric-literals': 'error',
-    'no-restricted-syntax': [
-      'error',
-      {
-        selector:
-          "CallExpression[callee.object.name='JSON'][callee.property.name='parse'] > CallExpression[callee.object.name='JSON'][callee.property.name='stringify']",
-        message: '不允许使用JSON.parse(JSON.stringify(object))来克隆对象，使用lodash或者spread运算符。',
-      },
-      {
-        selector: "CallExpression[callee.object.property.name='console']",
-        message: '不允许使用window.console.log.',
-      },
-      {
-        selector: "CallExpression[callee.property.name='toFixed'][callee.object.callee.name='Number']",
-        message: '你在用Number.prototype.toFixed？请改用decimal.js。',
-      },
-      {
-        selector: "CallExpression[callee.name='setTimeout']",
-        message: '在浏览器环境，请使用window.setTimeout，在node环境，请使用global.setTimeout。',
-      },
-      {
-        selector: "CallExpression[callee.name='setInterval']",
-        message: '在浏览器环境，请使用window.setTimeout，在node环境，请使用global.setTimeout。',
-      },
-      {
-        selector: "CallExpression[callee.name='clearTimeout']",
-        message: '在浏览器环境，请使用window.setTimeout，在node环境，请使用global.setTimeout。',
-      },
-      {
-        selector: "CallExpression[callee.name='clearInterval']",
-        message: '在浏览器环境，请使用window.setTimeout，在node环境，请使用global.setTimeout。',
-      },
-      {
-        selector: "CallExpression[callee.property.name='toLocaleString']",
-        message: 'toLocaleString不推荐使用',
-      },
-      {
-        selector: "CallExpression[callee.property.name='toLocaleDateString']",
-        message: 'toLocaleDateString不推荐使用',
-      },
-      {
-        selector: "CallExpression[callee.property.name='toLocaleTimeString']",
-        message: 'toLocaleTimeString不推荐使用',
-      },
-      {
-        selector: "CallExpression[callee.property.name='toString']",
-        message: 'toString不推荐使用，使用String()方法',
-      },
-      {
-        selector:
-          "CallExpression[callee.property.name='addEventListener'][arguments.0.value='click'][callee.object.callee.property.name='querySelector'][callee.object.callee.object.name='document'][callee.object.arguments.0.value='body']",
-        message: '请使用useClickAway。',
-      },
-    ],
+    // 'no-restricted-syntax': [
+    //   'error',
+    //   {
+    //     selector:
+    //       "CallExpression[callee.object.name='JSON'][callee.property.name='parse'] > CallExpression[callee.object.name='JSON'][callee.property.name='stringify']",
+    //     message: '不允许使用JSON.parse(JSON.stringify(object))来克隆对象，使用lodash或者spread运算符。',
+    //   },
+    //   {
+    //     selector: "CallExpression[callee.object.property.name='console']",
+    //     message: '不允许使用window.console.log.',
+    //   },
+    //   {
+    //     selector: "CallExpression[callee.property.name='toFixed'][callee.object.callee.name='Number']",
+    //     message: '你在用Number.prototype.toFixed？请改用decimal.js。',
+    //   },
+    //   {
+    //     selector: "CallExpression[callee.name='setTimeout']",
+    //     message: '在浏览器环境，请使用window.setTimeout，在node环境，请使用global.setTimeout。',
+    //   },
+    //   {
+    //     selector: "CallExpression[callee.name='setInterval']",
+    //     message: '在浏览器环境，请使用window.setTimeout，在node环境，请使用global.setTimeout。',
+    //   },
+    //   {
+    //     selector: "CallExpression[callee.name='clearTimeout']",
+    //     message: '在浏览器环境，请使用window.setTimeout，在node环境，请使用global.setTimeout。',
+    //   },
+    //   {
+    //     selector: "CallExpression[callee.name='clearInterval']",
+    //     message: '在浏览器环境，请使用window.setTimeout，在node环境，请使用global.setTimeout。',
+    //   },
+    //   {
+    //     selector: "CallExpression[callee.property.name='toLocaleString']",
+    //     message: 'toLocaleString不推荐使用',
+    //   },
+    //   {
+    //     selector: "CallExpression[callee.property.name='toLocaleDateString']",
+    //     message: 'toLocaleDateString不推荐使用',
+    //   },
+    //   {
+    //     selector: "CallExpression[callee.property.name='toLocaleTimeString']",
+    //     message: 'toLocaleTimeString不推荐使用',
+    //   },
+    //   {
+    //     selector: "CallExpression[callee.property.name='toString']",
+    //     message: 'toString不推荐使用，使用String()方法',
+    //   },
+    //   {
+    //     selector:
+    //       "CallExpression[callee.property.name='addEventListener'][arguments.0.value='click'][callee.object.callee.property.name='querySelector'][callee.object.callee.object.name='document'][callee.object.arguments.0.value='body']",
+    //     message: '请使用useClickAway。',
+    //   },
+    // ],
     'max-params': [
       'warn',
       {
-        max: 4,
+        max: 5,
       },
     ],
   },
@@ -291,7 +292,7 @@ if (existsSync(pkgFile)) {
           selector: 'variable',
           types: ['boolean'],
           format: ['PascalCase'],
-          prefix: ['is', 'should', 'has', 'can', 'did', 'will', 'have', ...antdBoolean],
+          prefix: ['is', 'should', 'has', 'can', 'did', 'will', 'have', 'need', 'show', ...antdBoolean],
         },
       ],
       '@typescript-eslint/no-unnecessary-boolean-literal-compare': 'error',
@@ -316,6 +317,11 @@ if (existsSync(pkgFile)) {
     }
   }
 
+  if (pkgDeps['eslint-plugin-prettier']) {
+    eslint.extends.push('plugin:prettier/recommended');
+    Object.assign(eslint.rules, { 'prettier/prettier': 'warn', indent: 'off' });
+  }
+
   if (pkgDeps['eslint-plugin-unicorn']) {
     eslint.extends.push('plugin:unicorn/recommended');
     eslint.plugins.push('unicorn');
@@ -325,12 +331,12 @@ if (existsSync(pkgFile)) {
       'unicorn/catch-error-name': 'off',
       'unicorn/empty-brace-spaces': 'off',
       'unicorn/expiring-todo-comments': 'off',
-      'unicorn/filename-case': 'off',
-      'unicorn/import-style': 'off',
+      // 'unicorn/filename-case': 'off',
+      // 'unicorn/import-style': 'off',
       'unicorn/new-for-builtins': 'off',
       'unicorn/no-array-callback-reference': 'off',
       'unicorn/no-nested-ternary': 'off',
-      'unicorn/no-new-array': 'off',
+      // 'unicorn/no-new-array': 'off',
       'unicorn/no-new-buffer': 'off',
       'unicorn/no-null': 'off',
       'unicorn/no-object-as-default-parameter': 'off',

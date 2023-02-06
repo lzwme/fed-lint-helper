@@ -62,7 +62,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
       .map(([key, val]) => {
         if (ignoredKeys.has(key) || !val || Array.isArray(val)) return '';
         if (typeof val === 'boolean') val = val ? '' : '0';
-        return `--${key}` + (val ? `="${val}"` : '');
+        return `--${key}${val ? `="${String(val)}"` : ''}`;
       })
       .filter(Boolean)
       .join(' ');
@@ -79,7 +79,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
         const p = resolve(config.rootDir, d);
         if (!existsSync(p) || !statSync(p).isDirectory()) continue;
 
-        const files = await glob('**/*' + specGlob, { cwd: p, absolute: true, ignore: exclude });
+        const files = await glob(`**/*${specGlob}`, { cwd: p, absolute: true, ignore: exclude });
         specFileList.push(...files);
       }
     } else {
@@ -98,7 +98,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
 
           const fileDir = dirname(filepath);
           // 同目录下存在单测文件
-          let files = glob.sync('*' + specGlob, { cwd: fileDir, absolute: true, ignore: exclude });
+          let files = glob.sync(`*${specGlob}`, { cwd: fileDir, absolute: true, ignore: exclude });
           if (files.length > 0) return files[0];
 
           // 支持查找在父级目录中的同名单测文件

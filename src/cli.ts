@@ -11,10 +11,9 @@ import { Option, program } from 'commander';
 import { cyanBright, green, greenBright, yellowBright } from 'console-log-colors';
 import { getHeadDiffFileList, wxWorkNotify } from '@lzwme/fe-utils';
 import { FlhConfig, JiraCheckConfig, CommitLintOptions, LintTypes } from './types.js';
-import { formatWxWorkKeys, getGitStaged } from './utils/index.js';
+import { formatWxWorkKeys, getGitStaged, getLogger } from './utils/index.js';
 import { commConfig, FlhPkgInfo, getConfig, mergeCommConfig } from './config.js';
 import { rmdir } from './tools/rmdir.js';
-import { getLogger } from './utils/index.js';
 import { lintStartAsync } from './worker/lintStartAsync.js';
 
 const logger = getLogger();
@@ -82,7 +81,7 @@ program
   .option('--wx-work-keys <key...>', '发送至企业微信机器人，需指定 webhook key 的值，可指定多个机器人')
   .option('--tscheck', `执行 TypeScript Diagnostics check`)
   .option('--eslint', `执行 eslint 检查`)
-  .option('--commitlint [verifyReg]', `执行 commitlint 检查`)
+  .option('--commitlint [verifyReg|help]', '执行 commitlint 检查。值为 `help` 时仅打印帮助信息，否则为自定义正则验证规则')
   .option(
     '--commit-edit <filepath|N>',
     `指定 git commit msg 的获取方式。可以是：COMMIT_EDITMSG 文件路径、commitId、数字(1-99，表示取最近N条日志全部验证)。默认为 ${yellowBright(
@@ -100,10 +99,10 @@ program
   .action(() => {
     const options = getProgramOptions();
     const config: FlhConfig = {
-      exitOnError: options.exitOnError !== false,
+      exitOnError: options.exitOnError ?? true,
       checkOnInit: false,
       silent: !options.debug && options.silent,
-      printDetail: options.printDetail !== false,
+      printDetail: options.printDetail ?? true,
       tscheck: {},
       eslint: {},
       jest: {},
@@ -154,7 +153,10 @@ program
       hasAction = true;
       import('./lint/commit-lint.js').then(({ commitMessageVerify }) => {
         const cmvOptions: CommitLintOptions = { msgPath: options.commitEdit, exitOnError: options.exitOnError };
-        if (typeof options.commitlint === 'string') cmvOptions.verify = options.commitlint;
+        if (typeof options.commitlint === 'string') {
+          if (options.commitlint === 'help') cmvOptions.help = true;
+          else cmvOptions.verify = options.commitlint;
+        }
         commitMessageVerify(cmvOptions);
       });
     }

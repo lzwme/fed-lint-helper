@@ -2,7 +2,7 @@
   "typescript.tsdk": "./node_modules/typescript/lib",
   "css.validate": false,
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": true
+    // "source.fixAll.eslint": true
   },
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnSave": true,
@@ -26,7 +26,8 @@
     "addons/**": true,
     "public/**": true,
     "**/dist/**": true,
-    "**/dist-admin/**": true,
+    "**/esm/**": true,
+    "**/cjs/**": true,
     "**/mock/**": true,
   },
   "git.rebaseWhenSync": true,

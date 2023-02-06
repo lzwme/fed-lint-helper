@@ -114,7 +114,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
     if (!Array.isArray(config.issuePrefix)) config.issuePrefix = [config.issuePrefix];
 
     for (const [index, value] of config.issuePrefix.entries()) {
-      if (!value.endsWith('-')) config.issuePrefix[index] = value + '-';
+      if (!value.endsWith('-')) config.issuePrefix[index] = `${value}-`;
     }
 
     const level = config.silent ? 'silent' : config.debug ? 'debug' : 'log';
@@ -449,7 +449,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
           smartCommit = `${config.commitMsgPrefix}[${versionName}][${issueText}][${jiraID}] ${message}`;
         } else if (smartRegWithJIRA.test(commitMessage)) {
           // 如果只匹配到JIRA号
-          smartCommit = `${config.commitMsgPrefix}[${versionName}][${issueText}][${jiraID}] ${summary}`;
+          smartCommit = `${config.commitMsgPrefix}[${versionName}][${issueText}][${jiraID}] ${summary as string}`;
         } else if (!reg.test(commitMessage)) {
           // 如果都是自己填的
           logger.debug(reg, commitMessage, reg.test(commitMessage));
@@ -473,7 +473,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
           }
         }
       } else {
-        if (/Merge branch/.test(commitMessage)) {
+        if (commitMessage.includes('Merge branch')) {
           logger.error('同分支提交禁止执行 Merge 操作，请使用 git rebase 或 git pull -r 命令。若为跨分支合并，请增加 -n 参数\n');
           return result;
         } else if (!ignoredCommitList.some(reg => reg.test(commitMessage))) {

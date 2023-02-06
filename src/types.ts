@@ -161,8 +161,14 @@ export interface CommitLintOptions extends CommConfig {
   msgPath?: string;
   /** 是否使用 Angular commit 风格验证。当自定义了 verify 时允许设置为 false */
   useAngularStyle?: boolean;
+  /** 允许的 type 类型与描述。默认使用内置定义 */
+  allowTypes?: Record<string, string> | string[];
+  /** 自定义额外允许的 type 类型与描述。会与内置类型合并 */
+  customTypes?: Record<string, string>;
   /** 自定义验证规则。为字符串时将使用 RegExp 转换为正则表达式匹配 */
   verify?: ((message: string) => boolean | string) | string | RegExp;
+  /** 仅打印帮助提示信息 */
+  help?: boolean;
 }
 
 export interface PrettierCheckConfig extends CommConfig {

@@ -13,7 +13,7 @@ export function packageManagerCheck(wantedPM = '', isDebug = false) {
     process.exit(1);
   }
 
-  const packageManager = /pnpm/.test(execpath) ? 'pnpm' : /yarn/.test(execpath) ? 'yarn' : 'npm';
+  const packageManager = execpath.includes('pnpm') ? 'pnpm' : execpath.includes('yarn') ? 'yarn' : 'npm';
 
   if (packageManager !== wantedPM) {
     getLogger().error(

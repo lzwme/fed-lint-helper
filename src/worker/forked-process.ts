@@ -12,6 +12,7 @@ import { lintStartAsync } from './lintStartAsync.js';
 
 globalThis.isInChildProcess = true;
 process.on('message', (options: CreateThreadOptions) => {
+  /* eslint-disable-next-line no-console */
   if (options.debug) console.log('ForkWorker received:', options);
   options = handlerForCTOptions(options, 'receive');
   const done = (data: unknown) => {
