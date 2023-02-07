@@ -13,7 +13,7 @@ import type { Diagnostic, DiagnosticCategory, CompilerOptions } from 'typescript
 import glob from 'fast-glob';
 import micromatch from 'micromatch';
 import { md5, fixToshortPath } from '@lzwme/fe-utils';
-import type { TsCheckConfig, LintResult, WhiteListInfo, LintCacheInfo } from '../types.js';
+import type { TsCheckConfig, LintResult, WhiteListInfo } from '../types';
 import { LintBase } from './LintBase.js';
 import { arrayToObject, fileListToString } from '../utils/common.js';
 
@@ -27,7 +27,6 @@ export interface TsCheckResult extends LintResult {
 export type TSCheckWhiteList = WhiteListInfo<{ md5: string; tscodes: { [code: number]: number } }>;
 export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
   protected override whiteList: TSCheckWhiteList = { list: {} };
-  protected override cacheInfo: LintCacheInfo<{ md5: string; updateTime: number }> = { list: {} };
   private cache: {
     /** 检测到异常且需要 report 的文件列表 */
     allDiagnosticsFileMap: { [file: string]: Diagnostic[] };
@@ -51,13 +50,12 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
       passedChanged: 0,
       sourceFiles: new Set(),
     };
-    this.cacheInfo = { list: {} };
 
     return this.stats;
   }
   protected override init() {
     super.init();
-    Object.assign(this.cacheInfo, this.getCacheInfo());
+    this.cacheInfo = this.getCacheInfo();
   }
   /** 返回可检测的子项目路径 */
   private getCheckProjectDirs(source = this.config.src) {

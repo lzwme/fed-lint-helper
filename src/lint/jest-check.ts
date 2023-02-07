@@ -14,7 +14,7 @@ import type { Config } from '@jest/types';
 import type { FormattedTestResults, formatTestResults } from '@jest/test-result';
 import { fixToshortPath, md5, execSync, rmrf, isEmptyObject } from '@lzwme/fe-utils';
 import { getConfig } from '../config.js';
-import type { JestCheckConfig, LintCacheInfo, LintResult, WhiteListInfo } from '../types.js';
+import type { JestCheckConfig, LintCacheInfo, LintResult, WhiteListInfo } from '../types';
 import { LintBase } from './LintBase.js';
 import { fileListToString } from '../utils/index.js';
 

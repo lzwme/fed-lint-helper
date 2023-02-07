@@ -9,5 +9,5 @@ export * from './lint/prettier-check.js';
 export * from './lint/ts-check.js';
 export * from './tools/pm-check.js';
 export * from './tools/rmdir.js';
-export * from './types.js';
+export * from './types';
 export * from './utils/index.js';

@@ -13,7 +13,7 @@ import { extname, resolve } from 'node:path';
 import { execSync, fixToshortPath, isGitRepo } from '@lzwme/fe-utils';
 import { arrayToObject, fileListToString } from '../utils/index.js';
 import { LintBase } from './LintBase.js';
-import type { ESLintCheckConfig, LintResult, WhiteListInfo } from '../types.js';
+import type { ESLintCheckConfig, LintResult, WhiteListInfo } from '../types';
 
 export interface ESLintCheckResult extends LintResult {
   /** warning 类型异常的总数量 */

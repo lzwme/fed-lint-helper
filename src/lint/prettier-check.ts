@@ -1,19 +1,18 @@
-/* eslint-disable no-console */
 /*
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2023-01-17 15:18:44
+ * @LastEditTime: 2023-02-07 15:26:47
  * @Description:  prettier check
  */
 
 import { resolve } from 'node:path';
 import { existsSync, statSync, readFileSync, writeFileSync } from 'node:fs';
 import { green, greenBright, magentaBright, red, redBright } from 'console-log-colors';
-import { md5, assign, execSync, fixToshortPath, isGitRepo } from '@lzwme/fe-utils';
+import { md5, assign, execSync, fixToshortPath, isGitRepo, isEmpty } from '@lzwme/fe-utils';
 import glob from 'fast-glob';
 import { getConfig } from '../config.js';
-import type { PrettierCheckConfig, LintResult, LintCacheInfo } from '../types.js';
+import type { PrettierCheckConfig, LintResult } from '../types';
 import { LintBase } from './LintBase.js';
 
 export interface PrettierCheckResult extends LintResult {
@@ -22,7 +21,6 @@ export interface PrettierCheckResult extends LintResult {
 }
 
 export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckResult> {
-  override cacheInfo: LintCacheInfo<{ md5: string; updateTime: number }> = { list: {} };
   constructor(config: PrettierCheckConfig = {}) {
     super('prettier', config);
   }
@@ -44,7 +42,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
   }
   protected override init() {
     super.init();
-    this.cacheInfo = { list: {} };
+    this.cacheInfo = this.getCacheInfo();
   }
   protected async getOptions(_fileList: string[]) {
     const prettier = await import('prettier');
@@ -87,12 +85,9 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
 
     const totalFiles = fileList.length;
     let cacheHits = 0;
+    const passedFiles = this.cacheInfo.list;
 
-    if (fileList.length > 0 && config.cache && existsSync(this.cacheFilePath)) {
-      assign(this.cacheInfo, JSON.parse(readFileSync(this.cacheFilePath, 'utf8')));
-
-      const passedFiles = this.cacheInfo.list;
-
+    if (fileList.length > 0 && config.cache && !isEmpty(passedFiles)) {
       fileList = fileList.filter(filepath => {
         const item = passedFiles[fixToshortPath(filepath, config.rootDir)];
         if (!item) return true;
@@ -178,16 +173,16 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
           }
 
           const tipPrefix = item.fixed ? greenBright(`Fixed`) : item.passed ? green('PASS') : red('Failed');
-          if (!config.silent && !baseConfig.ci) this.logger.logInline(` - [${tipPrefix}][${index}] ${filepath}`);
+          if (!config.silent && !baseConfig.ci) logger.logInline(` - [${tipPrefix}][${index}] ${filepath}`);
         } catch (error) {
-          console.log();
+          logger.log();
           logger.error(error);
           item.passed = false;
         }
         return item;
       });
 
-      console.log();
+      logger.log();
       for (const d of results) {
         const shortpath = fixToshortPath(d.filepath, config.rootDir);
 

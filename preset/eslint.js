@@ -26,9 +26,9 @@ const eslint = {
       jsx: true,
     },
   },
+  ignorePatterns: ['node_modules/**', 'dist/**', 'dist-*', 'cache/**', 'tmp/**', 'release/**'], // , 'src/**/*.js'
   extends: ['eslint:recommended'],
   plugins: [],
-  ignorePatterns: ['node_modules/**', 'dist/**', 'dist-*', 'cache/**', 'tmp/**', 'release/**'], // , 'src/**/*.js'
   rules: {
     // 'no-restricted-syntax': 'off',
     'prefer-object-spread': 'off',
@@ -259,8 +259,9 @@ if (existsSync(pkgFile)) {
     eslint.extends.push('plugin:@typescript-eslint/recommended');
     eslint.plugins.push('@typescript-eslint');
 
+    if (existsSync('./tsconfig.eslint.json')) eslint.parserOptions.project = './tsconfig.eslint.json';
+
     Object.assign(eslint.rules, {
-      // ======  @typescript-eslint =======
       '@typescript-eslint/no-unused-vars': [
         'error',
         {
@@ -295,7 +296,7 @@ if (existsSync(pkgFile)) {
           prefix: ['is', 'should', 'has', 'can', 'did', 'will', 'have', 'need', 'show', ...antdBoolean],
         },
       ],
-      '@typescript-eslint/no-unnecessary-boolean-literal-compare': 'error',
+      // '@typescript-eslint/no-unnecessary-boolean-literal-compare': 'error',
       '@typescript-eslint/no-unnecessary-condition': 'off',
       '@typescript-eslint/no-unnecessary-type-arguments': 'off',
       '@typescript-eslint/prefer-nullish-coalescing': 'off',
@@ -329,25 +330,30 @@ if (existsSync(pkgFile)) {
     Object.assign(eslint.rules, {
       // ======  unicorn =======
       'unicorn/catch-error-name': 'off',
+      'unicorn/consistent-destructuring': 'off',
       'unicorn/empty-brace-spaces': 'off',
       'unicorn/expiring-todo-comments': 'off',
       // 'unicorn/filename-case': 'off',
       // 'unicorn/import-style': 'off',
       'unicorn/new-for-builtins': 'off',
-      'unicorn/no-array-callback-reference': 'off',
-      'unicorn/no-nested-ternary': 'off',
       // 'unicorn/no-new-array': 'off',
+      'unicorn/no-array-callback-reference': 'off',
+      'unicorn/no-array-for-each': 'off',
+      'unicorn/no-array-reduce': 'off',
+      'unicorn/no-lonely-if': 'off',
+      'unicorn/no-nested-ternary': 'off',
       'unicorn/no-new-buffer': 'off',
       'unicorn/no-null': 'off',
       'unicorn/no-object-as-default-parameter': 'off',
       'unicorn/no-unreadable-array-destructuring': 'off',
       'unicorn/no-useless-undefined': 'off',
+      'unicorn/number-literal-case': 'off',
+      'unicorn/numeric-separators-style': 'off',
       'unicorn/prefer-add-event-listener': 'off',
+      'unicorn/prefer-json-parse-buffer': 'off',
       'unicorn/prefer-keyboard-event-key': 'off',
       'unicorn/prefer-module': 'off',
-      'unicorn/prevent-abbreviations': 'off',
       'unicorn/prefer-optional-catch-binding': 'off',
-      'unicorn/numeric-separators-style': 'off',
       'unicorn/prefer-spread': 'off',
       'unicorn/prefer-number-properties': [
         'error',
@@ -355,12 +361,7 @@ if (existsSync(pkgFile)) {
           checkInfinity: false,
         },
       ],
-      'unicorn/no-array-for-each': 'off',
-      'unicorn/number-literal-case': 'off',
-      'unicorn/prefer-node-protocol': 'off',
-      'unicorn/prefer-json-parse-buffer': 'off',
-      'unicorn/no-lonely-if': 'off',
-      'unicorn/consistent-destructuring': 'off',
+      'unicorn/prevent-abbreviations': 'off',
     });
   }
 }

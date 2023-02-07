@@ -5,7 +5,7 @@ import { assign } from '@lzwme/fe-utils';
 import { color } from 'console-log-colors';
 import { config } from '../config.js';
 import { getLogger } from '../utils/get-logger.js';
-import type { CommitLintOptions } from '../types.js';
+import type { CommitLintOptions } from '../types';
 import { checkUserEmial } from '../utils/index.js';
 
 let helpTips: Record<string, string> = {
@@ -103,6 +103,22 @@ export function commitMessageVerify(options?: CommitLintOptions) {
   if (!config.silent) logger.info('Passed!');
 
   return isPass;
+}
+
+export function shouldIgnoreCommitLint(msg: string) {
+  /**
+   * {@link https://github.com/conventional-changelog/commitlint/blob/master/%40commitlint/is-ignored/src/defaults.ts|忽略规则参考}
+   */
+  const ignoredCommitList = [
+    /^((Merge pull request)|(Merge (.*?) into (.*?)|(Merge branch (.*?)))(?:\r?\n)*$)/m,
+    /^(R|r)evert (.*)/,
+    /^(fixup|squash)!/,
+    /^(Merged (.*?)(in|into) (.*)|Merged PR (.*): (.*))/,
+    /^Merge remote-tracking branch (.*)/,
+    /^Automatic merge(.*)/,
+    /^Auto-merged (.*?) into (.*)/,
+  ];
+  return ignoredCommitList.some(r => r.test(msg));
 }
 
 function showHelp() {

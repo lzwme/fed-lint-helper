@@ -11,7 +11,7 @@
 import { resolve } from 'node:path';
 import { Worker, isMainThread, parentPort, workerData } from 'node:worker_threads';
 import { flhSrcDir } from '../config.js';
-import type { ILintTypes } from '../types.js';
+import type { ILintTypes } from '../types';
 import { getLogger } from '../utils/get-logger.js';
 import { lintStartAsync } from './lintStartAsync.js';
 import { type CreateThreadOptions, handlerForCTOptions } from './utils.js';

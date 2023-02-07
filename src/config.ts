@@ -1,8 +1,8 @@
 /*
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
- * @LastEditors: lzw
- * @LastEditTime: 2023-01-17 15:10:19
+ * @LastEditors: renxia lzwy0820@qq.com
+ * @LastEditTime: 2023-02-07 11:05:59
  * @Description:
  */
 
@@ -14,7 +14,7 @@ import { env } from 'node:process';
 import { sync } from 'fast-glob';
 import { color } from 'console-log-colors';
 import { assign, isEmptyObject, type PackageJson, readJsonFileSync } from '@lzwme/fe-utils';
-import { type CommConfig, type FlhConfig, LintTypes } from './types.js';
+import { type CommConfig, type FlhConfig, LintTypes } from './types';
 import { formatWxWorkKeys, getLogger } from './utils/index.js';
 
 export const commConfig: CommConfig = {
@@ -75,7 +75,7 @@ export const config: FlhConfig = {
     issuePrefix: [],
     projectName: 'fed-lint-helper',
     pipeline: {
-      requestParams: { maxResults: 100, fields: ['comment', 'assignee'] },
+      requestParams: { maxResults: 100 },
     },
     detectSubPackages: false,
   },

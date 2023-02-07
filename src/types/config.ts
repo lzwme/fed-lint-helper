@@ -1,19 +1,12 @@
 import type { ESLint } from 'eslint';
 import type { Config } from '@jest/types';
 import type { Config as PrettierConfig } from 'prettier';
-import type { IncomingHttpHeaders } from 'http';
-import type { WxWorkReqParams } from '@lzwme/fe-utils';
-
-/** @deprecated */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyObject = Record<string, any>;
-export type ValueOf<T> = T[keyof T];
-export type ArrayLikeArgs<T> = T extends ArrayLike<infer U> ? U : T;
+import type { WxWorkReqParams, ArrayLikeArgs } from '@lzwme/fe-utils';
+import type { JiraCheckConfig } from './jira.js';
+import { IPackageManager } from './base.js';
 
 export const LintTypes = ['eslint', 'tscheck', 'jest', 'jira', 'prettier'] as const;
 export type ILintTypes = ArrayLikeArgs<typeof LintTypes>;
-
-export type IPackageManager = 'npm' | 'yarn' | 'pnpm';
 
 export interface CommConfig {
   /** 项目根目录，默认为当前工作目录 */
@@ -119,44 +112,6 @@ export interface JestCheckConfig extends CommConfig {
   useJestCli?: boolean;
 }
 
-export interface JiraCheckConfig extends CommConfig {
-  /** 执行检测的类型 */
-  type?: 'pipeline' | 'commit';
-  /** jira 首页的 url 地址。如： http://jira.lzw.me */
-  jiraHome?: string;
-  /** gitlab 项目名称。如 lzwme/fed-lint-helper */
-  projectName?: string;
-  /** jira 请求自定义 headers 信息 */
-  headers?: IncomingHttpHeaders;
-  /** CI pipeline 阶段执行的批量检查相关配置 */
-  pipeline?: {
-    /** pipeline 批量获取 jira issues 的请求参数 */
-    requestParams: {
-      jql?: string;
-      fields?: string[];
-      maxResults?: number;
-      [key: string]: unknown;
-    };
-  };
-  /** 已封板后允许回复必须修复的人员列表 */
-  sealedCommentAuthors?: string[];
-  /** jira issue 编号前缀，如编号为 LZWME-4321，则设置为 LZWME- */
-  issuePrefix?: string | string[];
-  /** commit 提交固定前缀，如： [ET] */
-  commitMsgPrefix?: string;
-  /**
-   * 指定 git commit msg 的获取方式。可以是：
-   * - COMMIT_EDITMSG 路径（默认为 ./.git/COMMIT_EDITMSG）
-   * - git commitId hash
-   * - 数字(0-99，表示取最近N条日志全部验证)
-   */
-  commitEdit?: string;
-  /** 允许跳过分支版本检查提交的 jira 版本号 */
-  allowedFixVersions?: string[];
-  /** 是否忽略版本匹配检测 */
-  ignoreVersion?: boolean;
-}
-
 export interface CommitLintOptions extends CommConfig {
   msgPath?: string;
   /** 是否使用 Angular commit 风格验证。当自定义了 verify 时允许设置为 false */
@@ -237,49 +192,4 @@ export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {
   onlyChanges?: boolean;
   /** 是否仅检测 git add 添加到缓冲区中的文件，优先级高于 onlyChanges */
   onlyStaged?: boolean;
-}
-
-export interface WhiteListInfo<T = unknown> {
-  /** 白名单文件列表 */
-  list: { [filepath: string]: T };
-  $commitId?: string;
-}
-
-export interface LintCacheInfo<T = Record<string, unknown>> {
-  /** 最近一次 Lint 通过的文件缓存列表 */
-  list: { [filepath: string]: T };
-  /** 最近一次执行的 commitId */
-  $commitId?: string;
-  /** 最近一次执行时的 flh 版本 */
-  version?: string;
-  /** 最近一次执行是否成功 */
-  success?: boolean;
-}
-
-export interface LintResult {
-  /** 是否检测通过 */
-  isPassed: boolean;
-  /** 开始处理时间 */
-  startTime?: number;
-  /** 处理的（源）文件总数 */
-  totalFilesNum?: number;
-  /** 异常信息数(一个文件可能包含多个异常) */
-  errorCount?: number;
-  /** 错误信息。如可回调给告警类任务 */
-  errmsg?: string;
-  /** 检测通过的文件数 */
-  passedFilesNum?: number;
-  /** 失败的文件数 */
-  failedFilesNum?: number;
-  /** 缓存命中的数量 */
-  cacheHits?: number;
-  /** 缓存文件与对应的缓存信息。放在最后汇总并写入文件 */
-  cacheFiles?: {
-    [filepath: string]: {
-      updated: AnyObject;
-      deleted?: Record<string, unknown>;
-      type?: 'cache' | 'whitelist'; // todo: 用于区分 jsonFile 结构
-    };
-  };
-  [key: string]: unknown;
 }

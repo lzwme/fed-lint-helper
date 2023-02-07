@@ -6,7 +6,7 @@ import { fixToshortPath, md5 } from '@lzwme/fe-utils';
 import { getLogger } from '../utils/get-logger.js';
 import { getTimeCost, fileListToString, padSpace, formatQty, formatMem } from '../utils/common.js';
 import { getConfig } from '../config.js';
-import { FlhConfig } from '../types.js';
+import { FlhConfig } from '../types';
 
 type IFileStats = FlhConfig['fileStats'];
 interface IStatsOption extends IFileStats {

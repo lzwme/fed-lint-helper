@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2023-01-17 11:18:57
+ * @LastEditTime: 2023-02-07 14:03:19
  * @Description:  Jira check
  */
 
@@ -14,91 +14,10 @@ import { magenta, magentaBright, cyanBright, yellowBright, redBright, green, gre
 import { assign, execSync, getGitLog, getHeadBranch, readJsonFileSync, Request } from '@lzwme/fe-utils';
 import { getLogger, checkUserEmial } from '../utils/index.js';
 import { getConfig } from '../config.js';
-import type { AnyObject, JiraCheckConfig, LintResult } from '../types.js';
+import type { AnyObject } from '../types';
+import type { JiraCheckConfig, JiraCheckResult, JiraError, JiraReqConfig, JiraIssueItem } from '../types/jira.js';
 import { LintBase } from './LintBase.js';
-
-export interface JiraCheckResult extends LintResult {
-  /** 是否检测通过 */
-  isPassed: boolean;
-}
-interface JiraError {
-  errorMessages?: string[];
-  errors?: AnyObject;
-}
-interface IssueItem {
-  expand: string;
-  id: string;
-  /** 查询该 jira 信息的 api 地址 */
-  self: string;
-  /** issues 编号 */
-  key: string;
-  fields: {
-    comment: {
-      comments: {
-        self: string;
-        id: string;
-        author: Author;
-        body: string;
-        updateAuthor: Author;
-        created: string;
-        updated: string;
-      }[];
-      maxResults: number;
-      total: number;
-      startAt: number;
-    };
-    assignee: Author;
-    issuetype?: {
-      self: string;
-      id: string;
-      description: string;
-      iconUrl: string;
-      name: string;
-      subtask: boolean;
-      avatarId: number;
-    };
-    fixVersions?: {
-      name: string;
-      description: string;
-    }[];
-    [key: string]: unknown;
-  };
-}
-interface Author {
-  self: string;
-  name: string;
-  key: string;
-  emailAddress: string;
-  avatarUrls: {
-    '48x48': string;
-    '24x24': string;
-    '16x16': string;
-    '32x32': string;
-  };
-  displayName: string;
-  active: boolean;
-  timeZone: string;
-}
-type JiraConfig = {
-  cookie?: string;
-  JSESSIONID?: string;
-  authorization?: string;
-  username?: string;
-  pwd?: string;
-};
-
-/**
- * @url 忽略规则参考地址: https://github.com/conventional-changelog/commitlint/blob/master/%40commitlint/is-ignored/src/defaults.ts
- */
-const ignoredCommitList = [
-  /^((Merge pull request)|(Merge (.*?) into (.*?)|(Merge branch (.*?)))(?:\r?\n)*$)/m,
-  /^(R|r)evert (.*)/,
-  /^(fixup|squash)!/,
-  /^Merged (.*?)(in|into) (.*)/,
-  /^Merge remote-tracking branch (.*)/,
-  /^Automatic merge(.*)/,
-  /^Auto-merged (.*?) into (.*)/,
-];
+import { shouldIgnoreCommitLint } from './commit-lint.js';
 
 export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
   private reqeust: Request;
@@ -140,7 +59,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
     const jiraPath = this.getJiraCfgPath(true);
 
     if (jiraPath) {
-      const jiraConfig = jiraPath.endsWith('.json') ? readJsonFileSync<JiraConfig>(jiraPath) : await import(jiraPath);
+      const jiraConfig = jiraPath.endsWith('.json') ? readJsonFileSync<JiraReqConfig>(jiraPath) : await import(jiraPath);
       if (jiraConfig.default) Object.assign(jiraConfig, jiraConfig.default);
       if (jiraConfig.cookie) headers.cookie = jiraConfig.cookie;
       if (jiraConfig.JSESSIONID && !headers.cookie.includes('JSESSIONID=')) {
@@ -210,27 +129,50 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
     const { config, stats, logger } = this;
     const sprintVersion = `${getHeadBranch()}`.split('_')[0];
     const projects = (config.issuePrefix as string[]).map(d => d.replace(/-$/, '')).join(',');
-    const query = `project IN (${projects}) AND fixVersion = "${sprintVersion}" AND comment ~ "必须修复"${
+    const query = `comment ~ "必须修复"${
       config.projectName ? ` AND comment ~ "${config.projectName}"` : ''
     } AND status in ("新建(New)", "处理中(Inprocess)", "测试验收(Test Verification)", "调试与审查(Code Review)", "关闭(Closed)") ORDER BY due ASC, priority DESC, created ASC`;
     const url = `${config.jiraHome}/rest/api/2/search?`; // jql=${encodeURIComponent(query)}&maxResults=100&fields=comment,assignee`;
-    const p = assign<AnyObject>({ jql: query, maxResults: 100, fields: ['comment', 'assignee'] }, config.pipeline.requestParams);
-    const r = await this.reqeust.post<{ total: number; issues: IssueItem[]; expand: string; maxResults: number } & JiraError>(url, p);
-    const info = r.data;
+    const p = assign<AnyObject>(
+      {
+        jql: query,
+        maxResults: 100,
+        fields: [],
+      },
+      config.pipeline.requestParams
+    );
 
-    logger.debug('url:', url, info);
+    p.jql = `project IN (${projects}) AND fixVersion = "${sprintVersion}" AND ${p.jql}`;
+    p.fields = [...new Set(['comment', 'assignee', 'fixVersions', ...p.fields])];
+
+    type ReqType = { total: number; issues: JiraIssueItem[]; expand: string; maxResults: number } & JiraError;
+    const { data: info } = await this.reqeust.post<ReqType>(url, p);
+
+    logger.debug('url:', url, p, info);
     if (!info.issues) {
       logger.error(info.errorMessages || info);
       stats.failedFilesNum = -1;
       return false;
     }
 
-    logger.info('[检查信息]', query);
+    logger.info('[检查信息]', p.jql);
     logger.info('[检查信息]', `提取的JIRA(${magentaBright(info.total)}):`, info.issues.map(item => item.key).join(', '));
     logger.info('-'.repeat(80));
 
+    const printErrorInfo = (msg: string, item: JiraIssueItem) => {
+      if (!msg) return;
+      logger.info(
+        `[${++stats.failedFilesNum}] 指派给`,
+        item.fields.assignee.displayName.split('（')[0],
+        `${config.jiraHome.replace(/\/$/, '')}/browse/${item.key}`,
+        redBright(msg)
+      );
+      logger.info('-'.repeat(80));
+    };
+
     for (const item of info.issues) {
       let fields = item.fields;
+      let errmsg = '';
 
       if (!fields) {
         try {
@@ -248,11 +190,21 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
       }
 
       logger.debug(item.key, fields);
+
+      if (typeof config.pipeline.verify === 'function') {
+        const isOk = await config.pipeline.verify(item);
+        if (isOk) {
+          if (typeof isOk === 'string') printErrorInfo(isOk, item);
+          continue;
+        }
+      }
+
       const versionInfo = fields.fixVersions[0].description;
       /** 是否已封板 */
       const isSeal = (versionInfo && versionInfo.includes('[已封版]')) || false;
       // 没封板不做检查
       if (!isSeal) continue;
+
       // 查找必须修复的标记
       const mustRepairTagIndex = fields.comment.comments.findIndex(comment => comment.body.includes('[必须修复]'));
       if (mustRepairTagIndex === -1) continue;
@@ -275,7 +227,6 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
       const reviewComment = comments.find(item => item.body.includes('[已阅]'));
       const commiter = gitlabComment.body.split('|')[0].slice(1);
       const reviewers = fields.customfield_13002 as { displayName: string }[];
-      let errmsg = '';
 
       // review的留言需要在gitlab提交日志之后
       if (!reviewComment || reviewComment.id < gitlabComment.id) {
@@ -292,15 +243,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
         }
       }
 
-      if (errmsg) {
-        logger.info(
-          `[${++stats.failedFilesNum}] 指派给`,
-          fields.assignee.displayName.split('（')[0],
-          `${config.jiraHome.replace(/\/$/, '')}/browse/${item.key}`,
-          redBright(errmsg)
-        );
-        logger.info('-'.repeat(80));
-      }
+      printErrorInfo(errmsg, item);
     }
 
     return stats.failedFilesNum === 0;
@@ -388,7 +331,6 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
         const issueTypeList = await this.getIssueType();
         /** 禁止提交的类型 */
         const noAllowIssueType: number[] = [];
-        // eslint-disable-next-line unicorn/no-array-reduce
         const issueTypeToDesc = issueTypeList.reduce((object, item) => {
           object[item.id] = item.name.replace(/[^A-Za-z]/g, '').toLowerCase();
           if (object[item.id].includes('subtask')) object[item.id] = 'feature';
@@ -399,7 +341,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
           return object;
         }, {} as Record<number, string>);
         const jiraID = jiraIDs[0];
-        const { data: info } = await this.reqeust.get<IssueItem & JiraError>(`${config.jiraHome}/rest/api/latest/issue/${jiraID}`);
+        const { data: info } = await this.reqeust.get<JiraIssueItem & JiraError>(`${config.jiraHome}/rest/api/latest/issue/${jiraID}`);
 
         if (!info.fields || info.errorMessages) {
           logger.error(info.errorMessages || `获取 ${jiraID} 信息异常`);
@@ -468,7 +410,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
           });
 
           if (!comment) {
-            logger.error('[提交信息]', `[${jiraID}] JIRA并非 [必须修复]，不允许提交`);
+            logger.error(`[提交信息][${jiraID}] JIRA并非 [必须修复]，不允许提交`);
             return result;
           }
         }
@@ -476,8 +418,8 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
         if (commitMessage.includes('Merge branch')) {
           logger.error('同分支提交禁止执行 Merge 操作，请使用 git rebase 或 git pull -r 命令。若为跨分支合并，请增加 -n 参数\n');
           return result;
-        } else if (!ignoredCommitList.some(reg => reg.test(commitMessage))) {
-          logger.error(`提交代码信息不符合规范，信息中应包含字符"${issuePrefix}XXXX".`);
+        } else if (!shouldIgnoreCommitLint(commitMessage)) {
+          logger.error(redBright(`提交代码信息不符合规范，信息中应包含字符"${cyan(`${issuePrefix}`)}XXXX".`));
           logger.error('例如：', cyanBright(`${issuePrefix}9171 【两融篮子】多组合卖出，指令预览只显示一个组合。\n`));
           return result;
         }

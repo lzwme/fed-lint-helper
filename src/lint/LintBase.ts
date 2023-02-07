@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2023-01-17 15:07:24
+ * @LastEditTime: 2023-02-07 15:39:13
  * @Description:  jest check
  */
 
@@ -24,11 +24,16 @@ import { getIndentSize, getTimeCost, globMatcher, padSpace } from '../utils/comm
 import { getLogger } from '../utils/get-logger.js';
 import { createForkThread } from '../worker/fork.js';
 import { getConfig, FlhPkgInfo } from '../config.js';
-import type { CommConfig, ILintTypes, LintCacheInfo, LintResult, WhiteListInfo } from '../types.js';
+import type { CommConfig, ILintTypes, LintCacheInfo, LintResult, WhiteListInfo } from '../types';
 import { exit } from '../exit.js';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export abstract class LintBase<C extends CommConfig & Record<string, any>, R extends LintResult = LintResult> {
+export abstract class LintBase<
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  C extends CommConfig & Record<string, any>,
+  R extends LintResult = LintResult,
+  // LintCacheInfo<I>
+  I = Record<string, unknown>
+> {
   /** 统计信息 */
   protected stats = this.getInitStats() as R;
   /** 检测缓存文件的路径。不应提交至 git 仓库 */
@@ -37,7 +42,7 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
   protected logger: ReturnType<typeof getLogger>;
   protected whiteList: WhiteListInfo = { list: {} };
   /** 要缓存到 cacheFilePath 的信息 */
-  protected cacheInfo: LintCacheInfo = { list: {} };
+  protected cacheInfo: LintCacheInfo<I> = { list: {} };
 
   /** start 之前调用。返回 true 才会继续执行 */
   protected abstract beforeStart(fileList?: string[]): boolean | string | Promise<boolean | string>;
@@ -68,6 +73,7 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
     if (this.config.checkOnInit) this.start();
   }
   protected init(): void {
+    this.cacheInfo = { list: {} };
     const whiteListFilePath = this.config.whiteListFilePath;
     if (existsSync(whiteListFilePath) && !this.config.toWhiteList && !this.config.ignoreWhiteList) {
       const list = JSON.parse(readFileSync(whiteListFilePath, 'utf8'));
@@ -148,15 +154,15 @@ export abstract class LintBase<C extends CommConfig & Record<string, any>, R ext
     return this.commitId;
   }
   protected getCacheInfo() {
-    let cacheInfo: LintCacheInfo;
-    if (existsSync(this.cacheFilePath)) {
+    let cacheInfo: LintCacheInfo<I> = { list: {} };
+    if (this.config.cache && existsSync(this.cacheFilePath)) {
       try {
-        cacheInfo = readJsonFileSync(this.cacheFilePath);
-        if (!cacheInfo.list || (cacheInfo.version && cacheInfo.version !== FlhPkgInfo.version)) {
+        const info = readJsonFileSync<LintCacheInfo<I>>(this.cacheFilePath);
+        if (!info.list || (info.version && info.version !== FlhPkgInfo.version)) {
           unlinkSync(this.cacheFilePath);
-          cacheInfo = null;
         } else {
           this.logger.debug('load cache from', this.cacheFilePath);
+          cacheInfo = info;
         }
       } catch (error) {
         this.logger.error(error);

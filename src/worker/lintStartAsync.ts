@@ -6,7 +6,7 @@ import type {
   JiraCheckConfig,
   PrettierCheckConfig,
   CommConfig,
-} from '../types.js';
+} from '../types';
 
 export async function lintStartAsync(type: ILintTypes, config: CommConfig, isInWorker = true, done: (d: unknown) => void) {
   if (isInWorker) {
