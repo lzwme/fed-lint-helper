@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.3.0](https://github.com/lzwme/fed-lint-helper/compare/v2.2.0...v2.3.0) (2023-02-07)
+
+
+### Features
+
+* jira pipeline 新增 verify 参数，支持自定义验证规则；调整 types 类型定义的目录结构 ([54f73d0](https://github.com/lzwme/fed-lint-helper/commit/54f73d0a7c95ba46379c7bf17aae7985be7ada00))
+
+
+### Bug Fixes
+
+* 修复 变更build输出目录路径后 init config 失效的问题 ([372a42e](https://github.com/lzwme/fed-lint-helper/commit/372a42ed7f98239f1eb8db90624f85e5741733ee))
+* 修复模糊删除多个文件时，force 为 false 只会确认一次的问题 ([9216d39](https://github.com/lzwme/fed-lint-helper/commit/9216d390135fab76dfff76a28ac56ef0afb43f7f))
+* 修复指定 onlyStaged 参数，当获取列表为空时会识别为全量校验的问题 ([19821b4](https://github.com/lzwme/fed-lint-helper/commit/19821b4b368f48d7ba5bc3809b64690f2f2d05e0))
+
 ## [2.2.0](https://github.com/lzwme/fed-lint-helper/compare/v2.1.7...v2.2.0) (2023-01-18)
 
 
