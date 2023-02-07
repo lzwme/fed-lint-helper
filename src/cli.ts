@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: lzw
- * @LastEditTime: 2023-01-18 21:11:10
+ * @LastEditTime: 2023-02-07 16:25:49
  * @Description: cli 工具
  */
 import { resolve } from 'node:path';
@@ -102,6 +102,8 @@ program
     const config: FlhConfig = {
       exitOnError: options.exitOnError ?? true,
       checkOnInit: false,
+      onlyStaged: options.onlyStaged,
+      onlyChanges: options.onlyChanges,
       silent: !options.debug && options.silent,
       printDetail: options.printDetail ?? true,
       tscheck: {},
@@ -140,7 +142,7 @@ program
     }
 
     logger.debug(options, baseConfig);
-    if (options.onlyChanges) logger.debug('changeFiles:', changeFiles);
+    if (changeFiles) logger.debug('changeFiles:', changeFiles);
 
     for (const type of LintTypes) {
       if (options[type]) {

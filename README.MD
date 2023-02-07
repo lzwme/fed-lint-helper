@@ -89,8 +89,8 @@ flh notify "任务执行失败！@all" --wx-work <web hook key1> <web hook key2>
 npm exec flh --commitlint
 
 # .husky/pre-commit
-npm exec flh -- --eslint --tscheck --jest --only-changes
-npm exec flh -- --prettier --only-changes --fix
+npm exec flh -- --eslint --tscheck --jest --only-staged
+npm exec flh -- --prettier --only-staged --fix
 # git add --update
 ```
 
