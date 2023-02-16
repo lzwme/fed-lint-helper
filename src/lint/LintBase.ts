@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2023-02-07 15:39:13
+ * @LastEditTime: 2023-02-16 14:52:33
  * @Description:  jest check
  */
 
@@ -172,7 +172,7 @@ export abstract class LintBase<
   }
   protected saveCache(filepath: string, info: unknown, isReset = false) {
     const baseConfig = getConfig();
-    const isWhiteList = filepath !== this.config.whiteListFilePath;
+    const isWhiteList = filepath === this.config.whiteListFilePath;
 
     // 忽略白名单，不写入文件
     if (isWhiteList && this.config.ignoreWhiteList) return;
