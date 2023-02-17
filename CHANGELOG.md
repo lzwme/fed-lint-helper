@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.3.1](https://github.com/lzwme/fed-lint-helper/compare/v2.3.0...v2.3.1) (2023-02-17)
+
+
+### Bug Fixes
+
+* 修复 saveCache 识别是否为白名单文件逻辑错误的问题 ([fd2010e](https://github.com/lzwme/fed-lint-helper/commit/fd2010e3a93264e95abdaf614ca1fc2423d980ff))
+
 ## [2.3.0](https://github.com/lzwme/fed-lint-helper/compare/v2.2.0...v2.3.0) (2023-02-07)
 
 
