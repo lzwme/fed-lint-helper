@@ -75,6 +75,7 @@ export const config: FlhConfig = {
     issuePrefix: [],
     projectName: 'fed-lint-helper',
     pipeline: {
+      mustRepairTag: '[必须修复]',
       requestParams: { maxResults: 100 },
     },
     detectSubPackages: false,

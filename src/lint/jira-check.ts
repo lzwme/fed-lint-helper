@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: lzw
- * @LastEditTime: 2023-02-07 14:03:19
+ * @LastEditTime: 2023-02-16 18:02:11
  * @Description:  Jira check
  */
 
@@ -11,7 +11,7 @@ import { existsSync, writeFileSync, readFileSync, statSync } from 'node:fs';
 import type { IncomingHttpHeaders } from 'node:http';
 import { homedir } from 'node:os';
 import { magenta, magentaBright, cyanBright, yellowBright, redBright, green, greenBright, cyan } from 'console-log-colors';
-import { assign, execSync, getGitLog, getHeadBranch, readJsonFileSync, Request } from '@lzwme/fe-utils';
+import { assign, dateFormat, execSync, getGitLog, getHeadBranch, readJsonFileSync, Request } from '@lzwme/fe-utils';
 import { getLogger, checkUserEmial } from '../utils/index.js';
 import { getConfig } from '../config.js';
 import type { AnyObject } from '../types';
@@ -129,7 +129,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
     const { config, stats, logger } = this;
     const sprintVersion = `${getHeadBranch()}`.split('_')[0];
     const projects = (config.issuePrefix as string[]).map(d => d.replace(/-$/, '')).join(',');
-    const query = `comment ~ "必须修复"${
+    const query = `comment ~ "gitlab"${
       config.projectName ? ` AND comment ~ "${config.projectName}"` : ''
     } AND status in ("新建(New)", "处理中(Inprocess)", "测试验收(Test Verification)", "调试与审查(Code Review)", "关闭(Closed)") ORDER BY due ASC, priority DESC, created ASC`;
     const url = `${config.jiraHome}/rest/api/2/search?`; // jql=${encodeURIComponent(query)}&maxResults=100&fields=comment,assignee`;
@@ -142,20 +142,20 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
       config.pipeline.requestParams
     );
 
-    p.jql = `project IN (${projects}) AND fixVersion = "${sprintVersion}" AND ${p.jql}`;
+    p.jql = `project IN (${projects}) AND fixVersion = "${sprintVersion}" AND ${p.jql}`.replace(/AND +AND/, 'AND');
     p.fields = [...new Set(['comment', 'assignee', 'fixVersions', ...p.fields])];
 
     type ReqType = { total: number; issues: JiraIssueItem[]; expand: string; maxResults: number } & JiraError;
     const { data: info } = await this.reqeust.post<ReqType>(url, p);
 
     logger.debug('url:', url, p, info);
+    logger.info('[检查信息]', p.jql);
     if (!info.issues) {
       logger.error(info.errorMessages || info);
       stats.failedFilesNum = -1;
       return false;
     }
 
-    logger.info('[检查信息]', p.jql);
     logger.info('[检查信息]', `提取的JIRA(${magentaBright(info.total)}):`, info.issues.map(item => item.key).join(', '));
     logger.info('-'.repeat(80));
 
@@ -201,13 +201,30 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
 
       const versionInfo = fields.fixVersions[0].description;
       /** 是否已封板 */
-      const isSeal = (versionInfo && versionInfo.includes('[已封版]')) || false;
+      const isSeal = versionInfo?.includes('[已封版]') || false;
       // 没封板不做检查
       if (!isSeal) continue;
 
+      /** 封板开始时间 */
+      const sealTimeStr = versionInfo.match(/[\d- ]{8,}/)?.[0] || '';
+      const sealTime = sealTimeStr ? new Date(dateFormat('yyyy-MM-ddThh:mm:ss.S', sealTimeStr)) : new Date();
       // 查找必须修复的标记
-      const mustRepairTagIndex = fields.comment.comments.findIndex(comment => comment.body.includes('[必须修复]'));
-      if (mustRepairTagIndex === -1) continue;
+      const mustRepairTagIndex = fields.comment.comments.findIndex(comment => comment.body.includes(config.pipeline.mustRepairTag));
+      const commitAfterSeal =
+        sealTimeStr &&
+        fields.comment.comments.find(comment => {
+          return comment.author.name === 'gitlab' && !comment.body.includes('/merge_requests/') && new Date(comment.created) > sealTime;
+        });
+
+      if (mustRepairTagIndex === -1) {
+        if (commitAfterSeal) {
+          const commiter = commitAfterSeal.body.split('|')[0].slice(1);
+          errmsg = `[${commiter}]的代码在封板之后提交，需相关负责人审阅并添加 ${cyanBright(config.pipeline.mustRepairTag)} 标记！`;
+          printErrorInfo(errmsg, item);
+        }
+
+        continue;
+      }
 
       if (config.debug) {
         const mustRepair = fields.comment.comments[mustRepairTagIndex];
@@ -406,7 +423,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
           logger.info(magentaBright(versionName), yellowBright('已经封版'));
           // 查找由产品指派给当前用户的jira，备注了 [必须修复] 文案提交
           const comment = info.fields.comment.comments.find(comment => {
-            return comment.body.includes('[必须修复]') && config.sealedCommentAuthors.includes(comment.author.name);
+            return comment.body.includes(config.pipeline.mustRepairTag) && config.sealedCommentAuthors.includes(comment.author.name);
           });
 
           if (!comment) {

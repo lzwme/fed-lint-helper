@@ -87,6 +87,8 @@ export interface JiraCheckConfig extends CommConfig {
   headers?: IncomingHttpHeaders;
   /** CI pipeline 阶段执行的批量检查相关配置 */
   pipeline?: {
+    /** 必须修复的标记。默认为 `[必须修复]` */
+    mustRepairTag?: string;
     /** pipeline 批量获取 jira issues 的请求参数 */
     requestParams: {
       jql?: string;
