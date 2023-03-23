@@ -13,7 +13,6 @@ module.exports = {
   cache: !isMR,
   eslint: {
     fix: false,
-    printDetialOnSuccessed: !isCI,
     // eslintOptions: {
     //   extensions: ['ts', 'tsx'],
     //   overrideConfig: {},
