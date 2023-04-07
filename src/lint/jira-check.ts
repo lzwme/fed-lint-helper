@@ -59,7 +59,8 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
     const jiraPath = this.getJiraCfgPath(true);
 
     if (jiraPath) {
-      const jiraConfig = jiraPath.endsWith('.json') ? readJsonFileSync<JiraReqConfig>(jiraPath) : await import(jiraPath);
+      let jiraConfig = jiraPath.endsWith('.json') ? readJsonFileSync<JiraReqConfig>(jiraPath) : await import(jiraPath);
+      if (typeof jiraConfig === 'function') jiraConfig = await jiraConfig();
       if (jiraConfig.default) Object.assign(jiraConfig, jiraConfig.default);
       if (jiraConfig.cookie) headers.cookie = jiraConfig.cookie;
       if (jiraConfig.JSESSIONID && !headers.cookie.includes('JSESSIONID=')) {
