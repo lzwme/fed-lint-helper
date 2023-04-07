@@ -30,6 +30,11 @@
 - `jira` 自定义关联 jira 的检测逻辑（TODO: 方案说明）
 - more...
 
+
+![](./assets/img/flh.png)
+
+<p style="text-align: center">方案流程图</p>
+
 ## 安装(Install)
 
 ```bash

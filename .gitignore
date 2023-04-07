@@ -6,7 +6,6 @@ npm-debug.log
 /dist/
 /esm
 /cjs
-/docs
 /config
 tmp
 coverage
