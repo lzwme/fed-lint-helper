@@ -362,6 +362,7 @@ if (existsSync(pkgFile)) {
         },
       ],
       'unicorn/prevent-abbreviations': 'off',
+      'unicorn/prefer-string-replace-all': 'off',
     });
   }
 }

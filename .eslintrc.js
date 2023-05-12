@@ -29,5 +29,6 @@ module.exports = {
         },
       },
     ],
+    'unicorn/prefer-string-replace-all': 'off',
   },
 };
