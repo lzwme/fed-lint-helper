@@ -152,7 +152,11 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
       const prettier = await import('prettier');
       const options = await this.getOptions(fileList);
       const baseConfig = getConfig();
-      const results = fileList.map((filepath, index) => {
+      const results: { filepath: string; passed: boolean; fixed: boolean }[] = [];
+      let index = 0;
+      for (const filepath of fileList) {
+        index++;
+
         const item = { filepath, passed: true, fixed: false };
         const rawContent = readFileSync(filepath, 'utf8');
 
@@ -161,7 +165,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
 
         try {
           if (baseConfig.fix) {
-            const fixedcontent = prettier.format(rawContent, options);
+            const fixedcontent = await prettier.format(rawContent, options);
             item.fixed = rawContent !== fixedcontent;
             if (item.fixed) {
               writeFileSync(filepath, fixedcontent, 'utf8');
@@ -169,7 +173,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
               passedFiles[fixToshortPath(filepath, config.rootDir)] = { md5: md5(filepath, true), updateTime: stats.startTime };
             }
           } else {
-            item.passed = prettier.check(rawContent, options);
+            item.passed = await prettier.check(rawContent, options);
           }
 
           const tipPrefix = item.fixed ? greenBright(`Fixed`) : item.passed ? green('PASS') : red('Failed');
@@ -179,8 +183,9 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
           logger.error(error);
           item.passed = false;
         }
-        return item;
-      });
+
+        results.push(item);
+      }
 
       logger.log();
       for (const d of results) {
