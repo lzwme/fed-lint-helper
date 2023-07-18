@@ -349,15 +349,18 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
         const issueTypeList = await this.getIssueType();
         /** 禁止提交的类型 */
         const noAllowIssueType: number[] = [];
-        const issueTypeToDesc = issueTypeList.reduce((object, item) => {
-          object[item.id] = item.name.replace(/[^A-Za-z]/g, '').toLowerCase();
-          if (object[item.id].includes('subtask')) object[item.id] = 'feature';
-          else if (object[item.id].includes('bug')) object[item.id] = 'bugfix';
+        const issueTypeToDesc = issueTypeList.reduce(
+          (object, item) => {
+            object[item.id] = item.name.replace(/[^A-Za-z]/g, '').toLowerCase();
+            if (object[item.id].includes('subtask')) object[item.id] = 'feature';
+            else if (object[item.id].includes('bug')) object[item.id] = 'bugfix';
 
-          // 非 bug 的主任务，不允许提交
-          if (!item.subtask && object[item.id].includes('bug')) noAllowIssueType.push(item.id);
-          return object;
-        }, {} as Record<number, string>);
+            // 非 bug 的主任务，不允许提交
+            if (!item.subtask && object[item.id].includes('bug')) noAllowIssueType.push(item.id);
+            return object;
+          },
+          {} as Record<number, string>
+        );
         const jiraID = jiraIDs[0];
         const { data: info } = await this.reqeust.get<JiraIssueItem & JiraError>(`${config.jiraHome}/rest/api/latest/issue/${jiraID}`);
 

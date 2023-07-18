@@ -50,10 +50,13 @@ export function commitMessageVerify(options?: CommitLintOptions) {
 
     if (options.allowTypes) {
       if (Array.isArray(options.allowTypes)) {
-        options.allowTypes = options.allowTypes.reduce((o, type) => {
-          o[type] = helpTips[type] || type;
-          return o;
-        }, {} as Record<string, string>);
+        options.allowTypes = options.allowTypes.reduce(
+          (o, type) => {
+            o[type] = helpTips[type] || type;
+            return o;
+          },
+          {} as Record<string, string>
+        );
       }
 
       helpTips = options.allowTypes;

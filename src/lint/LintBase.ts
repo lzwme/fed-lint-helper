@@ -32,7 +32,7 @@ export abstract class LintBase<
   C extends CommConfig & Record<string, any>,
   R extends LintResult = LintResult,
   // LintCacheInfo<I>
-  I = Record<string, unknown>
+  I = Record<string, unknown>,
 > {
   /** 统计信息 */
   protected stats = this.getInitStats() as R;
@@ -49,7 +49,10 @@ export abstract class LintBase<
   /** 执行检测 */
   protected abstract check(fileList?: string[]): Promise<R>;
 
-  constructor(protected tag: ILintTypes, protected config?: C) {
+  constructor(
+    protected tag: ILintTypes,
+    protected config?: C
+  ) {
     const baseConfig = getConfig({ [tag]: config || {} }, false);
     this.config = assign({ whiteListFilePath: `config/whitelist-${tag}.json` } as C, baseConfig[tag]);
     this.parseConfig(this.config);
