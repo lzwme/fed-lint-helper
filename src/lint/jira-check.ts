@@ -234,7 +234,11 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
 
       const comments: AnyObject[] = fields.comment.comments.slice(mustRepairTagIndex).reverse();
       /** 最新一次的 gitlab 提交信息 */
-      const gitlabComment = comments.find(item => item.author.name === 'gitlab' && !item.body.includes('/merge_requests/'));
+      const gitlabComment = comments.find(item => {
+        // 检测jira提交是否为当前项目，没配置项目名称的话默认为true
+        const isCurrentProject = config.projectName ? item.body.includes(`[a commit of ${config.projectName}|`) : true;
+        return item.author.name === 'gitlab' && isCurrentProject && !item.body.includes('/merge_requests/');
+      });
 
       if (!gitlabComment) {
         logger.debug('[检查信息]', `[${item.key}]未有代码提交`);
