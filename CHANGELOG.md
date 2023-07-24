@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.4.1](https://github.com/lzwme/fed-lint-helper/compare/v2.3.4...v2.4.1) (2023-07-24)
+
 ### [2.3.4](https://github.com/lzwme/fed-lint-helper/compare/v2.3.3...v2.3.4) (2023-07-18)
 
 ### [2.3.3](https://github.com/lzwme/fed-lint-helper/compare/v2.3.2...v2.3.3) (2023-07-18)
