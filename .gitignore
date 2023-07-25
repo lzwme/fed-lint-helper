@@ -20,3 +20,4 @@ eslintWhitelist.json
 tsCheckWhiteList.json
 .nyc_output
 .husky/post-commit
+.jira.json

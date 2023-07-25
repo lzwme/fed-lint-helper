@@ -98,6 +98,8 @@ export interface JiraCheckConfig extends CommConfig {
     };
     /** 自定义验证逻辑。返回 true 通过，返回 string(errmsg) 失败，其他值则执行继续内置验证逻辑 */
     verify?: (item: JiraIssueItem) => boolean | string;
+    /** 提交记录筛选的白名单 */
+    whiteProjectCommit?: string[];
   };
   /** 已封板后允许回复必须修复的人员列表 */
   sealedCommentAuthors?: string[];

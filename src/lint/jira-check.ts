@@ -235,9 +235,10 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
       const comments: AnyObject[] = fields.comment.comments.slice(mustRepairTagIndex).reverse();
       /** 最新一次的 gitlab 提交信息 */
       const gitlabComment = comments.find(item => {
-        // 检测jira提交是否为当前项目，没配置项目名称的话默认为true
-        const isCurrentProject = config.projectName ? item.body.includes(`[a commit of ${config.projectName}|`) : true;
-        return item.author.name === 'gitlab' && isCurrentProject && !item.body.includes('/merge_requests/');
+        const white = config.pipeline?.whiteProjectCommit;
+        // 检测jira提交是否为白名单项目，没配置的话默认为true，主要用于前端项目过滤后端项目的commit记录
+        const isInWhite = white?.length > 0 ? white.some(projectName => item.body.includes(`[a commit of ${projectName}|`)) : true;
+        return item.author.name === 'gitlab' && isInWhite && !item.body.includes('/merge_requests/');
       });
 
       if (!gitlabComment) {
