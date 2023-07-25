@@ -7,7 +7,7 @@ module.exports = {
     semi: true,
     singleQuote: true,
     trailingComma: 'es5',
-    editorconfig: true,
+    // editorconfig: true,
     // printWidth: 140, // use .editorconfig
     // tabWidth: 4,
     overrides: [{

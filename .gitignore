@@ -4,6 +4,7 @@ npm-debug.log
 /release/
 /debug/
 /dist/
+/docs
 /esm
 /cjs
 /config

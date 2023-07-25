@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.5.0](https://github.com/lzwme/fed-lint-helper/compare/v2.4.1...v2.5.0) (2023-07-25)
+
+
+### Features
+
+* **jira-check:** 新增whiteProjectCommit参数，支持前端项目pipeline检查跳过后端commit信息 ([0beced6](https://github.com/lzwme/fed-lint-helper/commit/0beced64d540db620ee4a14762a584bed99b35d8))
+
 ### [2.4.1](https://github.com/lzwme/fed-lint-helper/compare/v2.3.4...v2.4.1) (2023-07-24)
 
 ### [2.3.4](https://github.com/lzwme/fed-lint-helper/compare/v2.3.3...v2.3.4) (2023-07-18)

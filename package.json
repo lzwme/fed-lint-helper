@@ -1,7 +1,7 @@
 {
   "name": "@lzwme/fed-lint-helper",
   "description": "前端项目编码质量 lint 检测辅助工具。用于辅助大型长期研发的前端项目渐进式的迁移与改进编码规范约束。",
-  "version": "2.4.1",
+  "version": "2.5.0",
   "main": "cjs/index.js",
   "module": "esm/index.js",
   "types": "cjs/index.d.ts",
