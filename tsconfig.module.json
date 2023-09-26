@@ -5,7 +5,7 @@
     "emitDeclarationOnly": false,
     "outDir": "esm",
     "target": "ES2022",
-    "module": "NodeNext"
+    "module": "ESNext"
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules/**", "__test__", "src/**/*.spec.ts"]
