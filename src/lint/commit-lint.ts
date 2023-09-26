@@ -8,7 +8,7 @@ import { getLogger } from '../utils/get-logger.js';
 import type { CommitLintOptions } from '../types';
 import { checkUserEmial } from '../utils/index.js';
 
-let helpTips: Record<string, string> = {
+const helpTipsDefault: Record<string, string> = {
   build: '构建相关',
   ci: '持续集成',
   docs: '文档/注释修改',
@@ -32,8 +32,18 @@ let helpTips: Record<string, string> = {
   workflow: '工作流改进',
 };
 
+export function angularCommitStyleLint(message: string, allowTypes: string[] = Object.keys(helpTipsDefault)) {
+  if (shouldIgnoreCommitLint(message)) return true;
+
+  const types = [...new Set([...allowTypes, 'Merge', 'UI'])].join('|');
+  return new RegExp(
+    `^(((\uD83C[\uDF00-\uDFFF])|(\uD83D[\uDC00-\uDE4F\uDE80-\uDEFF])|[\u2600-\u2B55]) )?(revert: )?(${types})((.+))?: .{1,100}`
+  ).test(message);
+}
+
 export function commitMessageVerify(options?: CommitLintOptions) {
   let isPass = true;
+  let helpTips = { ...helpTipsDefault };
   const logger = getLogger('[commitlint]', options.debug ? 'debug' : 'log');
 
   if (config.userEmailRule) {
@@ -64,9 +74,9 @@ export function commitMessageVerify(options?: CommitLintOptions) {
 
     if (options.customTypes) Object.assign(helpTips, options.customTypes);
 
-    if (options.help) return showHelp();
+    if (options.help) return showHelp(helpTips);
 
-    const message = readFileSync(options.msgPath, 'utf8').trim();
+    const message = options.message || readFileSync(options.msgPath, 'utf8').trim();
 
     if (!config.silent) logger.info('[msg] =>', message);
     logger.debug('options =>', options);
@@ -84,21 +94,10 @@ export function commitMessageVerify(options?: CommitLintOptions) {
       options.useAngularStyle = true;
     }
 
-    const types = [...new Set([...Object.keys(helpTips), 'Merge', 'UI'])].join('|');
-    const commitRE = new RegExp(
-      `^(((\uD83C[\uDF00-\uDFFF])|(\uD83D[\uDC00-\uDE4F\uDE80-\uDEFF])|[\u2600-\u2B55]) )?(revert: )?(${types})((.+))?: .{1,100}`
-    );
-
-    if (isPass && options.useAngularStyle && !commitRE.test(message)) {
+    if (isPass && options.useAngularStyle && !angularCommitStyleLint(message, Object.keys(helpTips))) {
       isPass = false;
-      logger.error(
-        [
-          // color.red(`Invalid commit message format.\n`),
-          // color.red(`  Proper commit message format is required for automated changelog generation. Examples:\n`),
-          color.red(`提交日志不符合规范。\n`),
-        ].join('\n')
-      );
-      showHelp();
+      logger.error(color.red(`提交日志不符合规范。\n`));
+      showHelp(helpTips);
     }
   }
 
@@ -110,7 +109,7 @@ export function commitMessageVerify(options?: CommitLintOptions) {
 
 export function shouldIgnoreCommitLint(msg: string) {
   /**
-   * {@link https://github.com/conventional-changelog/commitlint/blob/master/%40commitlint/is-ignored/src/defaults.ts|忽略规则参考}
+   * {@see https://github.com/conventional-changelog/commitlint/blob/master/%40commitlint/is-ignored/src/defaults.ts | 忽略规则参考}
    */
   const ignoredCommitList = [
     /^((Merge pull request)|(Merge (.*?) into (.*?)|(Merge branch (.*?)))(?:\r?\n)*$)/m,
@@ -124,7 +123,7 @@ export function shouldIgnoreCommitLint(msg: string) {
   return ignoredCommitList.some(r => r.test(msg));
 }
 
-function showHelp() {
+function showHelp(helpTips = helpTipsDefault) {
   /* eslint-disable no-console */
   console.log(
     [

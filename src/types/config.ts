@@ -113,7 +113,10 @@ export interface JestCheckConfig extends CommConfig {
 }
 
 export interface CommitLintOptions extends CommConfig {
+  /** 默认为 './.git/COMMIT_EDITMSG' */
   msgPath?: string;
+  /** 验证的信息。默认从 msgPath 文件中读取 */
+  message?: string;
   /** 是否使用 Angular commit 风格验证。当自定义了 verify 时允许设置为 false */
   useAngularStyle?: boolean;
   /** 允许的 type 类型与描述。默认使用内置定义 */

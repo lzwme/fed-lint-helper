@@ -141,7 +141,7 @@ program
       changeFiles = changeFiles.filter(d => existsSync(resolve(baseConfig.rootDir, d)));
     }
 
-    logger.debug(options, baseConfig);
+    logger.debug('argv:', options, '\nflhConfig:', baseConfig);
     if (changeFiles) logger.debug('changeFiles:', changeFiles);
 
     for (const type of LintTypes) {
