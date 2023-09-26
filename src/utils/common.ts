@@ -1,7 +1,7 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { color } from 'console-log-colors';
-import { execSync, formatTimeCost } from '@lzwme/fe-utils';
+import { execSync, formatTimeCost, getGitLog } from '@lzwme/fe-utils';
 import { formatByteSize } from '@lzwme/fe-utils/cjs/common/helper';
 import micromatch from 'micromatch';
 import { getLogger } from './get-logger.js';
@@ -102,4 +102,30 @@ export function getGitStaged(cwd = process.cwd()) {
   }
 
   return result.stdout.split('\u0000').filter(Boolean);
+}
+
+/**
+ * 获取 commit message 信息
+ * @param commitEdit 指定 git commit msg 的获取方式。可以是：COMMIT_EDITMSG 文件路径、commitId、数字(1-99，表示取最近N条日志全部验证)
+ * @param rootDir 当前工作目录
+ * @returns
+ */
+export function getCommitMsg(commitEdit: string, rootDir = process.cwd()) {
+  if (!commitEdit) commitEdit = process.env.GIT_PARAMS || process.env.COMMIT_EDITMSG || './.git/COMMIT_EDITMSG';
+  const gitPath = resolve(rootDir, commitEdit);
+  const result = { gitPath: '', commitMessage: [] as string[] };
+
+  if (existsSync(gitPath) && statSync(gitPath).isFile) {
+    Object.assign(result, { gitPath, commitMessage: [readFileSync(gitPath, 'utf8').trim()] });
+  } else if (/^\d+$/.test(commitEdit) && +commitEdit) {
+    // 读取近 N 条提交日志
+    result.commitMessage = getGitLog(+commitEdit, rootDir)
+      .map(d => d.s)
+      .reverse();
+  } else {
+    const msg = execSync(`git show --pretty="%s" -s ${commitEdit}`).stdout;
+    if (msg) result.commitMessage.push(msg);
+  }
+
+  return result;
 }

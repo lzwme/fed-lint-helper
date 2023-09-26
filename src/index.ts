@@ -1,6 +1,5 @@
 export * from './config.js';
 export * from './init/index.js';
-// export * from './lib.js';
 export * from './lint/commit-lint.js';
 export * from './lint/eslint-check.js';
 export * from './lint/jest-check.js';

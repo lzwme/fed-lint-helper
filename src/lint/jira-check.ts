@@ -6,13 +6,13 @@
  * @Description:  Jira check
  */
 
-import { resolve, join } from 'node:path';
-import { existsSync, writeFileSync, readFileSync, statSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { existsSync, writeFileSync, readFileSync } from 'node:fs';
 import type { IncomingHttpHeaders } from 'node:http';
 import { homedir } from 'node:os';
 import { magenta, magentaBright, cyanBright, yellowBright, redBright, green, greenBright, cyan } from 'console-log-colors';
-import { assign, dateFormat, execSync, getGitLog, getHeadBranch, readJsonFileSync, Request } from '@lzwme/fe-utils';
-import { getLogger, checkUserEmial } from '../utils/index.js';
+import { assign, dateFormat, getHeadBranch, readJsonFileSync, Request } from '@lzwme/fe-utils';
+import { getLogger, checkUserEmial, getCommitMsg } from '../utils/index.js';
 import { getConfig } from '../config.js';
 import type { AnyObject } from '../types';
 import type { JiraCheckConfig, JiraCheckResult, JiraError, JiraReqConfig, JiraIssueItem } from '../types/jira.js';
@@ -271,23 +271,6 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
 
     return stats.failedFilesNum === 0;
   }
-  private getCommitMsg(commitEdit: string, rootDir: string) {
-    if (!commitEdit) commitEdit = './.git/COMMIT_EDITMSG';
-    const gitPath = join(rootDir, commitEdit);
-    const result = { gitPath: '', commitMessage: [] as string[] };
-
-    if (existsSync(gitPath) && statSync(gitPath).isFile) {
-      Object.assign(result, { gitPath, commitMessage: [readFileSync(gitPath, 'utf8').trim()] });
-    } else if (/^\d+$/.test(commitEdit) && +commitEdit) {
-      // 读取近 N 条提交日志
-      result.commitMessage = getGitLog(+commitEdit, rootDir).map(d => d.s);
-    } else {
-      const msg = execSync(`git show --pretty="%s" -s ${commitEdit}`).stdout;
-      if (msg) result.commitMessage.push(msg);
-    }
-
-    return result;
-  }
   /** git hooks commit-msg 检查 */
   private async commitMsgCheck(): Promise<boolean> {
     const baseConfig = getConfig();
@@ -307,7 +290,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
       return false;
     }
 
-    const { commitMessage, gitPath } = this.getCommitMsg(config.commitEdit, config.rootDir);
+    const { commitMessage, gitPath } = getCommitMsg(config.commitEdit, config.rootDir);
     if (commitMessage.length === 0) {
       logger.error('获取 commit msg 提交信息失败！');
       return false;

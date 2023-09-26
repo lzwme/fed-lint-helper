@@ -1,12 +1,11 @@
 // @see https://github.com/umijs/umi-next/blob/master/scripts/verifyCommit.ts
 
-import { readFileSync } from 'node:fs';
 import { assign } from '@lzwme/fe-utils';
 import { color } from 'console-log-colors';
 import { config } from '../config.js';
 import { getLogger } from '../utils/get-logger.js';
 import type { CommitLintOptions } from '../types';
-import { checkUserEmial } from '../utils/index.js';
+import { checkUserEmial, getCommitMsg } from '../utils/index.js';
 
 const helpTipsDefault: Record<string, string> = {
   build: '构建相关',
@@ -41,7 +40,7 @@ export function angularCommitStyleLint(message: string, allowTypes: string[] = O
   ).test(message);
 }
 
-export function commitMessageVerify(options?: CommitLintOptions) {
+export function commitMessageVerify(options?: CommitLintOptions): boolean | void {
   let isPass = true;
   let helpTips = { ...helpTipsDefault };
   const logger = getLogger('[commitlint]', options.debug ? 'debug' : 'log');
@@ -56,7 +55,6 @@ export function commitMessageVerify(options?: CommitLintOptions) {
 
   if (isPass) {
     options = assign({ exitOnError: true, useAngularStyle: true } as CommitLintOptions, config.commitlint, options);
-    if (!options.msgPath) options.msgPath = process.env.GIT_PARAMS || process.env.COMMIT_EDITMSG || './.git/COMMIT_EDITMSG';
 
     if (options.allowTypes) {
       if (Array.isArray(options.allowTypes)) {
@@ -76,9 +74,13 @@ export function commitMessageVerify(options?: CommitLintOptions) {
 
     if (options.help) return showHelp(helpTips);
 
-    const message = options.message || readFileSync(options.msgPath, 'utf8').trim();
+    const message = options.message || getCommitMsg(options.msgPath, config.rootDir).commitMessage;
 
-    if (!config.silent) logger.info('[msg] =>', message);
+    if (Array.isArray(message)) {
+      return message.every(m => commitMessageVerify({ ...options, message: m }));
+    }
+
+    if (!config.silent) logger.info('[msg] =>', color.green(message));
     logger.debug('options =>', options);
 
     if (options.verify) {
