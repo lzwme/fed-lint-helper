@@ -1,8 +1,8 @@
 /*
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
- * @LastEditors: lzw
- * @LastEditTime: 2023-02-07 16:25:49
+ * @LastEditors: renxia
+ * @LastEditTime: 2023-10-25 15:11:43
  * @Description: cli 工具
  */
 import { resolve } from 'node:path';
@@ -180,6 +180,7 @@ program
   .description('[utils]删除指定的文件或目录， 跨平台的 rm 命令简化版')
   .option('-s, --silent', '是否静默执行', false)
   .option('-f, --force', '是否强制执行', false)
+  .option('-O, --only-empty', '仅删除空目录', false)
   .option('--show-size', '打印日志时，是否打印文件大小', false)
   .option('--dry-run', '是否仅测试执行，不真实删除文件', false)
   .action((list: string[], options) => {
