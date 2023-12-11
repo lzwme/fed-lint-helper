@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: renxia
- * @LastEditTime: 2023-10-25 15:11:43
+ * @LastEditTime: 2023-12-11 17:00:59
  * @Description: cli 工具
  */
 import { resolve } from 'node:path';
@@ -134,8 +134,8 @@ program
     let changeFiles: string[] = options.onlyStaged
       ? getGitStaged(baseConfig.rootDir)
       : options.onlyChanges
-      ? getHeadDiffFileList(0, baseConfig.rootDir)
-      : null;
+        ? getHeadDiffFileList(0, baseConfig.rootDir)
+        : null;
 
     if (changeFiles) {
       changeFiles = changeFiles.filter(d => existsSync(resolve(baseConfig.rootDir, d)));

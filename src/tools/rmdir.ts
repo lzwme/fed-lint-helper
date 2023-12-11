@@ -97,7 +97,7 @@ export async function rmEmptyDir(srcs: string[], dryRun = false) {
 
     for (const dir of dirs) {
       const list = await promises.readdir(dir);
-      if (!list.length) {
+      if (list.length === 0) {
         logger.debug(`${dryRun ? `[dryRun]` : ''}删除空目录：`, dir);
         if (!dryRun) await promises.rmdir(dir);
         total++;
