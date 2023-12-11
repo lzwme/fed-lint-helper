@@ -1,8 +1,8 @@
 /*
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
- * @LastEditors: lzw
- * @LastEditTime: 2023-01-17 15:23:39
+ * @LastEditors: renxia
+ * @LastEditTime: 2023-12-11 16:44:46
  * @Description:  eslint check
  */
 
@@ -106,7 +106,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
     const eslint = new ESLint(this.getESLintOptions(lintList));
     const results = await eslint.lintFiles(lintList);
     let errorResults: ESLint.LintResult[] = [];
-    /** 不在旧文件白名单中的 warning 类结果 */
+    /** 不在旧文件白名单中的 error 类结果 */
     const newErrorReults: ESLint.LintResult[] = [];
     const waringReults: ESLint.LintResult[] = [];
     /** 不在旧文件白名单中的 warning 类结果 */

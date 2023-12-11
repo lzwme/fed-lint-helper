@@ -1,14 +1,14 @@
 /*
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
- * @LastEditors: lzw
- * @LastEditTime: 2023-02-16 14:52:33
+ * @LastEditors: renxia
+ * @LastEditTime: 2023-12-11 16:52:09
  * @Description:  jest check
  */
 
 import { existsSync, unlinkSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
-import { bold, cyan, red, redBright, greenBright } from 'console-log-colors';
+import { bold, cyan, red, redBright, greenBright, yellowBright } from 'console-log-colors';
 import {
   assign,
   createFilePathFilter,
@@ -307,10 +307,11 @@ export abstract class LintBase<
       logger.debug('result', stats);
       logger.info(cyan(`[${config.mode}]`), bold(stats.isPassed ? greenBright('Verification passed!') : redBright('Verification failed!')));
       if (stats.totalFilesNum) {
+        if (stats.warningCount) logger.info(cyan(` - ${padSpace('warningCount', 15, false)}:`), bold(yellowBright(stats.warningCount)));
         if (stats.errorCount) logger.info(cyan(` - ${padSpace('errorCount', 15, false)}:`), bold(redBright(stats.errorCount)));
-        if (stats.failedFilesNum) logger.info(red(` - ${padSpace('Failed', 15, false)}:`), bold(red(stats.failedFilesNum)));
-        if (stats.passedFilesNum) logger.info(cyan(` - ${padSpace('Passed', 15, false)}:`), bold(greenBright(stats.passedFilesNum)));
-        logger.info(cyan(` - ${padSpace('Total(Source)', 15, false)}:`), stats.totalFilesNum);
+        if (stats.failedFilesNum) logger.info(red(` - ${padSpace('Failed Files', 15, false)}:`), bold(red(stats.failedFilesNum)));
+        if (stats.passedFilesNum) logger.info(cyan(` - ${padSpace('Passed Files', 15, false)}:`), bold(greenBright(stats.passedFilesNum)));
+        logger.info(cyan(` - ${padSpace('Total Files', 15, false)}:`), stats.totalFilesNum);
       }
 
       for (const [filepath, info] of Object.entries(stats.cacheFiles)) {
