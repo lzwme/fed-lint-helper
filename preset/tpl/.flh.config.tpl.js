@@ -35,7 +35,7 @@ module.exports = {
   // },
   // pmcheck: 'pnpm',
   // userEmailRule: /@(lz|lzw)\.me$/,
-  // wxWorkKeys: isInGitlabCI ? ['xxx'] : [],
+  // wxWorkKeys: isInGitlabCI ? ['xxx'] : ['https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=84770248-xxxx-xxxx-xxxx-6b8686adxxxx'],
   // wxWorkMessageFormat: (type) => {
   //   const cn = require('child_process').execSync(`git log -1 --pretty="%cn"`, { encoding: 'utf8' }).trim();
   //   return `[gitlab-ci]${type}任务执行失败，请检查 @${cn}`;

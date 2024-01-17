@@ -22,7 +22,7 @@ function getCfgInfo() {
   > = {
     flh: {
       configFile: config.configPath,
-      tpl: 'flh.config.tpl.js',
+      tpl: '.flh.config.tpl.js',
     },
     eslint: {
       tpl: `.eslintrc.tpl.js`,
