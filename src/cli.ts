@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: renxia
- * @LastEditTime: 2024-01-18 11:46:29
+ * @LastEditTime: 2024-01-18 15:02:30
  * @Description: cli 工具
  */
 import { resolve } from 'node:path';
@@ -203,14 +203,14 @@ program
         process.exit(-1);
       } else {
         wxWorkNotify(message, options.wxWorkKeys, options.debug).then(list => {
-          console.log(
+          logger.info(
             list
               .map((d, i) => `${i + 1}. [${d.errcode}]${d.errcode === 200 ? green(d.errmsg) : red(d.errmsg || JSON.stringify(d))}`)
               .join('\n')
           );
         });
       }
-    } else console.log('请指定 wx-work-keys 参数');
+    } else logger.error('请指定 wx-work-keys 参数');
   });
 
 program

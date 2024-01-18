@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: renxia
- * @LastEditTime: 2024-01-18 11:24:11
+ * @LastEditTime: 2024-01-18 14:57:23
  * @Description:
  */
 
@@ -132,7 +132,10 @@ export function getConfig(options?: FlhConfig, useCache = true) {
         const d = require(configPath);
         assign(config, d);
       } catch {
-        import(configPath).then(d => assign(config, d));
+        // @see https://github.com/microsoft/TypeScript/issues/43329
+        // const _importDynamic = new Function('modulePath', 'return import(modulePath)');
+        // _importDynamic(configPath).then((d: any) => assign(config, d));
+        import(configPath).then(d => assign(config, d.default || d));
       }
     } else if (config.debug || (options && options.debug)) {
       logger.log(color.yellowBright(`配置文件不存在：${configPath}`));

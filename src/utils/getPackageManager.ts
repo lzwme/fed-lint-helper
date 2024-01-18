@@ -23,7 +23,7 @@ export async function tryGetPackageManager(pkg?: PackageJson): Promise<IPackageM
   let packageManager = getPackageManager(pkg);
 
   if (!packageManager) {
-    const enquirer = await import('enquirer');
+    const { default: enquirer } = await import('enquirer');
     const anwsers = await enquirer.prompt<{ pm: IPackageManager }>([
       {
         type: 'select',

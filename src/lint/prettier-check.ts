@@ -1,8 +1,8 @@
 /*
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
- * @LastEditors: lzw
- * @LastEditTime: 2023-02-07 15:26:47
+ * @LastEditors: renxia
+ * @LastEditTime: 2024-01-24 09:15:03
  * @Description:  prettier check
  */
 
@@ -45,7 +45,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
     this.cacheInfo = this.getCacheInfo();
   }
   protected async getOptions(_fileList: string[]) {
-    const prettier = await import('prettier');
+    const { default: prettier } = await import('prettier');
     const cfgFile = await prettier.resolveConfigFile();
     const cfg = cfgFile ? await prettier.resolveConfig(cfgFile, { editorconfig: true }) : {};
     const config = this.config;
@@ -149,7 +149,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
         stats.failedFiles = this.filesFilter(stats.failedFiles);
       }
     } else {
-      const prettier = await import('prettier');
+      const { default: prettier } = await import('prettier');
       const options = await this.getOptions(fileList);
       const baseConfig = getConfig();
       const results: { filepath: string; passed: boolean; fixed: boolean }[] = [];
@@ -179,7 +179,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
           const tipPrefix = item.fixed ? greenBright(`Fixed`) : item.passed ? green('PASS') : red('Failed');
           if (!config.silent && !baseConfig.ci) logger.logInline(` - [${tipPrefix}][${index}] ${filepath}`);
         } catch (error) {
-          logger.log();
+          console.log();
           logger.error(error);
           item.passed = false;
         }
@@ -187,7 +187,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
         results.push(item);
       }
 
-      logger.log();
+      console.log();
       for (const d of results) {
         const shortpath = fixToshortPath(d.filepath, config.rootDir);
 

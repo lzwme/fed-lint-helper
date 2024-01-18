@@ -1,8 +1,8 @@
 /*
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
- * @LastEditors: lzw
- * @LastEditTime: 2022-11-25 10:45:36
+ * @LastEditors: renxia
+ * @LastEditTime: 2024-01-18 14:57:47
  * @Description: typescript Diagnostics report
  */
 
@@ -68,7 +68,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
     const { config, stats, logger } = this;
     const total = sourceFiles.length;
     const passed = this.cacheInfo.list;
-    const TS = await import('typescript');
+    const { default: TS } = await import('typescript');
 
     logger.info();
     logger.info(bold(cyanBright('Checking in')), subDirection);
@@ -258,7 +258,7 @@ export class TsCheck extends LintBase<TsCheckConfig, TsCheckResult> {
   }
   public async check(fileList = this.config.fileList) {
     const { config, stats, logger } = this;
-    const TS = await import('typescript');
+    const { default: TS } = await import('typescript');
     const directionMap = {
       // 没有 tsconfig.json 独立配置文件的子目录文件，也将全部放到这里一起编译
       [config.rootDir]: fileList || [],
