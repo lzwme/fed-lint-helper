@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.5.2](https://github.com/lzwme/fed-lint-helper/compare/v2.5.1...v2.5.2) (2024-01-18)
+
+
+### Bug Fixes
+
+* 修正 init 命令找不到 flh tpl 的问题；update deps ([fc38574](https://github.com/lzwme/fed-lint-helper/commit/fc38574648b42b4fe7bf04632ca4ab15cfbe2abf))
+
 ### [2.5.1](https://github.com/lzwme/fed-lint-helper/compare/v2.5.0...v2.5.1) (2023-12-12)
 
 
