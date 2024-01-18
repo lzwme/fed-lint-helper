@@ -1,8 +1,8 @@
 /*
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
- * @LastEditors: renxia lzwy0820@qq.com
- * @LastEditTime: 2023-02-07 11:05:59
+ * @LastEditors: renxia
+ * @LastEditTime: 2024-01-18 11:24:11
  * @Description:
  */
 
@@ -154,6 +154,7 @@ export function getConfig(options?: FlhConfig, useCache = true) {
   // 公共通用配置
   mergeCommConfig(config);
 
+  if (!config.wxWorkKeys?.length && process.env.WX_WORK_KEYS) config.wxWorkKeys = process.env.WX_WORK_KEYS.split(',');
   config.wxWorkKeys = formatWxWorkKeys(config.wxWorkKeys);
 
   if (isEmptyObject(config.packages)) config.packages = getMenorepoPackages();

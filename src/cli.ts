@@ -2,15 +2,15 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: renxia
- * @LastEditTime: 2023-12-11 17:00:59
+ * @LastEditTime: 2024-01-18 11:46:29
  * @Description: cli 工具
  */
 import { resolve } from 'node:path';
 import { existsSync } from 'node:fs';
 import { Option, program } from 'commander';
-import { cyanBright, green, greenBright, yellowBright } from 'console-log-colors';
-import { getHeadDiffFileList, wxWorkNotify } from '@lzwme/fe-utils';
-import { type FlhConfig, type CommitLintOptions, LintTypes } from './types';
+import { cyanBright, green, greenBright, red, yellowBright } from 'console-log-colors';
+import { assign, getHeadDiffFileList, wxWorkNotify } from '@lzwme/fe-utils';
+import { type FlhConfig, type CommitLintOptions, LintTypes, AnyObject } from './types';
 import type { JiraCheckConfig } from './types/jira';
 import { formatWxWorkKeys, getGitStaged, getLogger } from './utils/index.js';
 import { commConfig, FlhPkgInfo, getConfig, mergeCommConfig } from './config.js';
@@ -193,19 +193,24 @@ program
   .description('[utils]发送消息通知（当前仅支持企业微信机器人通知）')
   .option('--wx-work-keys <key...>', '发送至企业微信机器人，需指定 webhook key 的值，可指定多个机器人')
   .action((message: string, options) => {
-    const programOptions = getProgramOptions();
-    logger.debug(message, options, programOptions);
+    options = getProgramOptions(options);
+    if (!options.wxWorkKeys && process.env.WX_WORK_KEYS) options.wxWorkKeys = process.env.WX_WORK_KEYS.split(',');
+    logger.debug(message, options);
     if (options.wxWorkKeys) {
       options.wxWorkKeys = formatWxWorkKeys(options.wxWorkKeys);
       if (options.wxWorkKeys.length === 0) {
         logger.log('企业微信机器人 webhook 格式不正确');
         process.exit(-1);
       } else {
-        wxWorkNotify(message, options.wxWorkKeys, programOptions.debug).then(list => {
-          if (list.some(d => d.errcode !== 200)) process.exit(-1);
+        wxWorkNotify(message, options.wxWorkKeys, options.debug).then(list => {
+          console.log(
+            list
+              .map((d, i) => `${i + 1}. [${d.errcode}]${d.errcode === 200 ? green(d.errmsg) : red(d.errmsg || JSON.stringify(d))}`)
+              .join('\n')
+          );
         });
       }
-    }
+    } else console.log('请指定 wx-work-keys 参数');
   });
 
 program
@@ -251,9 +256,10 @@ program
 
 program.parse(process.argv);
 
-function getProgramOptions() {
+function getProgramOptions(opts?: AnyObject) {
   const options = program.opts<POptions>();
 
+  if (opts) assign(options, opts);
   if (options.debug) logger.updateOptions({ levelType: 'debug' });
 
   return options;
