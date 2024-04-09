@@ -1,4 +1,4 @@
-const { assign } = require('@lzwme/fe-utils');
+// const { assign } = require('@lzwme/fe-utils');
 const { existsSync } = require('node:fs');
 const { resolve } = require('node:path');
 const antdBoolean = ['visible', 'confirmLoading', 'closable', 'centered', 'maskClosable', 'forceRender', 'destroyOnClose'];
@@ -9,7 +9,7 @@ const eslint = {
     commonjs: true,
     es6: true,
     node: true,
-    es2021: true,
+    es2022: true,
   },
   globals: {
     Atomics: 'readonly',
@@ -184,8 +184,8 @@ if (existsSync(pkgFile)) {
       pragma: 'React',
       version: 'detect',
     };
-    eslint.extends.push('plugin:react-hooks/recommended', 'plugin:jsx-a11y/recommended');
-    eslint.plugins.push('jsx-a11y', 'react');
+    eslint.extends.push('plugin:react-hooks/recommended');
+    eslint.plugins.push('react');
     eslint.overrides.push({
       // 3) Now we enable eslint-plugin-testing-library rules or preset only for matching files!
       files: ['**/__tests__/**/*.[jt]s?(x)', '**/?(*.)+(spec|test).[jt]s?(x)'],
@@ -241,8 +241,13 @@ if (existsSync(pkgFile)) {
       'react/jsx-boolean-value': 'error',
 
       'testing-library/no-node-access': 'off',
+    });
+  }
 
-      // ======  jsx-a11y =======
+  if (pkgDeps['eslint-plugin-jsx-a11y']) {
+    eslint.extends.push('plugin:jsx-a11y/recommended');
+    eslint.plugins.push('jsx-a11y');
+    Object.assign(eslint.rules, {
       'jsx-a11y/tabindex-no-positive': 'warn',
       'jsx-a11y/label-has-associated-control': 'warn',
       'jsx-a11y/no-autofocus': [
@@ -367,4 +372,5 @@ if (existsSync(pkgFile)) {
   }
 }
 
-module.exports = eslint;
+const { ESLint } = require('eslint');
+module.exports = +ESLint.version.split('.')[0] < 9 ? eslint : require('./eslint.v9.js');

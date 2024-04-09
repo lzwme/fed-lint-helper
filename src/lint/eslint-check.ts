@@ -2,12 +2,12 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: renxia
- * @LastEditTime: 2023-12-11 16:44:46
+ * @LastEditTime: 2024-04-09 17:37:56
  * @Description:  eslint check
  */
 
 import { bold, red, redBright, yellowBright, cyanBright } from 'console-log-colors';
-import type { ESLint } from 'eslint';
+import { ESLint } from 'eslint';
 import { existsSync, statSync } from 'node:fs';
 import { extname, resolve } from 'node:path';
 import { execSync, fixToshortPath, isGitRepo } from '@lzwme/fe-utils';
@@ -64,8 +64,9 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
    * 获取 ESLint Options
    * @see https://eslint.org/docs/developer-guide/nodejs-api#-new-eslintoptions
    */
-  private getESLintOptions(lintList: string[]) {
+  private getESLintOptions(lintList: string[], version: string) {
     const cfg = this.config;
+    const isV9 = +version.split('.')[0] >= 9;
     const option: ESLint.Options = {
       ...cfg.eslintOptions,
       // 存在不以 ts、tsx 结尾的路径、或路径中包含 *，则允许 glob 匹配
@@ -78,13 +79,17 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
     };
 
     ['.js', '.cjs', '.mjs', '', '.json'].some(d => {
-      const filepath = resolve(cfg.rootDir, `.eslintrc${d}`);
+      const filepath = resolve(cfg.rootDir, isV9 ? `eslint.config${d}` : `.eslintrc${d}`);
       if (existsSync(filepath)) {
         option.overrideConfigFile = filepath;
         return true;
       }
       return false;
     });
+
+    if (isV9) {
+      delete option.extensions;
+    }
 
     if (cfg.debug) cfg.silent = false;
     this.logger.debug('eslintOption:', option);
@@ -103,7 +108,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
     logger.debug('[options]:', config);
 
     const { ESLint } = await import('eslint');
-    const eslint = new ESLint(this.getESLintOptions(lintList));
+    const eslint = new ESLint(this.getESLintOptions(lintList, ESLint.version));
     const results = await eslint.lintFiles(lintList);
     let errorResults: ESLint.LintResult[] = [];
     /** 不在旧文件白名单中的 error 类结果 */
@@ -145,7 +150,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
             stats.rules[d.ruleId] = (stats.rules[d.ruleId] || 0) + 1;
             fileRules[filePath][d.ruleId] = (fileRules[filePath][d.ruleId] || 0) + 1;
           } else {
-            if (/ignore pattern/i.test(d.message)) return;
+            if (['ignore pattern', 'Unused eslint-disable'].some(keyword => String(d.message).includes(keyword))) return;
           }
         }
       }
