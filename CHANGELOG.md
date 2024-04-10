@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.6.0](https://github.com/lzwme/fed-lint-helper/compare/v2.5.2...v2.6.0) (2024-04-10)
+
+
+### Features
+
+* **eslint:** 适配支持 ESLint V9 版本 ([7534c56](https://github.com/lzwme/fed-lint-helper/commit/7534c56bae5f12dea6a65fb2ee3ef8f048fb6a59))
+
+
+### Bug Fixes
+
+* 修复 cjs 构建转义 import 动态导入为 require 的问题 ([96f3e73](https://github.com/lzwme/fed-lint-helper/commit/96f3e73e952028fa1caa1b0e5f0b25eb20266c8f))
+
 ### [2.5.2](https://github.com/lzwme/fed-lint-helper/compare/v2.5.1...v2.5.2) (2024-01-18)
 
 
