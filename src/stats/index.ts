@@ -259,8 +259,12 @@ export async function stats(options: IStatsOption) {
 
   if (options.json) {
     const jsonRes = JSON.stringify(result, null, 2);
-    if (options.jsonFile) writeFileSync(resolve(rootDir, options.jsonFile), jsonRes, 'utf8');
-    /* eslint-disable no-console */ else console.log(jsonRes);
+    if (options.jsonFile) {
+      writeFileSync(resolve(rootDir, options.jsonFile), jsonRes, 'utf8');
+    } else {
+      /* eslint-disable-next-line no-console */
+      console.log(jsonRes);
+    }
   }
 
   logger.info(greenBright(`success!`));

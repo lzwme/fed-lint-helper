@@ -1,8 +1,8 @@
 /*
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
- * @LastEditors: lzw
- * @LastEditTime: 2023-02-16 18:02:11
+ * @LastEditors: renxia
+ * @LastEditTime: 2024-04-10 10:55:59
  * @Description:  Jira check
  */
 
@@ -59,7 +59,8 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
     const jiraPath = this.getJiraCfgPath(true);
 
     if (jiraPath) {
-      let jiraConfig = jiraPath.endsWith('.json') ? readJsonFileSync<JiraReqConfig>(jiraPath) : await import(jiraPath);
+      type JCType = (JiraReqConfig & { default?: JiraReqConfig }) | (() => Promise<JiraReqConfig>);
+      let jiraConfig: JCType = jiraPath.endsWith('.json') ? readJsonFileSync<JiraReqConfig>(jiraPath) : await import(jiraPath);
       if (typeof jiraConfig === 'function') jiraConfig = await jiraConfig();
       if (jiraConfig.default) Object.assign(jiraConfig, jiraConfig.default);
       if (jiraConfig.cookie) headers.cookie = jiraConfig.cookie;

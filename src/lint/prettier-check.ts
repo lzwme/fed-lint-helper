@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: renxia
- * @LastEditTime: 2024-01-24 09:15:03
+ * @LastEditTime: 2024-04-10 10:47:51
  * @Description:  prettier check
  */
 
@@ -179,6 +179,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
           const tipPrefix = item.fixed ? greenBright(`Fixed`) : item.passed ? green('PASS') : red('Failed');
           if (!config.silent && !baseConfig.ci) logger.logInline(` - [${tipPrefix}][${index}] ${filepath}`);
         } catch (error) {
+          /* eslint-disable-next-line no-console */
           console.log();
           logger.error(error);
           item.passed = false;
@@ -187,6 +188,7 @@ export class PrettierCheck extends LintBase<PrettierCheckConfig, PrettierCheckRe
         results.push(item);
       }
 
+      /* eslint-disable-next-line no-console */
       console.log();
       for (const d of results) {
         const shortpath = fixToshortPath(d.filepath, config.rootDir);

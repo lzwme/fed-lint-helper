@@ -75,7 +75,6 @@ export async function rmdir(srcs: string[], { slient = false, force = false, dry
       }
     }
 
-    // eslint-disable-next-line unicorn/no-await-expression-member
     if (list.length > 0) result = (await concurrency(list, cpus().length)).map(d => d.result);
     total = result.filter(Boolean).length;
   }

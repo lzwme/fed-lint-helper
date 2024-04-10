@@ -13,7 +13,7 @@ module.exports = [
       languageOptions: {
         parserOptions: {
           tsconfigRootDir: path.resolve(__dirname),
-          project: './tsconfig.eslint.json',
+          project: path.resolve('./tsconfig.eslint.json'),
           projectFolderIgnoreList: ['**/node_modules/**', '**/dist/**'],
           warnOnUnsupportedTypeScriptVersion: false,
           ecmaFeatures: {
@@ -23,6 +23,9 @@ module.exports = [
           sourceType: 'module',
         },
       },
+      linterOptions: {
+        reportUnusedDisableDirectives: false,
+      },
       plugins: {
         prettier: require('eslint-plugin-prettier'),
         unicorn: require('eslint-plugin-unicorn'),
@@ -31,6 +34,7 @@ module.exports = [
       rules: {
         'prettier/prettier': 'warn',
         indent: ['off', 2],
+        'no-console': ['error', { allow: ['warn', 'error'] }],
         '@typescript-eslint/explicit-module-boundary-types': 'off',
         '@typescript-eslint/no-unused-vars': ['warn', { varsIgnorePattern: '^_', argsIgnorePattern: '^_', ignoreRestSiblings: true }],
         // TODO

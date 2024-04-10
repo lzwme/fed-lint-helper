@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: renxia
- * @LastEditTime: 2024-04-09 17:37:56
+ * @LastEditTime: 2024-04-10 10:51:34
  * @Description:  eslint check
  */
 
@@ -121,7 +121,6 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
     const fileRules: { [filepath: string]: Record<string, number> } = {};
     const fixedFileList = new Set<string>();
 
-    // eslint-disable-next-line unicorn/no-array-for-each
     results.forEach(result => {
       const filePath = fixToshortPath(result.filePath, config.rootDir);
 

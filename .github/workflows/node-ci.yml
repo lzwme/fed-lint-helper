@@ -24,9 +24,9 @@ jobs:
           - macos-latest
           - windows-latest
         node-version:
-          - 16
+          - 18
         include:
-          - node-version: 18
+          - node-version: 20
             os: ubuntu-latest
     name: Node ${{ matrix.node-version }} on ${{ matrix.os }}
     steps:
