@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.6.1](https://github.com/lzwme/fed-lint-helper/compare/v2.6.0...v2.6.1) (2024-06-05)
+
+
+### Bug Fixes
+
+* 配置文件支持 cjs、js、mjs 后缀类型，以解决 ESM 模块项目下加载配置文件异常的问题 ([fd4a667](https://github.com/lzwme/fed-lint-helper/commit/fd4a6670dda8d6c8977e7dde0ba43ee119bce56a))
+
 ## [2.6.0](https://github.com/lzwme/fed-lint-helper/compare/v2.5.2...v2.6.0) (2024-04-10)
 
 
