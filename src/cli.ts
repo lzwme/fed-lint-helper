@@ -62,7 +62,7 @@ program
   // .aliases(['flh'])
   .version(FlhPkgInfo.version, '-v, --version')
   .description(cyanBright(FlhPkgInfo.description))
-  .option('-c, --config-path <filepath>', `配置文件 ${yellowBright('.flh.config.js')} 的路径`)
+  .option('-c, --config-path <filepath>', `配置文件 ${yellowBright('.flh.config.cjs')} 的路径`)
   .option('--silent', `开启静默模式。`)
   .option('--debug', `开启调试模式。`)
   .option('--ci', `Whether to run task in continuous integration (CI) mode.`)

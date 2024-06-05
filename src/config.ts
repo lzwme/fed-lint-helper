@@ -2,12 +2,12 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: renxia
- * @LastEditTime: 2024-01-18 14:57:23
+ * @LastEditTime: 2024-06-05 14:34:26
  * @Description:
  */
 
 import { existsSync, mkdirSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { resolve, dirname, extname } from 'node:path';
 import { homedir } from 'node:os';
 import { env } from 'node:process';
 // import { fileURLToPath } from 'node:url';
@@ -38,7 +38,7 @@ export const commConfig: CommConfig = {
 
 export const config: FlhConfig = {
   ...commConfig,
-  configPath: '.flh.config.js',
+  configPath: '.flh.config.cjs',
   packages: {},
   ci: Boolean(env.CI || env.GITLAB_CI || env.JENKINS_HOME || env.FLH_CI),
   logValidityDays: 7,
@@ -125,8 +125,10 @@ export function getConfig(options?: FlhConfig, useCache = true) {
 
   // 配置文件只处理一次
   if (!isInited) {
-    const configPath = resolve(config.configPath);
-    if (existsSync(configPath)) {
+    const ext = extname(config.configPath);
+    const extList = ['.cjs', '.js', '.mjs', ext];
+    const configPath = extList.find(d => existsSync(resolve(config.configPath.replace(ext, d))));
+    if (configPath) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const d = require(configPath);

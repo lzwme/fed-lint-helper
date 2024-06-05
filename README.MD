@@ -30,7 +30,6 @@
 - `jira` 自定义关联 jira 的检测逻辑（TODO: 方案说明）
 - more...
 
-
 ![](./assets/img/flh.png)
 
 <p style="text-align: center">方案流程图</p>
@@ -53,7 +52,7 @@ npm i -D @lzwme/fed-lint-helper
 ```bash
 flh --help
 
-# 在当前目录下生成默认的配置文件 .flh.config.js
+# 在当前目录下生成默认的配置文件 .flh.config.cjs
 flh init --config
 
 # typescript check
@@ -110,19 +109,18 @@ import { TsCheck, ESLintCheck } from '@lzwme/fed-lint-helper';
 
 // typescript check
 const tsCheck = new TsCheck({
-    exitOnError: false,
-    src: ['src'],
-    // checkOnInit: false,
-    // debug: true,
-    // toWhiteList: true,
-    // cache: true,
-    // removeCache: false,
-    // tsConfigFileName: 'tsconfig.eslint.json',
-    // silent: false,
+  exitOnError: false,
+  src: ['src'],
+  // checkOnInit: false,
+  // debug: true,
+  // toWhiteList: true,
+  // cache: true,
+  // removeCache: false,
+  // tsConfigFileName: 'tsconfig.eslint.json',
+  // silent: false,
 });
 const res = await tsCheck.start();
 console.log(res);
-
 
 // eslint check
 const eslintCheck = new ESLintCheck({
@@ -176,7 +174,6 @@ pnpm dev
 `@lzwme/fed-lint-helper` is released under the MIT license.
 
 该插件由[志文工作室](https://lzw.me)开发和维护。
-
 
 [stars-badge]: https://img.shields.io/github/stars/lzwme/fed-lint-helper.svg
 [stars-url]: https://github.com/lzwme/fed-lint-helper/stargazers

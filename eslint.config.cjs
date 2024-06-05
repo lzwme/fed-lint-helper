@@ -1,9 +1,17 @@
+/*
+ * @Author: renxia
+ * @Date: 2024-04-10 10:10:45
+ * @LastEditors: renxia
+ * @LastEditTime: 2024-06-05 14:36:13
+ * @Description:
+ */
 // module.exports = [
 //   ...require('./preset/eslint'),
 // ];
 const path = require('path');
 const eslint = require('@eslint/js');
 const tseslint = require('typescript-eslint');
+const globals = require('globals');
 
 module.exports = [
   ...tseslint.config(
@@ -11,6 +19,9 @@ module.exports = [
     ...tseslint.configs.recommendedTypeChecked,
     {
       languageOptions: {
+        globals: {
+          ...globals.node,
+        },
         parserOptions: {
           tsconfigRootDir: path.resolve(__dirname),
           project: path.resolve('./tsconfig.eslint.json'),
