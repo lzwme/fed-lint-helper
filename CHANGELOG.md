@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.6.2](https://github.com/lzwme/fed-lint-helper/compare/v2.6.1...v2.6.2) (2024-06-14)
+
+
+### Bug Fixes
+
+* 修复自定义配置文件加载失败的问题 ([c0afe31](https://github.com/lzwme/fed-lint-helper/commit/c0afe314f98248503c40a429e9254bd3021c113e))
+
 ### [2.6.1](https://github.com/lzwme/fed-lint-helper/compare/v2.6.0...v2.6.1) (2024-06-05)
 
 
