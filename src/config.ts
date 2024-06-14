@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: renxia
- * @LastEditTime: 2024-06-05 14:34:26
+ * @LastEditTime: 2024-06-14 14:35:30
  * @Description:
  */
 
@@ -127,20 +127,28 @@ export function getConfig(options?: FlhConfig, useCache = true) {
   if (!isInited) {
     const ext = extname(config.configPath);
     const extList = ['.cjs', '.js', '.mjs', ext];
-    const configPath = extList.find(d => existsSync(resolve(config.configPath.replace(ext, d))));
-    if (configPath) {
+    extList.some(d => {
+      const f = resolve(config.configPath.replace(ext, d));
+      if (existsSync(f)) {
+        config.configPath = f;
+        return true;
+      }
+      return false;
+    });
+
+    if (existsSync(config.configPath)) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const d = require(configPath);
+        const d = require(config.configPath);
         assign(config, d);
       } catch {
         // @see https://github.com/microsoft/TypeScript/issues/43329
         // const _importDynamic = new Function('modulePath', 'return import(modulePath)');
         // _importDynamic(configPath).then((d: any) => assign(config, d));
-        import(configPath).then(d => assign(config, d.default || d));
+        import(config.configPath).then(d => assign(config, d.default || d));
       }
     } else if (config.debug || (options && options.debug)) {
-      logger.log(color.yellowBright(`配置文件不存在：${configPath}`));
+      logger.log(color.yellowBright(`配置文件不存在：${config.configPath}`));
     }
   }
 
