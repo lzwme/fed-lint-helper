@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: renxia
- * @LastEditTime: 2024-06-14 14:35:30
+ * @LastEditTime: 2024-10-23 15:57:19
  * @Description:
  */
 
@@ -56,6 +56,7 @@ export const config: FlhConfig = {
     warningTip: `[errors-必须修复；warnings-历史文件选择性处理(对于历史文件慎重修改 == 类问题)]`,
     mode: 'proc',
     eslintOptions: {
+      // @ts-ignore-next-line
       extensions: ['ts', 'tsx', 'js', 'jsx', 'cts', 'mts'],
       errorOnUnmatchedPattern: false,
     },
@@ -138,7 +139,7 @@ export function getConfig(options?: FlhConfig, useCache = true) {
 
     if (existsSync(config.configPath)) {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
         const d = require(config.configPath);
         assign(config, d);
       } catch {

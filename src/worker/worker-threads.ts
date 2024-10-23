@@ -1,8 +1,8 @@
 /*
  * @Author: lzw
  * @Date: 2021-08-25 10:12:21
- * @LastEditors: lzw
- * @LastEditTime: 2022-11-01 11:13:55
+ * @LastEditors: renxia
+ * @LastEditTime: 2024-10-23 15:17:21
  * @Description: worker_threads 实现在 worker 线程中执行
  *
  * - worker_threads 比 child_process 和 cluster 更为轻量级的并行性，而且 worker_threads 可有效地共享内存
@@ -27,7 +27,7 @@ export function createWorkerThreads<T, C = unknown>(
   onMessage?: (d: WorkerMessageBody<T>) => void
 ): Promise<T> {
   return new Promise((rs, reject) => {
-    if (!isMainThread) return reject(-2);
+    if (!isMainThread) return reject(new Error('[createWorkerThreads]worker thread can not create worker thread'));
     const _filename = resolve(flhSrcDir, './worker/worker-threads.js');
     const worker = new Worker(_filename, {
       workerData: handlerForCTOptions(options, 'send'),
@@ -47,7 +47,7 @@ export function createWorkerThreads<T, C = unknown>(
 
     worker.on('exit', code => {
       getLogger().debug(`[${options.type}] exit worker with code:`, code);
-      if (code !== 0) reject(code);
+      if (code !== 0) reject(new Error(`[createWorkerThreads][${options.type}] worker exit with code: ${code}`));
     });
   });
 }

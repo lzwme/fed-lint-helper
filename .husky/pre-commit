@@ -1,6 +1,3 @@
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
-
 node bin/flh.js --tscheck --eslint --jest --only-changes --fix
 node bin/flh.js --prettier --only-changes --fix
 git add --update

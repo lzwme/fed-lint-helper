@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: renxia
- * @LastEditTime: 2024-10-23 14:57:12
+ * @LastEditTime: 2024-10-23 15:41:46
  * @Description:  Jira check
  */
 
@@ -337,7 +337,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
         /** 智能匹配正则表达式，commit覆盖, JIRA号后需要输入至少一个中文、【|[、英文或者空格进行隔开 例子: JGCPS-1234测试提交123 或 [JGCPS-1234] 测试提交123 => JGCPS-1234 [ET][2.9.1][feature]测试提交123 */
         const smartRegWithMessage = new RegExp(`^\\[?${issuePrefix}\\d+\\]?\\s*([A-Za-z\\u4e00-\\u9fa5\\s【\\[]+.+)`);
         /**  智能匹配正则表达式，单纯匹配jira 例子: JGCPS-1234 或 [JGCPS-1234] => JGCPS-1234 [ET][2.9.1][feature]JIRA本身的标题 */
-        const smartRegWithJIRA = new RegExp(`^\\[?${issuePrefix}(\\d+)\\]?`, 'g');
+        const smartRegWithJIRA = new RegExp(`^\\[?${issuePrefix}(\\d+)\\]?$`, 'g');
         const issueTypeList = await this.getIssueType();
         /** 禁止提交的类型 */
         const noAllowIssueType: number[] = [];
@@ -398,7 +398,9 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
         smartCommit = commitMessage;
 
         // 如果匹配到commit中包含中文，则保留提交信息
-        if (smartRegWithMessage.test(commitMessage)) {
+        if (commitMessage.startsWith(`${jiraID} ${config.commitMsgPrefix}[${versionName}][${issueText}]`)) {
+          smartCommit = commitMessage;
+        } else if (smartRegWithMessage.test(commitMessage)) {
           // 如果用户需要手动填入commit信息
           const message = commitMessage.match(smartRegWithMessage)[1].trim();
           smartCommit = `${jiraID} ${config.commitMsgPrefix}[${versionName}][${issueText}] ${message}`;

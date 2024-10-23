@@ -1,8 +1,8 @@
 /*
  * @Author: lzw
  * @Date: 2021-08-25 10:12:21
- * @LastEditors: lzw
- * @LastEditTime: 2022-11-01 11:10:55
+ * @LastEditors: renxia
+ * @LastEditTime: 2024-10-23 15:59:26
  * @Description: 在 fork 子进程中执行 Check 任务
  */
 
@@ -44,7 +44,7 @@ export function createForkThread<T, C = unknown>(
     worker.on('error', error => logger.log(`[worker][${options.type}]err:`, error));
     worker.on('exit', code => {
       if (options.debug) logger.debug(`[worker][${options.type}]exit worker`, code);
-      if (code !== 0) reject(code);
+      if (code !== 0) reject(new Error(`[createForkThread][exit]: ${code}`));
     });
 
     if (options.debug) {

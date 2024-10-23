@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: renxia
- * @LastEditTime: 2024-04-10 10:51:34
+ * @LastEditTime: 2024-10-23 15:49:18
  * @Description:  eslint check
  */
 
@@ -56,6 +56,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
   /** 配置参数格式化 */
   public override parseConfig(config: ESLintCheckConfig) {
     config = super.parseConfig(config);
+    // @ts-ignore-next
     this.config.extensions = config.extensions || config.eslintOptions.extensions || ['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs'];
 
     return this.config;
@@ -87,7 +88,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
       return false;
     });
 
-    if (isV9) {
+    if (isV9 && 'extensions' in option) {
       delete option.extensions;
     }
 
