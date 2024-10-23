@@ -2,12 +2,12 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: renxia
- * @LastEditTime: 2024-10-23 15:57:19
+ * @LastEditTime: 2024-10-23 16:30:07
  * @Description:
  */
 
 import { existsSync, mkdirSync } from 'node:fs';
-import { resolve, dirname, extname } from 'node:path';
+import { resolve, dirname, extname, basename } from 'node:path';
 import { homedir } from 'node:os';
 import { env } from 'node:process';
 // import { fileURLToPath } from 'node:url';
@@ -70,7 +70,7 @@ export const config: FlhConfig = {
   jira: {
     mode: 'current',
     type: 'commit',
-    commitMsgPrefix: '[ET]',
+    commitMsgPrefix: '', // '[ET]'
     sealedCommentAuthors: [],
     jiraHome: '',
     issuePrefix: [],
@@ -171,10 +171,11 @@ export function getConfig(options?: FlhConfig, useCache = true) {
   if (!config.wxWorkKeys?.length && process.env.WX_WORK_KEYS) config.wxWorkKeys = process.env.WX_WORK_KEYS.split(',');
   config.wxWorkKeys = formatWxWorkKeys(config.wxWorkKeys);
 
-  if (isEmptyObject(config.packages)) config.packages = getMenorepoPackages();
-
   const npmModules = resolve(config.rootDir, 'node_modules');
   const baseCaceDir = existsSync(npmModules) ? npmModules : resolve(homedir(), '.flh');
+  const pkgInfo = readJsonFileSync<PackageJson>(resolve(config.rootDir, 'package.json'));
+
+  if (isEmptyObject(config.packages)) config.packages = getMenorepoPackages(pkgInfo, config.rootDir);
 
   if (!config.logDir) config.logDir = resolve(baseCaceDir, './.cache/flh/log');
   if (config.logDir === '_NIL_') config.logDir = ''; // 禁用日志
@@ -186,19 +187,18 @@ export function getConfig(options?: FlhConfig, useCache = true) {
   config.cacheLocation = resolve(config.rootDir, config.cacheLocation);
   if (!existsSync(config.cacheLocation)) mkdirSync(config.cacheLocation, { recursive: true });
 
+  // jira.projectName
+  if (!config.jira.projectName) config.jira.projectName = pkgInfo.name || basename(config.rootDir);
+
   isInited = true;
   return config;
 }
 
-function getMenorepoPackages(rootDir = process.cwd()) {
+function getMenorepoPackages(pkgInfo: PackageJson, rootDir = process.cwd()) {
   const packages: Record<string, string> = {};
   let filepath = resolve(rootDir, 'package.json');
 
-  if (existsSync(filepath)) {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const pkgInfo = readJsonFileSync<PackageJson>(filepath);
-    if (pkgInfo.packages) Object.assign(packages, pkgInfo.packages);
-  }
+  if (existsSync(filepath) && pkgInfo.packages) Object.assign(packages, pkgInfo.packages);
 
   filepath = resolve(rootDir, 'packages');
   if (existsSync(filepath)) {
