@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: renxia
- * @LastEditTime: 2024-04-10 10:55:59
+ * @LastEditTime: 2024-10-23 14:57:12
  * @Description:  Jira check
  */
 
@@ -18,6 +18,7 @@ import type { AnyObject } from '../types';
 import type { JiraCheckConfig, JiraCheckResult, JiraError, JiraReqConfig, JiraIssueItem } from '../types/jira.js';
 import { LintBase } from './LintBase.js';
 import { shouldIgnoreCommitLint } from './commit-lint.js';
+import { pathToFileURL } from 'node:url';
 
 export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
   private reqeust: Request;
@@ -60,9 +61,11 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
 
     if (jiraPath) {
       type JCType = (JiraReqConfig & { default?: JiraReqConfig }) | (() => Promise<JiraReqConfig>);
-      let jiraConfig: JCType = jiraPath.endsWith('.json') ? readJsonFileSync<JiraReqConfig>(jiraPath) : await import(jiraPath);
+      let jiraConfig: JCType = jiraPath.endsWith('.json')
+        ? readJsonFileSync<JiraReqConfig>(jiraPath)
+        : await import(pathToFileURL(jiraPath).href);
+      if ('default' in jiraConfig) jiraConfig = jiraConfig.default;
       if (typeof jiraConfig === 'function') jiraConfig = await jiraConfig();
-      if (jiraConfig.default) Object.assign(jiraConfig, jiraConfig.default);
       if (jiraConfig.cookie) headers.cookie = jiraConfig.cookie;
       if (jiraConfig.JSESSIONID && !headers.cookie.includes('JSESSIONID=')) {
         headers.cookie += `;JSESSIONID=${jiraConfig.JSESSIONID}`;
@@ -113,7 +116,7 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
       await this.initRequest();
       const result = await this.reqeust.get<typeof issueTypeList>(url);
       if (!Array.isArray(result.data)) {
-        this.logger.warn('获取 issuetype 列表异常：', result.data || result.headers);
+        this.logger.warn('获取 issuetype 列表异常：', String(result.data).trim().slice(0, 300) || result.headers);
         return [];
       }
 
@@ -331,9 +334,9 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
       logger.info('='.repeat(40));
 
       if (jiraIDs) {
-        /** 智能匹配正则表达式，commit覆盖, JIRA号后需要输入至少一个中文、【|[、英文或者空格进行隔开 例子: JGCPS-1234测试提交123 或 [JGCPS-1234] 测试提交123 => [ET][2.9.1][feature][JGCPS-1234]测试提交123 */
-        const smartRegWithMessage = new RegExp(`^\\[?${issuePrefix}\\d+\\]?([A-Za-z\\u4e00-\\u9fa5\\s【\\[]+.+)`);
-        /**  智能匹配正则表达式，单纯匹配jira 例子: JGCPS-1234 或 [JGCPS-1234] => [ET][2.9.1][feature][JGCPS-1234]JIRA本身的标题 */
+        /** 智能匹配正则表达式，commit覆盖, JIRA号后需要输入至少一个中文、【|[、英文或者空格进行隔开 例子: JGCPS-1234测试提交123 或 [JGCPS-1234] 测试提交123 => JGCPS-1234 [ET][2.9.1][feature]测试提交123 */
+        const smartRegWithMessage = new RegExp(`^\\[?${issuePrefix}\\d+\\]?\\s*([A-Za-z\\u4e00-\\u9fa5\\s【\\[]+.+)`);
+        /**  智能匹配正则表达式，单纯匹配jira 例子: JGCPS-1234 或 [JGCPS-1234] => JGCPS-1234 [ET][2.9.1][feature]JIRA本身的标题 */
         const smartRegWithJIRA = new RegExp(`^\\[?${issuePrefix}(\\d+)\\]?`, 'g');
         const issueTypeList = await this.getIssueType();
         /** 禁止提交的类型 */
@@ -391,23 +394,23 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
         }
 
         const issueText = issueTypeToDesc[issuetype] || 'feature'; // 如果是其他类型，默认feature
-        const reg = new RegExp(`^${config.commitMsgPrefix.replace(/([.[-])/g, '\\$1')}\\[${versionName}]\\[${issueText}]\\[${jiraID}]`);
+        const reg = new RegExp(`^$${jiraID} ${config.commitMsgPrefix.replace(/([.[-])/g, '\\$1')}\\[${versionName}]\\[${issueText}]`);
         smartCommit = commitMessage;
 
         // 如果匹配到commit中包含中文，则保留提交信息
         if (smartRegWithMessage.test(commitMessage)) {
           // 如果用户需要手动填入commit信息
           const message = commitMessage.match(smartRegWithMessage)[1].trim();
-          smartCommit = `${config.commitMsgPrefix}[${versionName}][${issueText}][${jiraID}] ${message}`;
+          smartCommit = `${jiraID} ${config.commitMsgPrefix}[${versionName}][${issueText}] ${message}`;
         } else if (smartRegWithJIRA.test(commitMessage)) {
           // 如果只匹配到JIRA号
-          smartCommit = `${config.commitMsgPrefix}[${versionName}][${issueText}][${jiraID}] ${summary as string}`;
+          smartCommit = `${jiraID} ${config.commitMsgPrefix}[${versionName}][${issueText}] ${summary as string}`;
         } else if (!reg.test(commitMessage)) {
           // 如果都是自己填的
           logger.debug(reg, commitMessage, reg.test(commitMessage));
           logger.error('commit 格式校验不通过，请参考正确提交格式');
           logger.log('===================  Example  ===================');
-          logger.log(greenBright(`${config.commitMsgPrefix}[${versionName}][${issueText}][${jiraID}] 描述问题或改进`));
+          logger.log(greenBright(`${jiraID} ${config.commitMsgPrefix}[${versionName}][${issueText}] 描述问题或改进`));
           logger.log('===================  Example  ===================');
           return result;
         }
