@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.6.4](https://github.com/lzwme/fed-lint-helper/compare/v2.6.3...v2.6.4) (2024-10-23)
+
+
+### Bug Fixes
+
+* 修复 tsc 异常；修复 jira check 多次执行格式重复处理的问题 ([302e0a4](https://github.com/lzwme/fed-lint-helper/commit/302e0a433cf34cfbc067a07988af50ca81f854ce))
+
 ### [2.6.3](https://github.com/lzwme/fed-lint-helper/compare/v2.6.2...v2.6.3) (2024-10-23)
 
 ### [2.6.2](https://github.com/lzwme/fed-lint-helper/compare/v2.6.1...v2.6.2) (2024-06-14)
