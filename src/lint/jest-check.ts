@@ -1,8 +1,8 @@
 /*
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
- * @LastEditors: lzw
- * @LastEditTime: 2022-11-23 15:19:01
+ * @LastEditors: renxia
+ * @LastEditTime: 2024-12-10 13:13:36
  * @Description:  jest check
  */
 
@@ -62,7 +62,7 @@ export class JestCheck extends LintBase<JestCheckConfig, JestCheckResult> {
       .map(([key, val]) => {
         if (ignoredKeys.has(key) || !val || Array.isArray(val)) return '';
         if (typeof val === 'boolean') val = val ? '' : '0';
-        return `--${key}${val ? `="${String(val)}"` : ''}`;
+        return `--${key}${val ? `="${String(val as string)}"` : ''}`;
       })
       .filter(Boolean)
       .join(' ');

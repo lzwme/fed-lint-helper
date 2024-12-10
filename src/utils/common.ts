@@ -75,7 +75,7 @@ export function fileListToString(fileList: string[], prefix = '-') {
 }
 
 export function padSpace(txt: unknown, maxLenth: number, start = true) {
-  return start ? String(txt).padStart(maxLenth, ' ') : String(txt).padEnd(maxLenth, ' ');
+  return String(txt as string)[start ? 'padStart' : 'padEnd'](maxLenth, ' ');
 }
 
 export function formatMem(mem: number) {
