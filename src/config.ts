@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: renxia
- * @LastEditTime: 2024-10-23 16:30:07
+ * @LastEditTime: 2024-12-10 11:54:20
  * @Description:
  */
 
@@ -20,7 +20,7 @@ import { formatWxWorkKeys, getLogger } from './utils/index.js';
 export const commConfig: CommConfig = {
   cache: true,
   checkOnInit: false,
-  debug: !!process.env.DEBUG,
+  debug: process.env.FLH_DEBUG === '1',
   exclude: ['**/node_modules/**', '**/dist/**'],
   exitOnError: true,
   extensions: ['.ts', '.tsx', '.js', '.jsx'],
