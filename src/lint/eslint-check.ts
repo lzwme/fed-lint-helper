@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: renxia
- * @LastEditTime: 2025-01-17 09:58:52
+ * @LastEditTime: 2025-01-17 15:08:53
  * @Description:  eslint check
  */
 
@@ -180,6 +180,8 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
     });
 
     const formatter = await eslint.loadFormatter('stylish');
+    // TODO: 仅暂时用于处理 tsc 类型异常问题
+    const lrDataParams = { cwd: config.rootDir } as ESLint.LintResultData;
     stats.isPassed = config.toWhiteList || (newWaringReults.length === 0 && newErrorReults.length === 0);
 
     if (config.toWhiteList) {
@@ -188,7 +190,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
       } else {
         whiteList.list = fileRules;
 
-        if (config.printDetail !== false) logger.info(`\n`, formatter.format(results));
+        if (config.printDetail !== false) logger.info(`\n`, formatter.format(results, lrDataParams));
 
         logger.info('[ADD]write to whitelist:', cyanBright(fixToshortPath(config.whiteListFilePath, config.rootDir)));
         stats.cacheFiles[config.whiteListFilePath] = { updated: whiteList };
@@ -210,7 +212,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
 
         errorResults = config.allowErrorToWhiteList ? newErrorReults : errorResults;
 
-        if (config.printDetail !== false) logger.info(`\n ${await formatter.format(errorResults)}`);
+        if (config.printDetail !== false) logger.info(`\n ${await formatter.format(errorResults, lrDataParams)}`);
         logger.info(bold(redBright(`[Error]Verification failed![${errorResults.length} files]`)), yellowBright(tips), `\n`);
 
         if (!config.fix && errorResults.length < 20 && errorResults.some(d => d.fixableErrorCount || d.fixableWarningCount)) {
@@ -227,7 +229,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
         // 不在白名单中的 warning
         if (newWaringReults.length > 0) {
           if (config.printDetail !== false) {
-            logger.info(`\n ${await formatter.format(newWaringReults)}\n`);
+            logger.info(`\n ${await formatter.format(newWaringReults, lrDataParams)}\n`);
           }
           logger.info(
             bold(red(`[Warning]Verification failed![${newWaringReults.length} files]`)),
@@ -239,7 +241,7 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
 
       if (stats.isPassed && (stats.errorCount || stats.warningCount)) {
         if (config.printDetail !== false && config.printDetialOnSuccessed !== false) {
-          logger.info(`\n ${await formatter.format(waringReults)}\n`);
+          logger.info(`\n ${await formatter.format(waringReults, lrDataParams)}\n`);
         }
 
         logger.info(
