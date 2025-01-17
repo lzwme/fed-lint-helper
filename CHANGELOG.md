@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.6.6](https://github.com/lzwme/fed-lint-helper/compare/v2.6.5...v2.6.6) (2025-01-17)
+
+
+### Bug Fixes
+
+* **ESLint:** 修复 ESLint fix 不生效的问题 ([d612d23](https://github.com/lzwme/fed-lint-helper/commit/d612d23d5551cde959675a72ef0b15a3264c39d3))
+
 ### [2.6.5](https://github.com/lzwme/fed-lint-helper/compare/v2.6.4...v2.6.5) (2024-12-10)
 
 
