@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: renxia
- * @LastEditTime: 2024-10-23 15:49:18
+ * @LastEditTime: 2025-01-17 09:58:52
  * @Description:  eslint check
  */
 
@@ -109,8 +109,11 @@ export class ESLintCheck extends LintBase<ESLintCheckConfig, ESLintCheckResult> 
     logger.debug('[options]:', config);
 
     const { ESLint } = await import('eslint');
-    const eslint = new ESLint(this.getESLintOptions(lintList, ESLint.version));
+    const options = this.getESLintOptions(lintList, ESLint.version);
+    const eslint = new ESLint(options);
     const results = await eslint.lintFiles(lintList);
+    if (options.fix && ESLint.outputFixes) await ESLint.outputFixes(results);
+
     let errorResults: ESLint.LintResult[] = [];
     /** 不在旧文件白名单中的 error 类结果 */
     const newErrorReults: ESLint.LintResult[] = [];
