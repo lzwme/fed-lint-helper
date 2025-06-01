@@ -5,8 +5,8 @@
  * @see http://stylelint.docschina.org/user-guide/configuration/
  */
 
-import type { Config } from 'stylelint';
 import { assign } from '@lzwme/fe-utils';
+import type { Config } from 'stylelint';
 
 export function getStylelintConfig(config?: Config): Config {
   const stylelint: Config = {

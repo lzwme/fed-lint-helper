@@ -2,23 +2,23 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: renxia
- * @LastEditTime: 2024-10-23 15:41:46
+ * @LastEditTime: 2025-05-30 12:04:16
  * @Description:  Jira check
  */
 
-import { resolve } from 'node:path';
-import { existsSync, writeFileSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import type { IncomingHttpHeaders } from 'node:http';
 import { homedir } from 'node:os';
-import { magenta, magentaBright, cyanBright, yellowBright, redBright, green, greenBright, cyan } from 'console-log-colors';
-import { assign, dateFormat, getHeadBranch, readJsonFileSync, Request } from '@lzwme/fe-utils';
-import { getLogger, checkUserEmial, getCommitMsg } from '../utils/index.js';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { Request, assign, dateFormat, getHeadBranch, readJsonFileSync } from '@lzwme/fe-utils';
+import { cyan, cyanBright, green, greenBright, magenta, magentaBright, redBright, yellowBright } from 'console-log-colors';
 import { getConfig } from '../config.js';
 import type { AnyObject } from '../types';
-import type { JiraCheckConfig, JiraCheckResult, JiraError, JiraReqConfig, JiraIssueItem } from '../types/jira.js';
+import type { JiraCheckConfig, JiraCheckResult, JiraError, JiraIssueItem, JiraReqConfig } from '../types/jira.js';
+import { checkUserEmial, getCommitMsg, getLogger } from '../utils/index.js';
 import { LintBase } from './LintBase.js';
 import { shouldIgnoreCommitLint } from './commit-lint.js';
-import { pathToFileURL } from 'node:url';
 
 export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
   private reqeust: Request;
@@ -433,7 +433,9 @@ export class JiraCheck extends LintBase<JiraCheckConfig, JiraCheckResult> {
         if (commitMessage.includes('Merge branch')) {
           logger.error('同分支提交禁止执行 Merge 操作，请使用 git rebase 或 git pull -r 命令。若为跨分支合并，请增加 -n 参数\n');
           return result;
-        } else if (!shouldIgnoreCommitLint(commitMessage)) {
+        }
+
+        if (!shouldIgnoreCommitLint(commitMessage)) {
           logger.error(redBright(`提交代码信息不符合规范，信息中应包含字符"${cyan(`${issuePrefix}`)}XXXX".`));
           logger.error('例如：', cyanBright(`${issuePrefix}9171 【两融篮子】多组合卖出，指令预览只显示一个组合。\n`));
           return result;

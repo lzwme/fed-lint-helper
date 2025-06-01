@@ -46,7 +46,7 @@ export interface LintResult {
   /** 缓存命中的数量 */
   cacheHits?: number;
   /** 缓存文件与对应的缓存信息。放在最后汇总并写入文件 */
-  cacheFiles?: {
+  cacheFiles: {
     [filepath: string]: {
       updated: AnyObject;
       deleted?: Record<string, unknown>;

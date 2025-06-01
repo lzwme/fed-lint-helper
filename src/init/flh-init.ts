@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { dirname, resolve } from 'node:path';
+import { type PackageJson, execSync, getObjectKeysUnsafe, mkdirp, readJsonFileSync } from '@lzwme/fe-utils';
 import { color } from 'console-log-colors';
-import { getObjectKeysUnsafe, type PackageJson, execSync, mkdirp, readJsonFileSync } from '@lzwme/fe-utils';
 import { prompt } from 'enquirer';
 import { flhSrcDir, getConfig } from '../config.js';
 import { getLogger, tryGetPackageManager } from '../utils/index.js';
@@ -114,7 +114,9 @@ export async function flhInit(options: Record<string, string | boolean>, package
     .sort((a, b) => (a.disabled === b.disabled ? 0 : a.disabled ? 1 : -1));
   const isAllConfiged = choices.every(d => d.disabled);
 
-  if (options.force) choices.forEach(d => (d.disabled = false));
+  if (options.force) {
+    for (const d of choices) d.disabled = false;
+  }
 
   if (isAllConfiged && !options.force) {
     logger.info(`所有配置都已存在，如需重置，请添加 --force 参数`);

@@ -2,18 +2,18 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: renxia
- * @LastEditTime: 2024-12-10 11:54:20
+ * @LastEditTime: 2025-05-30 15:03:59
  * @Description:
  */
 
 import { existsSync, mkdirSync } from 'node:fs';
-import { resolve, dirname, extname, basename } from 'node:path';
 import { homedir } from 'node:os';
+import { basename, dirname, extname, resolve } from 'node:path';
 import { env } from 'node:process';
+import { type PackageJson, assign, isEmptyObject, readJsonFileSync } from '@lzwme/fe-utils';
+import { color } from 'console-log-colors';
 // import { fileURLToPath } from 'node:url';
 import { sync } from 'fast-glob';
-import { color } from 'console-log-colors';
-import { assign, isEmptyObject, type PackageJson, readJsonFileSync } from '@lzwme/fe-utils';
 import { type CommConfig, type FlhConfig, LintTypes } from './types';
 import { formatWxWorkKeys, getLogger } from './utils/index.js';
 
@@ -88,6 +88,9 @@ export const config: FlhConfig = {
     mode: 'current',
     extensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.json', '.less', '.scss', '.md'],
     detectSubPackages: false,
+  },
+  biome: {
+    mode: 'current',
   },
   fileStats: {
     extensions: [], // 避免被 common.extensions 覆盖

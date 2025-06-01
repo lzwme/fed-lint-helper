@@ -1,3 +1,6 @@
+import { existsSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { getUserEmail, isGitRepo } from '@lzwme/fe-utils';
 /*
  * @Author: renxia
  * @Date: 2023-03-23 22:34:36
@@ -6,9 +9,6 @@
  * @Description:
  */
 import { color } from 'console-log-colors';
-import { existsSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { getUserEmail, isGitRepo } from '@lzwme/fe-utils';
 
 export function checkUserEmial(regRule: string | RegExp, exitOnError = true, rootDir = process.cwd()) {
   let errmsg = '';

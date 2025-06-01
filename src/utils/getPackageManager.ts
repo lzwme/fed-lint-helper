@@ -1,6 +1,6 @@
-import { PackageJson } from '@lzwme/fe-utils';
 import { existsSync, readFileSync } from 'node:fs';
-import { IPackageManager } from '../types';
+import type { PackageJson } from '@lzwme/fe-utils';
+import type { IPackageManager } from '../types';
 
 export function getPackageManager(pkg?: PackageJson): IPackageManager | undefined {
   let packageManager: IPackageManager;

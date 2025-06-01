@@ -1,20 +1,20 @@
+import { existsSync } from 'node:fs';
 /*
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: renxia
- * @LastEditTime: 2024-01-18 15:02:30
+ * @LastEditTime: 2025-06-03 08:47:54
  * @Description: cli 工具
  */
 import { resolve } from 'node:path';
-import { existsSync } from 'node:fs';
+import { assign, getHeadDiffFileList, wxWorkNotify } from '@lzwme/fe-utils';
 import { Option, program } from 'commander';
 import { cyanBright, green, greenBright, red, yellowBright } from 'console-log-colors';
-import { assign, getHeadDiffFileList, wxWorkNotify } from '@lzwme/fe-utils';
-import { type FlhConfig, type CommitLintOptions, LintTypes, AnyObject } from './types';
+import { FlhPkgInfo, commConfig, getConfig, mergeCommConfig } from './config.js';
+import { rmdir } from './tools/rmdir.js';
+import { type AnyObject, type CommitLintOptions, type FlhConfig, LintTypes } from './types';
 import type { JiraCheckConfig } from './types/jira';
 import { formatWxWorkKeys, getGitStaged, getLogger } from './utils/index.js';
-import { commConfig, FlhPkgInfo, getConfig, mergeCommConfig } from './config.js';
-import { rmdir } from './tools/rmdir.js';
 import { lintStartAsync } from './worker/lintStartAsync.js';
 
 const logger = getLogger();
@@ -56,6 +56,7 @@ interface POptions
   /** 执行 jira check 的类型 */
   jiraType?: FlhConfig['jira']['type'];
   commitEdit?: FlhConfig['jira']['commitEdit'];
+  biome?: boolean;
 }
 
 program
@@ -97,6 +98,7 @@ program
   .option('--use-jest-cli [value]', `执行单元测试时是否使用 jest-cli 模式。1 是(默认)，0 否`)
   .option('--prettier', `执行 prettier 编码风格检查`)
   .option('--use-prettier-cli [value]', `执行代码风格检查时是否使用 prettier cli 模式。1 是，0 否(默认)`)
+  .option('--biome', '执行 biome 检查')
   .action(() => {
     const options = getProgramOptions();
     const config: FlhConfig = {
@@ -113,6 +115,7 @@ program
         type: options.jiraType === 'pipeline' ? 'pipeline' : 'commit',
       },
       prettier: {},
+      biome: {},
     };
 
     const commKeys = ['wxWorkKeys', 'ci', ...(Object.keys(commConfig) as (keyof typeof commConfig)[])] as const;

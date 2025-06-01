@@ -7,8 +7,8 @@
  */
 
 import type { WorkerMessageBody } from './fork.js';
-import { type CreateThreadOptions, handlerForCTOptions } from './utils.js';
 import { lintStartAsync } from './lintStartAsync.js';
+import { type CreateThreadOptions, handlerForCTOptions } from './utils.js';
 
 globalThis.isInChildProcess = true;
 process.on('message', (options: CreateThreadOptions) => {

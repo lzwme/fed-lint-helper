@@ -2,13 +2,12 @@
  * @Author: lzw
  * @Date: 2021-08-15 22:39:01
  * @LastEditors: renxia
- * @LastEditTime: 2023-12-11 16:52:09
+ * @LastEditTime: 2025-06-03 08:48:50
  * @Description:  jest check
  */
 
-import { existsSync, unlinkSync, readFileSync, writeFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
-import { bold, cyan, red, redBright, greenBright, yellowBright } from 'console-log-colors';
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import {
   assign,
   createFilePathFilter,
@@ -20,12 +19,13 @@ import {
   mkdirp,
   readJsonFileSync,
 } from '@lzwme/fe-utils';
+import { bold, cyan, greenBright, red, redBright, yellowBright } from 'console-log-colors';
+import { FlhPkgInfo, getConfig } from '../config.js';
+import { exit } from '../exit.js';
+import type { CommConfig, ILintTypes, LintCacheInfo, LintResult, WhiteListInfo } from '../types';
 import { getIndentSize, getTimeCost, globMatcher, padSpace } from '../utils/common.js';
 import { getLogger } from '../utils/get-logger.js';
 import { createForkThread } from '../worker/fork.js';
-import { getConfig, FlhPkgInfo } from '../config.js';
-import type { CommConfig, ILintTypes, LintCacheInfo, LintResult, WhiteListInfo } from '../types';
-import { exit } from '../exit.js';
 
 export abstract class LintBase<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -249,7 +249,7 @@ export abstract class LintBase<
       }
     }
 
-    result = { isPassed: true, startTime: this.stats.startTime };
+    result = { isPassed: true, startTime: this.stats.startTime, cacheFiles: {} };
     const res = await Promise.all(results);
     res.forEach(r => {
       getObjectKeysUnsafe(r).forEach(key => {

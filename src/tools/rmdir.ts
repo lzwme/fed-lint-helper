@@ -1,11 +1,11 @@
+import { existsSync, promises, statSync } from 'node:fs';
 import { cpus } from 'node:os';
-import { statSync, existsSync, promises } from 'node:fs';
-import { green, red, greenBright } from 'console-log-colors';
-import glob from 'fast-glob';
-import { rmrfAsync, readSyncByRl, concurrency } from '@lzwme/fe-utils';
-import { getLogger } from '../utils/get-logger.js';
-import { formatMem, getTimeCost } from '../utils/common';
 import { dirname, resolve } from 'node:path';
+import { concurrency, readSyncByRl, rmrfAsync } from '@lzwme/fe-utils';
+import { green, greenBright, red } from 'console-log-colors';
+import glob from 'fast-glob';
+import { formatMem, getTimeCost } from '../utils/common';
+import { getLogger } from '../utils/get-logger.js';
 
 async function doRmdir(source: string, slient = false, force = false, dryRun = false, showSize = true) {
   if (!existsSync(source)) return false;

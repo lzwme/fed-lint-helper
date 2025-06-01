@@ -1,3 +1,4 @@
 node bin/flh.js --tscheck --eslint --jest --only-changes --fix
 node bin/flh.js --prettier --only-changes --fix
+pnpm biome lint --staged --no-errors-on-unmatched --fix
 git add --update

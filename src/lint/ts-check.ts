@@ -6,16 +6,16 @@
  * @Description: typescript Diagnostics report
  */
 
-import { resolve, dirname, normalize } from 'node:path';
 import { existsSync, statSync } from 'node:fs';
-import { bold, redBright, yellowBright, cyanBright, red, cyan } from 'console-log-colors';
-import type { Diagnostic, DiagnosticCategory, CompilerOptions } from 'typescript';
+import { dirname, normalize, resolve } from 'node:path';
+import { fixToshortPath, md5 } from '@lzwme/fe-utils';
+import { bold, cyan, cyanBright, red, redBright, yellowBright } from 'console-log-colors';
 import glob from 'fast-glob';
 import micromatch from 'micromatch';
-import { md5, fixToshortPath } from '@lzwme/fe-utils';
-import type { TsCheckConfig, LintResult, WhiteListInfo } from '../types';
-import { LintBase } from './LintBase.js';
+import type { CompilerOptions, Diagnostic, DiagnosticCategory } from 'typescript';
+import type { LintResult, TsCheckConfig, WhiteListInfo } from '../types';
 import { arrayToObject, fileListToString } from '../utils/common.js';
+import { LintBase } from './LintBase.js';
 
 export interface TsCheckResult extends LintResult {
   /** 异常类型数量统计 */

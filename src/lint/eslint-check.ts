@@ -6,14 +6,14 @@
  * @Description:  eslint check
  */
 
-import { bold, red, redBright, yellowBright, cyanBright } from 'console-log-colors';
-import { ESLint } from 'eslint';
 import { existsSync, statSync } from 'node:fs';
 import { extname, resolve } from 'node:path';
 import { execSync, fixToshortPath, isGitRepo } from '@lzwme/fe-utils';
+import { bold, cyanBright, red, redBright, yellowBright } from 'console-log-colors';
+import type { ESLint } from 'eslint';
+import type { ESLintCheckConfig, LintResult, WhiteListInfo } from '../types';
 import { arrayToObject, fileListToString } from '../utils/index.js';
 import { LintBase } from './LintBase.js';
-import type { ESLintCheckConfig, LintResult, WhiteListInfo } from '../types';
 
 export interface ESLintCheckResult extends LintResult {
   /** warning 类型异常的总数量 */

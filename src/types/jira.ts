@@ -1,5 +1,5 @@
 import type { IncomingHttpHeaders } from 'node:http';
-import { LintResult, type AnyObject } from './base.js';
+import type { AnyObject, LintResult } from './base.js';
 import type { CommConfig } from './config.js';
 
 export interface JiraIssueItem {

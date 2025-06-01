@@ -1,8 +1,8 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { color } from 'console-log-colors';
 import { execSync, formatTimeCost, getGitLog } from '@lzwme/fe-utils';
 import { formatByteSize } from '@lzwme/fe-utils/cjs/common/helper';
+import { color } from 'console-log-colors';
 import micromatch from 'micromatch';
 import { getLogger } from './get-logger.js';
 

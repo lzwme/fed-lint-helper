@@ -6,17 +6,17 @@
  * @Description:  jest check
  */
 
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { basename, dirname, extname, resolve } from 'node:path';
-import { existsSync, statSync, readFileSync } from 'node:fs';
+import type { FormattedTestResults, formatTestResults } from '@jest/test-result';
+import type { Config } from '@jest/types';
+import { execSync, fixToshortPath, isEmptyObject, md5, rmrf } from '@lzwme/fe-utils';
 import { color } from 'console-log-colors';
 import glob from 'fast-glob';
-import type { Config } from '@jest/types';
-import type { FormattedTestResults, formatTestResults } from '@jest/test-result';
-import { fixToshortPath, md5, execSync, rmrf, isEmptyObject } from '@lzwme/fe-utils';
 import { getConfig } from '../config.js';
 import type { JestCheckConfig, LintCacheInfo, LintResult, WhiteListInfo } from '../types';
-import { LintBase } from './LintBase.js';
 import { fileListToString } from '../utils/index.js';
+import { LintBase } from './LintBase.js';
 
 export type JestCheckResult = LintResult;
 

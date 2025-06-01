@@ -6,13 +6,13 @@
  * @Description:  prettier check
  */
 
+import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { existsSync, statSync, readFileSync, writeFileSync } from 'node:fs';
+import { assign, execSync, fixToshortPath, isEmpty, isGitRepo, md5 } from '@lzwme/fe-utils';
 import { green, greenBright, magentaBright, red, redBright } from 'console-log-colors';
-import { md5, assign, execSync, fixToshortPath, isGitRepo, isEmpty } from '@lzwme/fe-utils';
 import glob from 'fast-glob';
 import { getConfig } from '../config.js';
-import type { PrettierCheckConfig, LintResult } from '../types';
+import type { LintResult, PrettierCheckConfig } from '../types';
 import { LintBase } from './LintBase.js';
 
 export interface PrettierCheckResult extends LintResult {

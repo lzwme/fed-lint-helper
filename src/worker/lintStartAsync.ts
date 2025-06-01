@@ -1,14 +1,14 @@
 import type {
-  ILintTypes,
-  TsCheckConfig,
+  CommConfig,
   ESLintCheckConfig,
+  ILintTypes,
   JestCheckConfig,
   JiraCheckConfig,
   PrettierCheckConfig,
-  CommConfig,
+  TsCheckConfig,
 } from '../types';
 
-export async function lintStartAsync(type: ILintTypes, config: CommConfig, isInWorker = true, done: (d: unknown) => void) {
+export async function lintStartAsync(type: ILintTypes, config: CommConfig, isInWorker: boolean, done: (d: unknown) => void) {
   if (isInWorker) {
     const resetConfig = { checkOnInit: false, exitOnError: false, mode: 'current' };
     Object.assign(config, resetConfig);
@@ -42,6 +42,12 @@ export async function lintStartAsync(type: ILintTypes, config: CommConfig, isInW
     case 'prettier': {
       return import('../lint/prettier-check.js').then(({ PrettierCheck }) => {
         const inc = new PrettierCheck(config as PrettierCheckConfig);
+        inc.start().then(d => done(d));
+      });
+    }
+    case 'biome': {
+      return import('../lint/biome-check.js').then(({ BiomeCheck }) => {
+        const inc = new BiomeCheck(config);
         inc.start().then(d => done(d));
       });
     }

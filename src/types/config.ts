@@ -1,11 +1,11 @@
-import type { ESLint } from 'eslint';
 import type { Config } from '@jest/types';
+import type { ArrayLikeArgs, WxWorkReqParams } from '@lzwme/fe-utils';
+import type { ESLint } from 'eslint';
 import type { Config as PrettierConfig } from 'prettier';
-import type { WxWorkReqParams, ArrayLikeArgs } from '@lzwme/fe-utils';
+import type { IPackageManager } from './base.js';
 import type { JiraCheckConfig } from './jira.js';
-import { IPackageManager } from './base.js';
 
-export const LintTypes = ['eslint', 'tscheck', 'jest', 'jira', 'prettier'] as const;
+export const LintTypes = ['eslint', 'tscheck', 'jira', 'prettier', 'biome', 'jest'] as const;
 export type ILintTypes = ArrayLikeArgs<typeof LintTypes>;
 
 export interface CommConfig {
@@ -138,6 +138,11 @@ export interface PrettierCheckConfig extends CommConfig {
   extensions?: string[];
 }
 
+export interface BiomeCheckConfig extends CommConfig {
+  /** biome lint 自定义的 args 参数 */
+  args?: Record<string, string | number>;
+}
+
 export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {
   /** 子包配置。针对多子模块的 menorepo 类项目 */
   packages?: Record<string, string>;
@@ -163,6 +168,7 @@ export interface FlhConfig extends Omit<CommConfig, 'cacheFilePath'> {
   wxWorkMessageFormat?: (type: string, details: { errmsg?: string }) => string | WxWorkReqParams;
   /** 自定义出错退出前执行的回调方法 */
   beforeExitOnError?: (code: number, msg?: string) => void;
+  biome?: BiomeCheckConfig;
   commitlint?: CommitLintOptions;
   eslint?: ESLintCheckConfig;
   jest?: JestCheckConfig;

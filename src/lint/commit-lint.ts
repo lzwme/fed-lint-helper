@@ -3,8 +3,8 @@
 import { assign } from '@lzwme/fe-utils';
 import { color } from 'console-log-colors';
 import { config } from '../config.js';
-import { getLogger } from '../utils/get-logger.js';
 import type { CommitLintOptions } from '../types';
+import { getLogger } from '../utils/get-logger.js';
 import { checkUserEmial, getCommitMsg } from '../utils/index.js';
 
 const helpTipsDefault: Record<string, string> = {

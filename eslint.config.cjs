@@ -2,7 +2,7 @@
  * @Author: renxia
  * @Date: 2024-04-10 10:10:45
  * @LastEditors: renxia
- * @LastEditTime: 2024-06-05 14:36:13
+ * @LastEditTime: 2025-06-03 08:54:04
  * @Description:
  */
 // module.exports = [
@@ -39,7 +39,7 @@ module.exports = [
       },
       plugins: {
         prettier: require('eslint-plugin-prettier'),
-        unicorn: require('eslint-plugin-unicorn'),
+        unicorn: import('eslint-plugin-unicorn'),
       },
       ignores: ['**/node_modules/**', 'dist/**', 'cjs/**', 'esm/**', 'docs/**', 'mock/**', '**/*.js', '**/*.d.ts'],
       rules: {

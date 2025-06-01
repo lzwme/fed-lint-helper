@@ -10,8 +10,8 @@ import { fork } from 'node:child_process';
 import { resolve } from 'node:path';
 import { flhSrcDir } from '../config.js';
 import type { ILintTypes } from '../types';
-import { type CreateThreadOptions, handlerForCTOptions } from './utils.js';
 import { getLogger } from '../utils/get-logger';
+import { type CreateThreadOptions, handlerForCTOptions } from './utils.js';
 
 export interface WorkerMessageBody<T = unknown> {
   type: ILintTypes;
