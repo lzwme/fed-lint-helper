@@ -1,11 +1,11 @@
-import { existsSync } from 'node:fs';
 /*
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: renxia
- * @LastEditTime: 2025-06-03 08:47:54
+ * @LastEditTime: 2025-07-22 17:30:54
  * @Description: cli 工具
  */
+import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { assign, getHeadDiffFileList, wxWorkNotify } from '@lzwme/fe-utils';
 import { Option, program } from 'commander';
@@ -236,7 +236,7 @@ program
   .command('stats [src...]')
   .alias('s')
   .description(`文件类型数量统计`)
-  .option('--root-dir', '指定统计的根目录。默认为当前目录')
+  .option('-R, --root-dir [rootDir]', '指定统计的根目录。默认为当前目录', process.cwd())
   .option('--ext <ext...>', '需统计的文件类型后缀列表')
   .option('-e, --exclude <rules...>', '文件排除规则')
   .option('--topN <number>', 'Line/Size Top N 统计的数量')
@@ -253,6 +253,9 @@ program
       logger.debug(src);
       if (options.ext) options.extensions = options.ext;
       if (src.length > 0) options.src = src;
+      else if (existsSync(resolve(options.rootDir, 'src'))) {
+        options.src = ['src'];
+      } else options.src = ['.'];
       stats({ rootDir: config.rootDir, ...options });
     });
   });

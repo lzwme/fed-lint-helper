@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 16:15:03
  * @LastEditors: renxia
- * @LastEditTime: 2025-05-30 15:03:59
+ * @LastEditTime: 2025-07-22 17:18:43
  * @Description:
  */
 
@@ -176,7 +176,11 @@ export function getConfig(options?: FlhConfig, useCache = true) {
 
   const npmModules = resolve(config.rootDir, 'node_modules');
   const baseCaceDir = existsSync(npmModules) ? npmModules : resolve(homedir(), '.flh');
-  const pkgInfo = readJsonFileSync<PackageJson>(resolve(config.rootDir, 'package.json'));
+  const pkgFile = resolve(config.rootDir, 'package.json');
+  let pkgInfo = {} as PackageJson;
+  if (existsSync(pkgFile)) {
+    pkgInfo = readJsonFileSync<PackageJson>(resolve(config.rootDir, 'package.json'));
+  } else logger.warn(`不存在 package.json 文件：${color.yellowBright(pkgFile)}`);
 
   if (isEmptyObject(config.packages)) config.packages = getMenorepoPackages(pkgInfo, config.rootDir);
 
