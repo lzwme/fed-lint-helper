@@ -2,7 +2,7 @@
  * @Author: lzw
  * @Date: 2021-09-25 15:45:24
  * @LastEditors: renxia
- * @LastEditTime: 2025-07-22 17:30:54
+ * @LastEditTime: 2025-07-23 09:02:03
  * @Description: cli 工具
  */
 import { existsSync } from 'node:fs';
@@ -187,8 +187,7 @@ program
   .option('--show-size', '打印日志时，是否打印文件大小', false)
   .option('--dry-run', '是否仅测试执行，不真实删除文件', false)
   .action((list: string[], options) => {
-    getProgramOptions();
-    rmdir(list, options);
+    rmdir(list, { ...options, showProcess: true });
   });
 
 program

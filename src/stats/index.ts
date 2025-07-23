@@ -14,37 +14,20 @@ interface IStatsOption extends IFileStats {
 }
 
 const binaryExts = new Set([
-  'avi',
-  'doc',
-  'docx',
   'exe',
-  'gif',
-  'jpg',
-  'jpeg',
-  'mp3',
-  'mp4',
   'node',
-  'ppt',
-  'pptx',
-  'pdf',
-  'png',
-  'svg',
-  'wav',
-  'xls',
-  'xlsx',
+  // docs
+  ...['ppt', 'pptx', 'pdf', 'doc', 'docx', 'xls', 'xlsx'],
+  // videos
+  ...['mp4', 'avi', 'mov', 'mkv', 'flv', 'wmv', 'webm'],
+  // sounds
+  ...['mp3', 'amr', 'pcm', 'acc', 'wma', 'ogg', 'flac'],
+  // images
+  ...['png', 'svg', 'wav', 'jpg', 'jpeg', 'gif', 'webp', 'tiff', 'bmp'],
 ]);
 const extensionsDefault = [
-  'ts',
-  'tsx',
-  'js',
-  'jsx',
-  'mjs',
-  'cjs',
-  'json',
-  'css',
-  'less',
-  'scss',
-  'md',
+  // frontend
+  ...['cjs', 'css', 'html', 'js', 'json', 'jsx', 'less', 'md', 'mjs', 'scss', 'svelte', 'ts', 'tsx', 'vue'],
   // others
   'bat',
   'c',
@@ -54,7 +37,6 @@ const extensionsDefault = [
   'cs',
   'csv',
   'h',
-  'html',
   'java',
   'php',
   'proto',
@@ -64,12 +46,12 @@ const extensionsDefault = [
   'rs.in',
   'sh',
   'sql',
-  'svelte',
   'swift',
   'txt',
-  'vue',
   'xml',
   'yaml',
+  'yml',
+  'wasm',
   'zig',
   // binary
   ...binaryExts,
@@ -236,7 +218,7 @@ export async function stats(options: IStatsOption) {
     statsInfo.push(
       cyanBright(
         ` Duplicate files: [${duplicatesTotal}/${list.length}]${
-          options.showDupFiles ? ':' : ' (Add `showDupFiles` parameter to display details)'
+          options.showDupFiles ? ':' : ' (Add `--show-dup-files` parameter to display details)'
         }`
       )
     );

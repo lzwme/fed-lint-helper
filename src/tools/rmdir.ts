@@ -1,16 +1,15 @@
-import { existsSync, promises, statSync } from 'node:fs';
+import { existsSync, promises, readdirSync, rmdirSync, statSync } from 'node:fs';
 import { cpus } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { concurrency, readSyncByRl, rmrfAsync } from '@lzwme/fe-utils';
 import { green, greenBright, red } from 'console-log-colors';
 import glob from 'fast-glob';
 import { formatMem, getTimeCost } from '../utils/common';
-import { getLogger } from '../utils/get-logger.js';
+import { logger } from '../utils/get-logger.js';
 
 async function doRmdir(source: string, slient = false, force = false, dryRun = false, showSize = true) {
   if (!existsSync(source)) return false;
 
-  const logger = getLogger();
   const isFile = statSync(source).isFile();
   const sourceTip = isFile ? '文件' : '目录';
 
@@ -45,9 +44,11 @@ async function doRmdir(source: string, slient = false, force = false, dryRun = f
   return true;
 }
 
-export async function rmdir(srcs: string[], { slient = false, force = false, dryRun = false, showSize = true, onlyEmpty = false }) {
+export async function rmdir(
+  srcs: string[],
+  { slient = false, force = false, dryRun = false, showSize = true, onlyEmpty = false, showProcess = false }
+) {
   const startTime = Date.now();
-  const logger = getLogger();
   let total = 0;
 
   if (!Array.isArray(srcs) || srcs.length === 0) {
@@ -55,7 +56,7 @@ export async function rmdir(srcs: string[], { slient = false, force = false, dry
     return total;
   }
 
-  logger.debug('[RM]开始处理:', srcs);
+  if (showProcess) logger.info('[RMDIR]开始处理:', srcs.map(d => greenBright(d)).join(', '));
 
   if (onlyEmpty) {
     total = await rmEmptyDir(srcs, dryRun);
@@ -65,7 +66,7 @@ export async function rmdir(srcs: string[], { slient = false, force = false, dry
 
     for (const source of srcs) {
       // const files = glob.isDynamicPattern(source) ? await glob(source, { cwd: process.cwd() }) : [source];
-      const files = source.includes('*') ? await glob(source, { cwd: process.cwd(), onlyFiles: false }) : [source];
+      const files = source.includes('*') ? await glob(source, { cwd: process.cwd(), onlyFiles: false, dot: true }) : [source];
       for (const filepath of files) {
         if (force) {
           list.push(() => doRmdir(filepath, slient, force, dryRun, showSize));
@@ -79,26 +80,25 @@ export async function rmdir(srcs: string[], { slient = false, force = false, dry
     total = result.filter(Boolean).length;
   }
 
-  logger.debug(`${dryRun ? `[dryRun]` : ''}执行完成！共删除了 ${total} 个文件或目录。`, getTimeCost(startTime));
+  if (showProcess) logger.info(`${dryRun ? `[dryRun]` : ''}执行完成！共删除了 ${red(total)} 个文件或目录。`, getTimeCost(startTime));
 
   return total;
 }
 
 export async function rmEmptyDir(srcs: string[], dryRun = false) {
   let total = 0;
-  const logger = getLogger();
 
   for (let src of srcs) {
     src = resolve(src);
-    let dirs = await glob('**/*', { cwd: src, onlyDirectories: true, absolute: true });
+    let dirs = await glob('**/*', { cwd: src, onlyDirectories: true, absolute: true, dot: true });
     dirs = dirs.sort((a, b) => b.length - a.length).concat(src);
     logger.debug(dirs);
 
     for (const dir of dirs) {
-      const list = await promises.readdir(dir);
+      const list = readdirSync(dir);
       if (list.length === 0) {
-        logger.debug(`${dryRun ? `[dryRun]` : ''}删除空目录：`, dir);
-        if (!dryRun) await promises.rmdir(dir);
+        logger.debug(`${dryRun ? `[dryRun]` : ''}删除空目录：`, red(dir));
+        if (!dryRun) rmdirSync(dir);
         total++;
       }
     }
